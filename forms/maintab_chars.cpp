@@ -1,13 +1,13 @@
-#include "ui_maintab_chars.h"
 #include "maintab_chars.h"
+#include "ui_maintab_chars.h"
 #include "globals.h"
 #include "../spherescript/scriptobjects.h"
 #include "../uofiles/uoclientcom.h"
-
 #include <QMessageBox>
+#include <QStandardItem>
 #include <sstream>  // for std::stringstream
 #include <ios>      // for std::hex
-#include <thread>
+//#include <thread>
 
 
 MainTab_Chars::MainTab_Chars(QWidget *parent) :

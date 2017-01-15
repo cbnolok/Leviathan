@@ -1,9 +1,9 @@
 #ifndef PROFILE_OPTIONS_H
 #define PROFILE_OPTIONS_H
 
+#include "../spherescript/scriptsprofile.h"
 #include <QDialog>
 #include <QModelIndex>
-#include "../spherescript/scriptsprofile.h"
 //#include <map>
 #include <vector>
 

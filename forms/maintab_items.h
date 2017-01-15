@@ -2,13 +2,14 @@
 #define MAINTAB_ITEMS_H
 
 #include <QWidget>
-#include <QStandardItemModel>
+
 
 class UOClientCom;
 class ScriptCategory;
 class ScriptSubsection;
 class ScriptObj;
-
+class QStandardItem;
+class QStandardItemModel;
 
 namespace Ui {
 class MainTab_Items;

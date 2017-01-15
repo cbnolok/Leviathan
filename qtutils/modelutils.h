@@ -4,6 +4,7 @@
 #include <QStringList>
 #include <QModelIndex>
 
+
 class QAbstractItemModel;
 class QDirModel;
 class CheckableProxyModel;

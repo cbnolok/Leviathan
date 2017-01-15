@@ -1,12 +1,13 @@
 #include "scriptparser.h"
 #include "../globals.h"
+#include "../common.h"
 #include "scriptobjects.h"
 #include "scriptutils.h"
-#include "common.h"
 #include <limits>           // for UINT16_MAX macro
 #include <QCoreApplication> // for QCoreApplication::processEvents();
 
 #include <QDebug>
+
 
 ScriptParser::ScriptParser(int profileIndex) :
     m_profileIndex(profileIndex), m_scriptLine(0)
@@ -782,8 +783,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         case ScriptUtils::TAG_DUPEITEM:
             obj->m_dupeItem = value;
 
-            // Put temporarily the dupe items in a special Dupe Items Subsection. When parsing is completed,
-            // overwrite Category and Subsection for dupe items: they will have the same as the main/original item.
+            // When parsing is completed, overwrite Category and Subsection for dupe items: they will have the same as the main/original item.
             // Also the name will be inherited.
             m_scriptsDupeItems.push_back(obj);
             goto GOTO_DUPEITEM;

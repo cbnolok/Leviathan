@@ -3,11 +3,11 @@
 
 #include <QMainWindow>
 
+
 // i don't need the whole structure, because i use only a pointer to the class instance.
 class MainTab_Items;
 class MainTab_Chars;
 class Dlg_ProfileScripts_Options;
-
 
 namespace Ui {
 class MainWindow;

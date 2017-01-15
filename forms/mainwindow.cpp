@@ -1,16 +1,12 @@
-#include "ui_mainwindow.h"
 #include "mainwindow.h"
+#include "ui_mainwindow.h"
 #include "globals.h"
-
+#include "../spherescript/scriptparser.h"
 #include "maintab_items.h"
 #include "maintab_chars.h"
 #include "maintab_log.h"
-
 #include "dlg_parseprogress.h"
 #include "dlg_profilescripts_options.h"
-
-#include "../spherescript/scriptparser.h"
-
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -43,9 +39,7 @@ MainWindow::~MainWindow()
     delete m_MainTab_Items_inst;
     delete m_MainTab_Chars_inst;
     delete g_MainTab_Log_inst;
-
     delete m_Profile_Options_inst;
-
     delete ui;
 }
 

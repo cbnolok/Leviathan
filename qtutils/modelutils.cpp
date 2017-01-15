@@ -1,7 +1,6 @@
 #include "modelutils.h"
 #include <QAbstractItemModel>
 #include <QDirModel>
-#include <QFileSystemModel>
 #include "checkableproxymodel.h"
 
 

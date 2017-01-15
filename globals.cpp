@@ -1,4 +1,6 @@
 #include "globals.h"
+#include "spherescript/scriptobjects.h"
+
 
 int g_loadedScriptsProfile;
 std::vector<ScriptsProfile> g_scriptsProfiles;

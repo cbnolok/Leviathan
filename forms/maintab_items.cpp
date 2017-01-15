@@ -4,11 +4,11 @@
 #include "../spherescript/scriptobjects.h"
 #include "../spherescript/scriptutils.h"
 #include "../uofiles/uoclientcom.h"
-
 #include <QMessageBox>
+#include <QStandardItem>
 #include <sstream>  // for std::stringstream
 #include <ios>      // for std::hex
-#include <thread>
+//#include <thread>
 
 #include <QDebug>
 

@@ -2,7 +2,6 @@
 #define GLOBALS_H
 
 #include "spherescript/scriptsprofile.h"
-#include "spherescript/scriptobjects.h"
 #include "forms/maintab_log.h"
 
 
@@ -10,6 +9,7 @@ extern int g_loadedScriptsProfile;                    // index of the current sc
 extern std::vector<ScriptsProfile> g_scriptsProfiles;  // contains all of the scripts profiles
 
 // containers for Sphere Objects: characters, items, maps...
+class ScriptObjTree;
 extern ScriptObjTree *g_scriptObjTree_Chars;
 extern ScriptObjTree *g_scriptObjTree_Spawns;
 extern ScriptObjTree *g_scriptObjTree_Items;

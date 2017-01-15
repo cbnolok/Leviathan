@@ -1,12 +1,13 @@
 #ifndef SCRIPTPARSER_H
 #define SCRIPTPARSER_H
 
-#include "../globals.h"
 #include "../forms/dlg_parseprogress.h"
 #include <fstream>  // for std::ifstream
 #include <string>
 #include <vector>
 
+
+class ScriptObj;
 
 class ScriptParser : public QObject
 {

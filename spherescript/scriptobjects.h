@@ -21,6 +21,7 @@
 #define SCRIPTCATEGORY_NONE_NAME        "<No Category>"
 #define SCRIPTSUBSECTION_NONE_NAME      "<No Subsection>"
 
+
 class ScriptCategory;
 class ScriptSubsection;
 

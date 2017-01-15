@@ -1,5 +1,7 @@
 #include "dlg_profilescripts_options.h"
 #include "ui_dlg_profilescripts_options.h"
+#include "../common.h"
+#include "../globals.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDirModel>
@@ -10,8 +12,6 @@
 #include <QJsonArray>
 #include "../qtutils/checkableproxymodel.h"
 #include "../qtutils/modelutils.h"
-#include "../common.h"
-#include "../globals.h"
 
 #include <qDebug>
 
