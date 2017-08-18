@@ -1,9 +1,9 @@
 #include "scriptparser.h"
 #include "../globals.h"
 #include "../common.h"
+#include "../sysio.h"
 #include "scriptobjects.h"
 #include "scriptutils.h"
-#include <limits>           // for UINT16_MAX macro
 #include <QCoreApplication> // for QCoreApplication::processEvents();
 
 #include <QDebug>
@@ -13,6 +13,8 @@ ScriptParser::ScriptParser(int profileIndex) :
     m_profileIndex(profileIndex), m_scriptLine(0)
 {
     // Parse the scripts and store the data in the ScriptObjTree classes.
+
+    g_scriptFileList.clear();
 
     delete g_scriptObjTree_Chars;
     delete g_scriptObjTree_Spawns;
@@ -42,127 +44,206 @@ void ScriptParser::run()
 {
     g_loadedScriptsProfile = m_profileIndex;
     // TODO: fai leggere i files da spheretables
-    std::vector<std::string> scriptFileList;
-    getFilesInDirectorySub(&scriptFileList, g_scriptsProfiles[m_profileIndex].m_scriptsPath);
+    getFilesInDirectorySub(&g_scriptFileList, g_scriptsProfiles[m_profileIndex].m_scriptsPath);
+
+
+    /*  Store in memory scripts data    */
 
     appendToLog(std::string("Loading Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\"..."));
-    int filesNumber = (int)scriptFileList.size();
-    emit notifyPPProgressMax(filesNumber);
-    QString msg("Parsing ");
+    int filesNumber = (int)g_scriptFileList.size();
+    emit notifyTPProgressMax(filesNumber);
+    //QString msg("Parsing ");
+    emit notifyTPMessage("Parsing scripts");
     for (int i = 0; i < filesNumber; i++)
     {
-        emit notifyPPMessage(msg + scriptFileList[i].c_str());
-        loadFile(scriptFileList[i], false);
-        emit notifyPPProgressVal(i);
+        //emit notifyTPMessage(msg + g_scriptFileList[i].c_str());
+        loadFile(i, false);
+        emit notifyTPProgressVal(i);
         QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
     }
 
+
+    /*  Find Dupe items and set them the same Name, Category and Subsection as the Original item    */
+
     appendToLog("Organizing dupe items...");
-    emit notifyPPMessage("Organizing dupe items...");
-    emit notifyPPProgressMax(500);
-    // Find Dupe items and set them the same Name, Category and Subsection as the Original item.
+    emit notifyTPMessage("Organizing dupe items...");
+    emit notifyTPProgressMax(150);
+
     size_t dupeObjs_num = m_scriptsDupeItems.size();
     int progressVal = 0;
     for (size_t dupeObj_i = 0; dupeObj_i < dupeObjs_num; dupeObj_i++)
     {
+        bool found = false;
         ScriptObj * dupeObj = m_scriptsDupeItems[dupeObj_i];
         if (dupeObj->m_dupeItem.empty())
-            continue;
+            continue;   // error?
 
-        bool found = false;
-        int dupeNum = ScriptUtils::strToSphereInt(dupeObj->m_dupeItem);
-        if (dupeNum != -1)
+        bool isDUPEITEMnumerical = isStringNumericHex(dupeObj->m_dupeItem);
+        for (auto it = m_scriptsDupeParents.begin(), end = m_scriptsDupeParents.end(); it != end; it++)
         {
-            // DUPEITEM property is numerical, so an ID
-            for (size_t originalCategory_i = 0; originalCategory_i < g_scriptObjTree_Items->m_categories.size(); originalCategory_i++)
+            ScriptObj * parentObj = *it;
+            //if (!parentObj->m_dupeItem.empty())   // if it's a dupe item
+            //    continue; // dupe item having as parent another dupe item? error in scripts?
+            if (!parentObj->m_baseDef)    // it may be a child item which has ben set ID = base item
+                continue;
+
+            if (isDUPEITEMnumerical)    // DUPEITEM property is numerical, so it's a ID
             {
-                ScriptCategory * originalCategory = g_scriptObjTree_Items->m_categories[originalCategory_i];
-                for (size_t originalSubsection_i = 0; originalSubsection_i < originalCategory->m_subsections.size(); originalSubsection_i++)
-                {
-                    ScriptSubsection * originalSubsection = originalCategory->m_subsections[originalSubsection_i];
-                    for (size_t originalObj_i = 0; originalObj_i < originalSubsection->m_objects.size(); originalObj_i++)
-                    {
-                        ScriptObj * originalObj = originalSubsection->m_objects[originalObj_i];
-                        //if (!originalObj->m_dupeItem.empty())   // if it's a dupe item
-                        //    continue;
-                        if (originalObj->m_ID != dupeNum)
-                            continue;
-                        found = true;
-                        dupeObj->m_description = originalObj->m_description + " - (dupe)";
-                        dupeObj->m_category = originalObj->m_category;
-                        dupeObj->m_subsection = originalObj->m_subsection;
-                        dupeObj->m_subsection->m_objects.push_back(dupeObj);
-                        break;
-                    }
-                    if (found)
-                        break;
-                }
-                if (found)
-                    break;
+                if (parentObj->m_ID != dupeObj->m_dupeItem)
+                    continue;
             }
-            //if (!found)
-            //qDebug() << "NOT FOUND x: " << dupeObj->m_ID << " - " << dupeObj->m_defname.c_str() << " - " << dupeObj->m_dupeItem.c_str() << " - " << dupeNum;
-        }
-        else
-        {
-            // DUPEITEM property is a string, so a defname
-            for (size_t originalCategory_i = 0; originalCategory_i < g_scriptObjTree_Items->m_categories.size(); originalCategory_i++)
+            else                        // DUPEITEM property is a string, so it's a defname
             {
-                ScriptCategory * originalCategory = g_scriptObjTree_Items->m_categories[originalCategory_i];
-                for (size_t originalSubsection_i = 0; originalSubsection_i < originalCategory->m_subsections.size(); originalSubsection_i++)
-                {
-                    ScriptSubsection * originalSubsection = originalCategory->m_subsections[originalSubsection_i];
-                    for (size_t originalObj_i = 0; originalObj_i < originalSubsection->m_objects.size(); originalObj_i++)
-                    {
-                        ScriptObj * originalObj = originalSubsection->m_objects[originalObj_i];
-                        if (!originalObj->m_dupeItem.empty())   // if it's a dupe item
-                            continue;
-                        else if (originalObj->m_defname.compare(dupeObj->m_dupeItem) != 0)
-                            continue;
-                        found = true;
-                        dupeObj->m_description = originalObj->m_description + " - (dupe)";
-                        dupeObj->m_category = originalObj->m_category;
-                        dupeObj->m_subsection = originalObj->m_subsection;
-                        dupeObj->m_subsection->m_objects.push_back(dupeObj);
-                        break;
-                    }
-                    if (found)
-                        break;
-                }
-                if (found)
-                    break;
+                if (parentObj->m_defname != dupeObj->m_dupeItem)
+                    continue;
             }
-            //if (!found)
-            //qDebug() << "NOT FOUND y: " << dupeObj->m_ID << " - " << dupeObj->m_defname.c_str() << " - " << dupeObj->m_dupeItem.c_str();
+
+            found = true;
+            dupeObj->m_description = parentObj->m_description + " - (dupe)";
+            dupeObj->m_category = parentObj->m_category;
+            dupeObj->m_subsection = parentObj->m_subsection;
+            dupeObj->m_subsection->m_objects.push_back(dupeObj);
+            break;
         }
 
-        int progressValNow = (dupeObj_i*500)/dupeObjs_num;
+        if (!found)
+            appendToLog("[WARNING](Dupe) Couldn't find Parent Item (" + dupeObj->m_dupeItem + ") " +
+                        "for Dupe Item -> Defname=" + dupeObj->m_defname + ", ID=" + dupeObj->m_ID + ". " +
+                        "File: " + g_scriptFileList[dupeObj->m_scriptFileIndex]);
+
+        int progressValNow = (int)( (dupeObj_i*150)/dupeObjs_num );
         if (progressValNow > progressVal)
         {
             progressVal = progressValNow;
-            emit notifyPPProgressVal(progressVal);
+            emit notifyTPProgressVal(progressVal);
             QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
         }
     }
+
+
+    /*  Get the ID of the item/animation to show for the child objects (derived from another item/char) */
+
+    appendToLog("Assigning the displayID to child objects...");
+    emit notifyTPMessage("Assigning the displayID to child objects...");
+    emit notifyTPProgressMax(150);
+    progressVal = 0;
+
+    ScriptObjTree*              trees[]         = { g_scriptObjTree_Items,  g_scriptObjTree_Chars   };
+    std::deque<ScriptObj*>*     childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
+    size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
+    size_t childrenProcessed = 0;
+    for (int tree_i = 0; tree_i < 2; tree_i++)
+    {
+        // Iterate one time for the items and one for the chars
+
+        auto curTree            = trees[tree_i];
+        auto curChildObjects    = childObjects[tree_i];
+        for (size_t child_i = 0, child_s = curChildObjects->size(); child_i < child_s; child_i++)
+        {
+            // Iterate through each object of the tree.
+            // Now look inside each object of each subsection of each category to find the parent object.
+
+            bool found = false;
+            ScriptObj* childObj = (*curChildObjects)[child_i];
+            bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
+
+            for (size_t x = 0, xe = curTree->m_categories.size(); x < xe; x++)
+            {
+                ScriptCategory * originalCategory = curTree->m_categories[x];
+                for (size_t y = 0, ye = originalCategory->m_subsections.size(); y < ye; y++)
+                {
+                    ScriptSubsection * z = originalCategory->m_subsections[y];
+                    for (size_t w = 0, we = z->m_objects.size(); w < we; w++)
+                    {
+                        ScriptObj * parentObj = z->m_objects[w];
+                        if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
+                            continue;
+
+                        if (isChildIDNumeric)           // the object has ID = number
+                        {
+                            if (parentObj->m_ID != childObj->m_ID)
+                                continue;
+                        }
+                        else                            // the object has ID = defname
+                        {
+                            if (parentObj->m_defname != childObj->m_ID)
+                                continue;
+                        }
+
+                        found = true;
+                        childObj->m_display = parentObj->m_display;
+                        break;
+                    }
+                    if (found)
+                        break;
+                }
+                if (found)
+                    break;
+            }
+
+            /*
+            for (auto it = trees[tree_i]->begin(), end = trees[tree_i]->end(); it != end; ++it)
+            {
+                ScriptObj * parentObj = *it;
+                if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
+                    continue;
+
+                if (isChildIDNumeric)           // the object has ID = number
+                {
+                    if (parentObj->m_ID != childObj->m_ID)
+                        continue;
+                }
+                else                            // the object has ID = defname
+                {
+                    if (parentObj->m_defname != childObj->m_ID)
+                        continue;
+                }
+
+                found = true;
+                childObj->m_display = parentObj->m_display;
+                break;
+            }
+
+            if (!found)
+                appendToLog("[WARNING](displayID) Couldn't find Parent Object (" + childObj->m_ID + ") " +
+                            "for Child Object -> Defname=" + childObj->m_defname + ", ID=" + childObj->m_ID + ". " +
+                            "File: " + g_scriptFileList[childObj->m_scriptFileIndex]);
+            */
+
+
+            childrenProcessed++;
+            int progressValNow = (int)( (childrenProcessed*150)/childItemsNum );
+            if (progressValNow > progressVal)
+            {
+                progressVal = progressValNow;
+                emit notifyTPProgressVal(progressVal);
+                QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
+            }
+
+        }   // end of child iterating for loop
+    }       // end of the tree iterating for loop
+
 
     appendToLog(std::string("Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\" loaded."));
 }
 
 
-bool ScriptParser::loadFile(std::string filePath, bool loadingResources)
+bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
 {
     //if (g_scriptObjTree == nullptr)
     //    return false;       // if it wasn't initialized we can't store the objects that will be parsed.
 
-    for (std::vector<std::string>::iterator it = m_loadedScripts.begin(); it != m_loadedScripts.end(); it++)
+    std::string& filePath = g_scriptFileList[fileIndex];
+
+    for (std::string& f : m_loadedScripts)
     {
-        if (!filePath.compare(*it))
+        if (filePath == f)
             return false;   // this file was already loaded.
     }
 
     std::ifstream fileStream;
     // it's fundamental to open the file in binary mode, otherwise tellg and seekg won't work properly...
-    fileStream.open(filePath.c_str(), std::ifstream::in | std::ifstream::binary);
+    fileStream.open(filePath, std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open())
     {
         appendToLog(std::string("Error opening file " + filePath));
@@ -173,8 +254,8 @@ bool ScriptParser::loadFile(std::string filePath, bool loadingResources)
     appendToLog(std::string("Loading file " + filePath));
     m_scriptLine = 0;
 
-    try
-    {
+//    try
+//    {
         while ( !fileStream.eof() )
         {         
             std::string line;
@@ -183,107 +264,111 @@ bool ScriptParser::loadFile(std::string filePath, bool loadingResources)
                 break;
             m_scriptLine++;
 
-            if ( line.find('[') != std::string::npos )
+            if ( line.find('[') == std::string::npos )
+                continue;
+
+            //-- Get the pure block string (removing also leading/trailing spaces, trailing \n, \t, \r, \v, \f...)
+            size_t index_startBlock = line.find_first_of('[');
+            size_t index_endBlock = line.find_first_of(']');
+            if (index_endBlock == std::string::npos)
+                continue;
+            size_t index_comment = line.find("//");     // Checking if the block is commented.
+            if (index_comment != std::string::npos)
             {
-                //-- Get the pure block string (removing also leading/trailing spaces, trailing \n, \t, \r, \v, \f...)
-                size_t index_startBlock = line.find_first_of('[');                
-                size_t index_endBlock = line.find_first_of(']');
-                if (index_endBlock == std::string::npos)
+                if (index_comment < index_startBlock)
                     continue;
-                size_t index_comment = line.find("//");     // Checking if the block is commented.
-                if (index_comment != std::string::npos)
-                {
-                    if (index_comment < index_startBlock)
-                        continue;
-                }
-                std::string blockStr = line.substr(index_startBlock, index_endBlock-index_startBlock+1);
+            }
+            std::string blockStr = line.substr(index_startBlock, index_endBlock-index_startBlock+1);
 
-                //-- Get the keyword
-                // Skip eventual spaces and the '[' character before the keyword
-                size_t index_keywordLeft = blockStr.find_first_not_of(" \r", 1); // starting from 1 skips the '['
-                if (index_keywordLeft == std::string::npos)
+            //-- Get the keyword
+            // Skip eventual spaces and the '[' character before the keyword
+            size_t index_keywordLeft = blockStr.find_first_not_of(" \r", 1); // starting from 1 skips the '['
+            if (index_keywordLeft == std::string::npos)
+                continue;
+
+            // Skip eventual spaces and the ']' character after the keyword
+            size_t index_keywordRight = blockStr.find_first_of("] \r", index_keywordLeft);
+            if (index_keywordRight == std::string::npos)
+                continue;
+
+            // Get the pure keyword (it can also be COMMENT, which isn't in the table, so we won't do anything if we encounter it).
+            std::string keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight-index_keywordLeft);
+
+            //-- Get the eventual keyword argument (e.g.: [DEFNAME *c_foo*]). We can also have no argument.
+            std::string argumentStr("<No Argument>");
+            size_t index_argumentLeft = index_keywordRight + 1;
+            while ( (blockStr[index_argumentLeft]==' ') || (blockStr[index_argumentLeft]=='\r') )
+            {
+                index_argumentLeft++;
+            }
+            if (blockStr[index_argumentLeft]!=']')  // encountered the end of the block: argument not found
+            {
+                size_t index_argumentRight = blockStr.find_first_of("] \r", index_argumentLeft);
+                if (index_argumentRight == std::string::npos)
                     continue;
+                argumentStr = blockStr.substr(index_argumentLeft, index_argumentRight-index_argumentLeft);
+            }
 
-                // Skip eventual spaces and the ']' character after the keyword
-                size_t index_keywordRight = blockStr.find_first_of("] \r", index_keywordLeft);
-                if (index_keywordRight == std::string::npos)
-                    continue;
-
-                // Get the pure keyword (it can also be COMMENT, which isn't in the table, so we won't do anything if we encounter it).
-                std::string keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight-index_keywordLeft);
-
-                //-- Get the eventual keyword argument (e.g.: [DEFNAME *c_foo*]). We can also have no argument.
-                std::string argumentStr("<No Argument>");
-                size_t index_argumentLeft = index_keywordRight + 1;
-                while ( (blockStr[index_argumentLeft]==' ') || (blockStr[index_argumentLeft]=='\r') )
-                {
-                    index_argumentLeft++;
-                }
-                if (blockStr[index_argumentLeft]!=']')  // encountered the end of the block: argument not found
-                {
-                    size_t index_argumentRight = blockStr.find_first_of("] \r", index_argumentLeft);
-                    if (index_argumentRight == std::string::npos)
-                        continue;
-                    argumentStr = blockStr.substr(index_argumentLeft, index_argumentRight-index_argumentLeft);
-                }
-
-                // Look up in the table the ID (enum) of the keyword (resource)
-                switch (ScriptUtils::findTableSorted(keywordStr.c_str(), ScriptUtils::resourceBlocks, ScriptUtils::SCRIPTOBJ_RES_QTY))
-                {
-                case -1:
-                    // keyword not found
-                    break;
-                case ScriptUtils::SCRIPTOBJ_RES_ITEMDEF:
-                {
-                    ScriptObj *objItem = new ScriptObj();
-                    objItem->m_type = SCRIPTOBJ_TYPE_ITEM;
-                    objItem->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                    objItem->m_scriptFile = filePath;
-                    objItem->m_scriptLine = m_scriptLine;
-                    parseBlock(fileStream, objItem);
-                }
-                    break;
-                case ScriptUtils::SCRIPTOBJ_RES_MULTIDEF:
-                {
-                    ScriptObj *objMulti = new ScriptObj();
-                    objMulti->m_type = SCRIPTOBJ_TYPE_MULTI;
-                    objMulti->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                    objMulti->m_scriptFile = filePath;
-                    objMulti->m_scriptLine = m_scriptLine;
-                    parseBlock(fileStream, objMulti);
-                }
-                    break;
-                case ScriptUtils::SCRIPTOBJ_RES_TEMPLATE:
-                {
-                    ScriptObj *objTemplate = new ScriptObj();
-                    objTemplate->m_type = SCRIPTOBJ_TYPE_TEMPLATE;
-                    objTemplate->m_defname = argumentStr;   // using this only as a temporary storage for the argument
-                    objTemplate->m_ID = 01;                 // overwrites further IDs findings
-                    objTemplate->m_scriptFile = filePath;
-                    objTemplate->m_scriptLine = m_scriptLine;
-                    parseBlock(fileStream, objTemplate);
-                }
-                    break;
-                case ScriptUtils::SCRIPTOBJ_RES_CHARDEF:
-                {
-                    ScriptObj *objNPC = new ScriptObj();
-                    objNPC->m_type = SCRIPTOBJ_TYPE_CHAR;
-                    objNPC->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                    objNPC->m_scriptFile = filePath;
-                    objNPC->m_scriptLine = m_scriptLine;
-                    parseBlock(fileStream, objNPC);
-                }
-                    break;
-                case ScriptUtils::SCRIPTOBJ_RES_SPAWN:
-                {
-                    ScriptObj *objSpawn = new ScriptObj();
-                    objSpawn->m_type = SCRIPTOBJ_TYPE_SPAWN;
-                    objSpawn->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                    objSpawn->m_scriptFile = filePath;
-                    objSpawn->m_scriptLine = m_scriptLine;
-                    parseBlock(fileStream, objSpawn);
-                }
-                    break;
+            // Look up in the table the ID (enum) of the keyword (resource)
+            switch (ScriptUtils::findTableSorted(keywordStr, ScriptUtils::resourceBlocks, ScriptUtils::SCRIPTOBJ_RES_QTY - 1))
+            {
+            case -1:
+                // keyword not found
+                break;
+            case ScriptUtils::SCRIPTOBJ_RES_ITEMDEF:
+            {
+                ScriptObj *objItem = new ScriptObj();
+                objItem->m_type = SCRIPTOBJ_TYPE_ITEM;
+                objItem->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+                objItem->m_scriptFileIndex = fileIndex;
+                objItem->m_scriptLine = m_scriptLine;
+                parseBlock(fileStream, objItem);
+            }
+                break;
+            case ScriptUtils::SCRIPTOBJ_RES_MULTIDEF:
+            {
+                ScriptObj *objMulti = new ScriptObj();
+                objMulti->m_type = SCRIPTOBJ_TYPE_MULTI;
+                objMulti->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+                objMulti->m_scriptFileIndex = fileIndex;
+                objMulti->m_scriptLine = m_scriptLine;
+                objMulti->m_display = 0x22c4;     // mini house
+                parseBlock(fileStream, objMulti);
+            }
+                break;
+            case ScriptUtils::SCRIPTOBJ_RES_TEMPLATE:
+            {
+                ScriptObj *objTemplate = new ScriptObj();
+                objTemplate->m_type = SCRIPTOBJ_TYPE_TEMPLATE;
+                objTemplate->m_defname = argumentStr;   // using this only as a temporary storage for the argument
+                objTemplate->m_ID = "01";               // overwrites further IDs findings
+                objTemplate->m_scriptFileIndex = fileIndex;
+                objTemplate->m_scriptLine = m_scriptLine;
+                objTemplate->m_display = 0xe76;     // bag
+                parseBlock(fileStream, objTemplate);
+            }
+                break;
+            case ScriptUtils::SCRIPTOBJ_RES_CHARDEF:
+            {
+                ScriptObj *objNPC = new ScriptObj();
+                objNPC->m_type = SCRIPTOBJ_TYPE_CHAR;
+                objNPC->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+                objNPC->m_scriptFileIndex = fileIndex;
+                objNPC->m_scriptLine = m_scriptLine;
+                parseBlock(fileStream, objNPC);
+            }
+                break;
+            case ScriptUtils::SCRIPTOBJ_RES_SPAWN:
+            {
+                ScriptObj *objSpawn = new ScriptObj();
+                objSpawn->m_type = SCRIPTOBJ_TYPE_SPAWN;
+                objSpawn->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+                objSpawn->m_scriptFileIndex = fileIndex;
+                objSpawn->m_scriptLine = m_scriptLine;
+                objSpawn->m_display = 0x3a;     // wisp
+                parseBlock(fileStream, objSpawn);
+            }
+                break;
                 /*
                 case ScriptUtils::SCRIPTOBJ_RES_AREA:
                 case ScriptUtils::SCRIPTOBJ_RES_AREADEF:
@@ -610,51 +695,50 @@ bool ScriptParser::loadFile(std::string filePath, bool loadingResources)
                     break;
                 */
                 //Ignore these blocks
-                case ScriptUtils::SCRIPTOBJ_RES_COMMENT:
-                case ScriptUtils::SCRIPTOBJ_RES_UNKNOWN:
-                case ScriptUtils::SCRIPTOBJ_RES_ADVANCE:
-                case ScriptUtils::SCRIPTOBJ_RES_BLOCKIP:
-                case ScriptUtils::SCRIPTOBJ_RES_BOOK:
-                case ScriptUtils::SCRIPTOBJ_RES_DIALOG:
-                case ScriptUtils::SCRIPTOBJ_RES_FAME:
-                case ScriptUtils::SCRIPTOBJ_RES_GLOBALS:
-                case ScriptUtils::SCRIPTOBJ_RES_GMPAGE:
-                case ScriptUtils::SCRIPTOBJ_RES_KARMA:
-                case ScriptUtils::SCRIPTOBJ_RES_MENU:
-                case ScriptUtils::SCRIPTOBJ_RES_MOONGATES:
-                case ScriptUtils::SCRIPTOBJ_RES_NAMES:
-                case ScriptUtils::SCRIPTOBJ_RES_NEWBIE:
-                case ScriptUtils::SCRIPTOBJ_RES_NOTOTITLES:
-                case ScriptUtils::SCRIPTOBJ_RES_OBSCENE:
-                case ScriptUtils::SCRIPTOBJ_RES_PLEVEL:
-                case ScriptUtils::SCRIPTOBJ_RES_REGIONRESOURCE:
-                case ScriptUtils::SCRIPTOBJ_RES_REGIONTYPE:
-                case ScriptUtils::SCRIPTOBJ_RES_RUNES:
-                case ScriptUtils::SCRIPTOBJ_RES_SECTOR:
-                case ScriptUtils::SCRIPTOBJ_RES_SERVERS:
-                case ScriptUtils::SCRIPTOBJ_RES_SKILLCLASS:
-                case ScriptUtils::SCRIPTOBJ_RES_SKILLMENU:
-                case ScriptUtils::SCRIPTOBJ_RES_SPEECH:
-                case ScriptUtils::SCRIPTOBJ_RES_STARTS:
-                case ScriptUtils::SCRIPTOBJ_RES_TELEPORTERS:
-                case ScriptUtils::SCRIPTOBJ_RES_TIMERF:
-                case ScriptUtils::SCRIPTOBJ_RES_WEBPAGE:
-                case ScriptUtils::SCRIPTOBJ_RES_WORLDCHAR:
-                case ScriptUtils::SCRIPTOBJ_RES_WC:
-                case ScriptUtils::SCRIPTOBJ_RES_WS:
-                case ScriptUtils::SCRIPTOBJ_RES_QTY:
-                    break;
-                default:
-                    //appendToLog("Unknown keyword \"" + keywordStr + "\" in file " + filePath + ".");
-                    break;
-                }
+            case ScriptUtils::SCRIPTOBJ_RES_COMMENT:
+            case ScriptUtils::SCRIPTOBJ_RES_UNKNOWN:
+            case ScriptUtils::SCRIPTOBJ_RES_ADVANCE:
+            case ScriptUtils::SCRIPTOBJ_RES_BLOCKIP:
+            case ScriptUtils::SCRIPTOBJ_RES_BOOK:
+            case ScriptUtils::SCRIPTOBJ_RES_DIALOG:
+            case ScriptUtils::SCRIPTOBJ_RES_FAME:
+            case ScriptUtils::SCRIPTOBJ_RES_GLOBALS:
+            case ScriptUtils::SCRIPTOBJ_RES_GMPAGE:
+            case ScriptUtils::SCRIPTOBJ_RES_KARMA:
+            case ScriptUtils::SCRIPTOBJ_RES_MENU:
+            case ScriptUtils::SCRIPTOBJ_RES_MOONGATES:
+            case ScriptUtils::SCRIPTOBJ_RES_NAMES:
+            case ScriptUtils::SCRIPTOBJ_RES_NEWBIE:
+            case ScriptUtils::SCRIPTOBJ_RES_NOTOTITLES:
+            case ScriptUtils::SCRIPTOBJ_RES_OBSCENE:
+            case ScriptUtils::SCRIPTOBJ_RES_PLEVEL:
+            case ScriptUtils::SCRIPTOBJ_RES_REGIONRESOURCE:
+            case ScriptUtils::SCRIPTOBJ_RES_REGIONTYPE:
+            case ScriptUtils::SCRIPTOBJ_RES_RUNES:
+            case ScriptUtils::SCRIPTOBJ_RES_SECTOR:
+            case ScriptUtils::SCRIPTOBJ_RES_SERVERS:
+            case ScriptUtils::SCRIPTOBJ_RES_SKILLCLASS:
+            case ScriptUtils::SCRIPTOBJ_RES_SKILLMENU:
+            case ScriptUtils::SCRIPTOBJ_RES_SPEECH:
+            case ScriptUtils::SCRIPTOBJ_RES_STARTS:
+            case ScriptUtils::SCRIPTOBJ_RES_TELEPORTERS:
+            case ScriptUtils::SCRIPTOBJ_RES_TIMERF:
+            case ScriptUtils::SCRIPTOBJ_RES_WEBPAGE:
+            case ScriptUtils::SCRIPTOBJ_RES_WORLDCHAR:
+            case ScriptUtils::SCRIPTOBJ_RES_WC:
+            case ScriptUtils::SCRIPTOBJ_RES_WS:
+            case ScriptUtils::SCRIPTOBJ_RES_QTY:
+                break;
+            default:
+                //appendToLog("Unknown keyword \"" + keywordStr + "\" in file " + filePath + ".");
+                break;
             }
         }
-    }
-    catch (std::ios_base::failure& e)
-    {
-        appendToLog("ERROR: Caught an exception while reading the file " + filePath + ". Error code: " + std::to_string(e.code().value()) + ". Message: " + e.what() + ".");
-    }
+//    }
+//    catch (std::ios_base::failure& e)
+//    {
+//        appendToLog("ERROR: Caught an exception while reading the file " + filePath + ". Error code: " + std::to_string(e.code().value()) + ". Message: " + e.what() + ".");
+//    }
     return true;
 }
 
@@ -667,7 +751,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
     std::string objDescription;     // If the value is '@', then the Description should have the same value than the Name.
     std::string objName;
     std::string objDefname;         // It can be the in the block's header or with the DEFNAME keyword, we'll sort it out later.
-    int objID = -1;                 // Same as for the DEFNAME.
+    std::string objID;              // Same as for the DEFNAME.
 
     std::string objArgument = obj->m_defname;
     obj->m_defname.clear();
@@ -682,14 +766,25 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
             break;
 
         //appendToLog(std::string("Reading line " + line));
-        m_scriptLine++;
 
-        // Check if we are in a new block.
+        // Check if we are in a new block, in this case we have to stop.
         if ( line.find('[') != std::string::npos )
         {
             fileStream.seekg(pos);
             break;
         }
+
+        m_scriptLine++;
+
+        // Remove leading spaces
+        size_t linestart = 0;
+        while ( isspace(line[linestart]) && linestart < line.length() )
+            linestart++;
+
+        // Checking if the block is commented.
+        size_t index_comment = line.rfind("//", linestart + 1);     // reverse find, starting from the second character (position 1)
+        if (index_comment != std::string::npos)
+                continue;
 
         //-- Check if it's a trigger and if we have to parse the values inside it.
         // There can be spaces between '=' and '@', or even "ON @Create" is legit, so we have to recognize all of them.
@@ -697,18 +792,13 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         // Also, valid assignations are both "DEFNAME= foo" and "DEFNAME  foo".
         std::string tempLine(line);
         strToUpper(tempLine);       // need to put all to uppercase since std::string::find is case-sensitive.
-        size_t i_temp;
-        while ( (i_temp = tempLine.find_first_of(" \r=")) != std::string::npos )
-        {
-            tempLine.erase(i_temp, 1);
-        }
-        unsigned int prefixPos = tempLine.find("ON@");
+        size_t prefixPos = tempLine.find("ON@", linestart);
         if (prefixPos != std::string::npos)
         {
             // We care only about keywords under the header or inside the @Create trigger.
             if (tempLine.find("DESCRIPTION@") == std::string::npos)    // "DESCRIPTION@" contains "ON@"! If it's not the case, check the following...
             {
-                if (tempLine.find("CREATE", prefixPos + 3) != std::string::npos)
+                if (tempLine.find("CREATE", linestart + prefixPos + 3) != std::string::npos)
                     ignoreTrigger = false;
                 else
                     ignoreTrigger = true;
@@ -718,16 +808,12 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
 
         //-- The line is not the trigger head, so separate the keyword from the value.
         // Remove leading spaces or tabulation escapes (e.g.: " \t DEFNAME c_foo").
-        unsigned int keywordStart = 0, keywordEnd;
-        for (; keywordStart < line.length(); keywordStart++)
-        {
-            if (!isspace(line[keywordStart]))
-                break;
-        }
+        size_t keywordStart, keywordEnd;
+        keywordStart = linestart;
 
         // Get the position of the Keyword.
         //  We can have both spaces before the '=' symbol or directly the value after some spaces.
-        unsigned int delimiterIndex;
+        size_t delimiterIndex;
         delimiterIndex = line.find_first_of('=', keywordStart);
         if (delimiterIndex != std::string::npos)    // If there's a '=' symbol.
         {
@@ -749,73 +835,91 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
             }
         }
 
+
         // Get the position of the Value.
-        unsigned int valueStart, valueEnd;
+        size_t valueStart, valueEnd;
+
         //  Skip eventual whitespaces before the Value
-        for (valueStart = keywordEnd+1; valueStart < line.length(); valueStart++)
+        for (valueStart = keywordEnd + 1; valueStart < line.length(); valueStart++)
         {
-            if (!isspace(line[valueStart+1]))
+            if (!isspace(line[valueStart]))
                 break;
         }
+
         //  Get the position of the last character of the Value.
-        valueEnd = line.find_first_of("\r", valueStart);
+        valueEnd = line.find("//", valueStart); // skip comments at the end of the line
         if (valueEnd == std::string::npos)
-            valueEnd = line.find_first_of("\t\n\v\f", valueStart);
-        while (valueEnd > valueStart && line[valueEnd] == ' ')
+            valueEnd = line.length();
+        valueEnd--;
+        while ( (valueEnd > valueStart) && (isspace(line[valueEnd]) || line[valueEnd] == '\n') )
             --valueEnd;
+        valueEnd++;     // to have the character number (starting from 1), instead of having the position (0-based)
 
         // Finally separate the keyword from the value.
         std::string keyword = line.substr(keywordStart, keywordEnd - keywordStart);
         std::string value = line.substr(valueStart, valueEnd - valueStart);
-        //appendToLog(std::string("Keyword:" + keyword + " - Value:" + value));
+        //appendToLog(std::string("Keyword:*" + keyword + "* - Value:*" + value + "*"+ ". line:*" +line +"*"));
+        //appendToLog(std::string("keystart:" + std::to_string(keywordStart) + "-end:" + std::to_string(keywordEnd)));
+        //appendToLog(std::string("valstart:" + std::to_string(valueStart) + "-end:" + std::to_string(valueEnd)));
 
-        switch (ScriptUtils::findTableSorted(keyword.c_str(), ScriptUtils::objectTags, ScriptUtils::TAG_QTY))
+        switch (ScriptUtils::findTableSorted(keyword, ScriptUtils::objectTags, ScriptUtils::SCRIPTOBJ_TAG_QTY - 1))
         {
-        case ScriptUtils::TAG_CATEGORY:
+        case ScriptUtils::SCRIPTOBJ_TAG_CATEGORY:
             obj->m_category = objTree(obj->m_type)->findCategory(value);
             break;
-        case ScriptUtils::TAG_SUBSECTION:
+        case ScriptUtils::SCRIPTOBJ_TAG_SUBSECTION:
             objSubsection = value;
             break;
-        case ScriptUtils::TAG_DESCRIPTION:
+        case ScriptUtils::SCRIPTOBJ_TAG_DESCRIPTION:
             objDescription = value;
             break;
-        case ScriptUtils::TAG_DUPEITEM:
-            obj->m_dupeItem = value;
+        case ScriptUtils::SCRIPTOBJ_TAG_DUPEITEM:
+            // if dupeitem is not numerical, metti string normale; metti tutte le altre to lower
+            if (isStringNumericHex(value))
+                obj->m_dupeItem = ScriptUtils::numericalStrFormattedAsSphereInt(value);
+            else
+            {
+                strToLower(value);
+                obj->m_dupeItem = value;
+            }
 
             // When parsing is completed, overwrite Category and Subsection for dupe items: they will have the same as the main/original item.
             // Also the name will be inherited.
             m_scriptsDupeItems.push_back(obj);
-            goto GOTO_DUPEITEM;
             break;
-        case ScriptUtils::TAG_DEFNAME:
+        case ScriptUtils::SCRIPTOBJ_TAG_DUPELIST:
+            // If we store now the parent for each dupe item, we can retrieve them later much quickly (instead of looping through all of the items)
+            m_scriptsDupeParents.push_back(obj);
+            break;
+        case ScriptUtils::SCRIPTOBJ_TAG_DEFNAME:
+            strToLower(value);
             objDefname = value;
             break;
-        case ScriptUtils::TAG_ID:
-        {
-            if (ignoreTrigger || obj->m_ID)
+        case ScriptUtils::SCRIPTOBJ_TAG_ID:
+            if (ignoreTrigger || !obj->m_ID.empty())
                 break;
-            objID = ScriptUtils::strToSphereInt(value);
-        }
+            if (isStringNumericHex(value))
+            {
+                objID = ScriptUtils::numericalStrFormattedAsSphereInt(value);
+            }
+            else
+            {
+                strToLower(value);
+                objID = value;
+            }
             break;
-        case ScriptUtils::TAG_COLOR:
-        {
+        case ScriptUtils::SCRIPTOBJ_TAG_COLOR:
             if (ignoreTrigger)
                 break;
-            // The color is a 16 bits number.
-            int tempColor = ScriptUtils::strToSphereInt(value);
-            obj->m_color = (tempColor > UINT16_MAX) ? 0 : (unsigned short)tempColor;
+            obj->m_color = value;
             break;
-        }
-        case ScriptUtils::TAG_NAME:
-        {
+        case ScriptUtils::SCRIPTOBJ_TAG_NAME:
             if (ignoreTrigger)
                 break;
             objName = value;
-        }
             break;
         /*
-        case ScriptUtils::TAG_GROUP:
+        case ScriptUtils::SCRIPTOBJ_TAG_GROUP:
         {
             if (bIgnore)
                 break;
@@ -823,7 +927,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
                 this->m_csSubsection = csValue;
             break;
         }
-        case ScriptUtils::TAG_P:
+        case ScriptUtils::SCRIPTOBJ_TAG_P:
         {
             if (bIgnore)
                 break;
@@ -848,7 +952,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
             }
             break;
         }
-        case ScriptUtils::TAG_POINT:
+        case ScriptUtils::SCRIPTOBJ_TAG_POINT:
         {
             if (bIgnore)
                 break;
@@ -877,6 +981,8 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         }   // this closes the switch clause
     }   // this closes the while loop
 
+    if (!obj->m_dupeItem.empty())
+        goto GOTO_DUPEITEM;
 
     if (obj->m_category != nullptr)
     {
@@ -896,7 +1002,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
     {
         if (!objName.empty())
             obj->m_description = objName;
-        else if (obj->m_subsection->m_subsectionName.compare(SCRIPTSUBSECTION_NONE_NAME) != 0)
+        else if (obj->m_subsection->m_subsectionName != SCRIPTSUBSECTION_NONE_NAME)
             obj->m_description = obj->m_subsection->m_subsectionName;
     }
     else
@@ -905,7 +1011,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         {
             if (!objName.empty())
                 obj->m_description = objName;
-            else if (obj->m_subsection->m_subsectionName.compare(SCRIPTSUBSECTION_NONE_NAME) != 0)
+            else if (obj->m_subsection->m_subsectionName != SCRIPTSUBSECTION_NONE_NAME)
                 obj->m_description = obj->m_subsection->m_subsectionName;
         }
         else
@@ -921,21 +1027,35 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
     if (objIDHeader == -1)  // It's a DEFNAME.
     {
         if (!objArgument.empty())
+        {
+            strToLower(objArgument);
             obj->m_defname = objArgument;
+        }
 
-        if (objID != -1)
+        if (!objID.empty())
             obj->m_ID = objID;
+        // else:
+        //  -> m_display will be assigned after we loaded all the scripts, in a second time
+
+        if (obj->m_type == SCRIPTOBJ_TYPE_ITEM)
+            m_scriptsChildItems.push_back(obj);
+        else if (obj->m_type == SCRIPTOBJ_TYPE_CHAR)
+            m_scriptsChildChars.push_back(obj);
     }
     else                    // It's an ID.
     {
+        obj->m_baseDef = true;
+
         if (!objDefname.empty())
             obj->m_defname = objDefname;
 
-        if (objID != -1)    // There's an "override" for the ID.
-            obj->m_ID = objID;
-        else
-            obj->m_ID = objIDHeader;
+        //if (!objID.empty())    // There's an "override" for the ID.
+        //    obj->m_ID = objID;
+        //else
+            obj->m_ID = ScriptUtils::numericalStrFormattedAsSphereInt(objIDHeader);
 
+        obj->m_display = ScriptUtils::strToSphereInt(obj->m_ID);
     }
+
 }
 

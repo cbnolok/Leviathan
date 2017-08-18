@@ -101,7 +101,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>20</width>
+       <width>15</width>
        <height>20</height>
       </size>
      </property>
@@ -170,7 +170,7 @@
         <item row="7" column="0" rowspan="2">
          <widget class="QLabel" name="label_editPath">
           <property name="text">
-           <string>Scripts Path</string>
+           <string>Scripts Directory Path</string>
           </property>
          </widget>
         </item>

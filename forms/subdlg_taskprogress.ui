@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dlg_ParseProgress</class>
- <widget class="QWidget" name="Dlg_ParseProgress">
+ <class>SubDlg_TaskProgress</class>
+ <widget class="QWidget" name="SubDlg_TaskProgress">
   <property name="geometry">
    <rect>
     <x>0</x>

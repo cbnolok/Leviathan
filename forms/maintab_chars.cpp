@@ -1,13 +1,16 @@
 #include "maintab_chars.h"
 #include "ui_maintab_chars.h"
 #include "globals.h"
+#include "common.h"
 #include "../spherescript/scriptobjects.h"
-#include "../uofiles/uoclientcom.h"
+#include "../spherescript/scriptutils.h"
+#include "../keystrokesender/keystrokesender.h"
+#include "../uofiles/uoanim.h"
 #include <QMessageBox>
 #include <QStandardItem>
-#include <sstream>  // for std::stringstream
-#include <ios>      // for std::hex
+#include <QGraphicsPixmapItem>
 //#include <thread>
+
 
 
 MainTab_Chars::MainTab_Chars(QWidget *parent) :
@@ -17,7 +20,7 @@ MainTab_Chars::MainTab_Chars(QWidget *parent) :
     ui->setupUi(this);
 
     // Get ready to send text to the client
-    m_UOCom = new UOClientCom();
+    m_keystrokeSender = new keystrokesender::KeystrokeSender();
 
     // Create the model for the organizer tree view
     m_organizer_model = new QStandardItemModel(0,0);
@@ -32,6 +35,8 @@ MainTab_Chars::MainTab_Chars(QWidget *parent) :
     m_objList_model->setHorizontalHeaderItem(1, charList_header1);
 
     ui->treeView_objList->setModel(m_objList_model);
+    connect(ui->treeView_objList->selectionModel(), SIGNAL(currentChanged(const QModelIndex&,const QModelIndex&)),
+            this, SLOT(onManual_treeView_objList_selectionChanged(const QModelIndex&,const QModelIndex&)));
 
     // Center column headers text
     ui->treeView_objList->header()->setDefaultAlignment(Qt::AlignHCenter);
@@ -45,7 +50,7 @@ MainTab_Chars::~MainTab_Chars()
 {
     delete ui;
 
-    delete m_UOCom;
+    delete m_keystrokeSender;
     delete m_organizer_model;
     delete m_objList_model;
 }
@@ -56,7 +61,8 @@ void MainTab_Chars::updateViews()
     m_organizer_model->removeRows(0, m_organizer_model->rowCount());
     m_subsectionMap.clear();
     m_objList_model->removeRows(0, m_objList_model->rowCount());
-    m_objMap.clear();
+    m_objMapQItemToScript.clear();
+    m_objMapScriptToQItem.clear();
 
     QStandardItem *root = m_organizer_model->invisibleRootItem();
 
@@ -96,35 +102,56 @@ void MainTab_Chars::on_treeView_organizer_clicked(const QModelIndex &index)
     //    return;
 
     m_objList_model->removeRows(0,m_objList_model->rowCount());
-    m_objMap.clear();
+    m_objMapQItemToScript.clear();
+    m_objMapScriptToQItem.clear();
 
+    /* Populate the object list */
     for (size_t subsection_i = 0; subsection_i < subsection_inst->m_objects.size(); subsection_i++)
     {
+        // Build the two QStandardItem for each ScriptObj in this Subsection
+
         ScriptObj *obj = subsection_inst->m_objects[subsection_i];
         QList<QStandardItem*> row;
+
+        /* Build the description part */
         QStandardItem *description_item = new QStandardItem(obj->m_description.c_str());
+
+        QString bodyStr;
+        if (obj->m_baseDef)
+            bodyStr = "Base Chardef";
+        else
+            bodyStr = "Child Chardef (Parent: " + QString(obj->m_ID.c_str()) + ")";
+        QString colorStr;
+        //if (isStringNumericHex(obj->m_color))
+        //{
+        //    int colorNum = ScriptUtils::strToSphereInt16(obj->m_color);
+        //    colorStr = QString("0%1").arg(colorNum, 1, 16, QChar('0')) +
+        //            " (Dec: " + QString("%1").arg(colorNum, 0, 10) + ")";
+        //}
+        //else
+            colorStr = obj->m_color.c_str();
+
         description_item->setToolTip(
-                    "Color: " + QString("0%1").arg(obj->m_color, 1, 16, QChar('0')) + "\n" +
-                    "Script File: " + obj->m_scriptFile.c_str() + "\n" +
-                    "Script File Line: " + QString::number(obj->m_scriptLine));
+                    bodyStr                                                                     + "\n" +
+                    "Color: "               + colorStr                                          + "\n" +
+                    "Script File: "         + g_scriptFileList[obj->m_scriptFileIndex].c_str()  + "\n" +
+                    "Script File Line: "    + QString::number(obj->m_scriptLine));
+
         if (obj->m_type == SCRIPTOBJ_TYPE_SPAWN)
             description_item->setForeground(QBrush(QColor("red")));
+
         row.append(description_item);
-        std::string def;
-        if (obj->m_defname.empty())
-        {
-            std::stringstream ssDef;
-            ssDef << "0x" << std::hex << obj->m_ID;
-            def = ssDef.str();
-        }
-        else
-        {
-            def = obj->m_defname;
-        }
+
+        /* Build the defname part */
+        std::string def = obj->m_defname.empty() ? obj->m_ID : obj->m_defname;
         QStandardItem *defname_item = new QStandardItem(def.c_str());
         row.append(defname_item);
-        m_objList_model->appendRow(row);
-        m_objMap[description_item] = obj;    // For each row, only the Description item is "linked" to the obj via the map.
+
+        /* Store the elements in the map and append the whole row to the view */
+        m_objMapQItemToScript[description_item] = obj;    // For each row, only the Description item is "linked" to the obj via the map.
+        m_objMapScriptToQItem[obj] = description_item;
+
+        m_objList_model->appendRow(row);        
     }
     m_objList_model->sort(0, Qt::AscendingOrder);  // Order alphabetically.
 }
@@ -135,18 +162,50 @@ void MainTab_Chars::on_treeView_objList_doubleClicked(const QModelIndex &index)
         return;
 
     //QStandardItem *objItem = m_objList_model->itemFromIndex(index);
-    //if (!m_objMap.count(objItem)) // If the selected item isn't in the map there's something wrong.
+    //if (!m_objMapQItemToScript.count(objItem)) // If the selected item isn't in the map there's something wrong.
     //    return;
-    //ScriptObj *obj = m_objMap[objItem];
+    //ScriptObj *obj = m_objMapQItemToScript[objItem];
 
     QModelIndex IDIndex(m_objList_model->index(index.row(), 1, index.parent()));
 
-    if (!m_UOCom->sendString((".add " + IDIndex.data().toString().toStdString()).c_str()))
+    if (!m_keystrokeSender->sendString((".add " + IDIndex.data().toString().toStdString()).c_str()))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(m_UOCom->getErrorString());
+        errorDlg.setText(m_keystrokeSender->getErrorString().c_str());
         errorDlg.exec();
     }
+}
+
+void MainTab_Chars::onManual_treeView_objList_selectionChanged(const QModelIndex &selected, const QModelIndex& /* UNUSED deselected */ )
+{
+    if (g_UOAnim == nullptr)
+        return;
+
+    if (m_objList_model->rowCount() == 0)     // Empty list, can't proceed.
+        return;
+
+    QStandardItem *obj_item = m_objList_model->itemFromIndex(selected);
+    if (!m_objMapQItemToScript.count(obj_item)) // If the selected item isn't in the map, it is a Category, not a Subsection.
+        return;
+
+    ScriptObj *script = m_objMapQItemToScript[obj_item];
+    int id = script->m_display;
+    int hue = ScriptUtils::strToSphereInt16(script->m_color);
+    if (hue < 0)    // template or random expr (not supported yet) or strange string
+        hue = 0;
+    QImage* frameimg = g_UOAnim->drawAnimFrame(id, 0, 1, 0, hue);
+    if (frameimg == nullptr)
+        return;
+
+    QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(*frameimg));
+    delete frameimg;
+    if (ui->graphicsView->scene() != nullptr)
+        delete ui->graphicsView->scene();
+    QGraphicsScene* scene = new QGraphicsScene();
+    ui->graphicsView->setScene(scene);
+    scene->clear();
+    scene->addItem(item);
+    //qDebug() << "Char added to scene";
 }
 
 void MainTab_Chars::on_pushButton_collapseAll_clicked()
@@ -163,10 +222,10 @@ void MainTab_Chars::on_pushButton_summon_clicked()
     if (!selection->hasSelection())
         return;
 
-    if (!m_UOCom->sendString((".add " + selection->selectedRows(1)[0].data().toString().toStdString()).c_str()))
+    if (!m_keystrokeSender->sendString((".add " + selection->selectedRows(1)[0].data().toString().toStdString()).c_str()))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(m_UOCom->getErrorString());
+        errorDlg.setText(m_keystrokeSender->getErrorString().c_str());
         errorDlg.exec();
     }
 }
@@ -174,10 +233,10 @@ void MainTab_Chars::on_pushButton_summon_clicked()
 void MainTab_Chars::on_pushButton_remove_clicked()
 {
     const char command[]=".remove";
-    if (!m_UOCom->sendString(command))
+    if (!m_keystrokeSender->sendString(command))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(m_UOCom->getErrorString());
+        errorDlg.setText(m_keystrokeSender->getErrorString().c_str());
         errorDlg.exec();
     }
 }

@@ -1,16 +1,15 @@
 #include "scriptsprofile.h"
 #include "globals.h"
+#include "common.h"
 #include <QJsonArray>
 #include <QJsonParseError>
 #include <QFile>
-#include <sstream>  // stringstream
-
-#include <QDebug>
 
 
 ScriptsProfile::ScriptsProfile(std::string scriptsPath) :
-        m_name("Unnamed"), m_scriptsPath(scriptsPath)
+        m_name("Unnamed"), m_defaultProfile(false), m_scriptsPath(scriptsPath), m_useSpheretables(false)
 {
+    standardizePath(m_scriptsPath);
 }
 
 QJsonObject ScriptsProfile::generateJsonObject()
@@ -18,8 +17,8 @@ QJsonObject ScriptsProfile::generateJsonObject()
     // Build the json object.
     QJsonObject obj;
     obj["Name"] = m_name.c_str();
-    obj["Path"] = m_scriptsPath.c_str();
     obj["DefaultProfile"] = m_defaultProfile;
+    obj["Path"] = m_scriptsPath.c_str();
     obj["LoadFromSpheretables"] = m_useSpheretables;
 
     if (!m_useSpheretables)
@@ -27,6 +26,7 @@ QJsonObject ScriptsProfile::generateJsonObject()
         QJsonArray scriptsToLoad;
         for (size_t i = 0; i < m_scriptsToLoad.size(); i++)
             scriptsToLoad.append(m_scriptsToLoad[i].c_str());
+
         obj["ScriptsToLoad"] = scriptsToLoad;
     }
 
@@ -51,11 +51,7 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
     QJsonParseError err;
     QJsonDocument doc = QJsonDocument::fromJson(fileContent, &err);
 
-    //qDebug() << err.errorString();
-    //qDebug() << err.offset;
-
     QJsonObject mainObj = doc.object();
-    //qDebug() << mainObj.isEmpty();
     if (mainObj.isEmpty())
         return savedProfiles;
 
@@ -63,7 +59,7 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
     if (profilesListObj.isEmpty())
         return savedProfiles;
 
-    for (auto it = profilesListObj.begin(); it != profilesListObj.end(); it++) // for each profile
+    for (auto it = profilesListObj.begin(), end = profilesListObj.end(); it != end; it++) // for each profile
     {
         QJsonObject profileObj = profilesListObj[it.key()].toObject();
         QJsonValue val = QJsonValue::Undefined;
@@ -71,25 +67,26 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
         val = profileObj["Path"];
         if (val == QJsonValue::Undefined)
         {
-            std::stringstream errorStr;
-            errorStr << "Error loading profile number " << it.key().toStdString() << ". Invalid path.";
-            appendToLog(errorStr.str());
+            appendToLog("Error loading profile number " + it.key().toStdString() + ". Invalid path");
             continue;
         }
 
         ScriptsProfile profile(val.toString().toStdString());
 
+        val = profileObj["Name"];
+        if (val != QJsonValue::Undefined)
+            profile.m_name = val.toString().toStdString();
+
+        val = QJsonValue::Undefined;
         val = profileObj["DefaultProfile"];
         if (val != QJsonValue::Undefined)
             profile.m_defaultProfile = val.toBool();
+
         val = QJsonValue::Undefined;
         val = profileObj["LoadFromSpheretables"];
         if (val != QJsonValue::Undefined)
             profile.m_useSpheretables = val.toBool();
-        val = QJsonValue::Undefined;
-        val = profileObj["Name"];
-        if (val != QJsonValue::Undefined)
-            profile.m_name = val.toString().toStdString();
+
         val = QJsonValue::Undefined;
         val = profileObj["Path"];
         if (val != QJsonValue::Undefined)
@@ -97,12 +94,10 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
 
         if (!profile.m_useSpheretables)
         {
-            // carica da un QJsonArray la lista degli scripts
+            // load from a QJsonArray the script file list
             QJsonArray jsonScriptList = profileObj["ScriptsToLoad"].toArray();
             for (int i = 0; i < jsonScriptList.size(); i++)
-            {
                 profile.m_scriptsToLoad.push_back(jsonScriptList[i].toString().toStdString());
-            }
         }
 
         savedProfiles.push_back(profile);

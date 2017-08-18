@@ -22,14 +22,15 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_actionOptions_triggered();
-    void on_actionLoadDefaultProfile_triggered();
+    void onCustom_actionEditScriptsProfiles_triggered();
+    void onCustom_actionLoadDefaultScriptsProfile_triggered();
+    void onCustom_actionEditClientProfiles_triggered();
+    void onCustom_actionLoadDefaultClientProfile_triggered();
 
 private:
     Ui::MainWindow      *ui;
     MainTab_Items       *m_MainTab_Items_inst        = nullptr;
     MainTab_Chars       *m_MainTab_Chars_inst        = nullptr;
-    Dlg_ProfileScripts_Options    *m_Profile_Options_inst     = nullptr;
 };
 
 

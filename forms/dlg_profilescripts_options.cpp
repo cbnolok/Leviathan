@@ -2,6 +2,7 @@
 #include "ui_dlg_profilescripts_options.h"
 #include "../common.h"
 #include "../globals.h"
+#include "../sysio.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDirModel>
@@ -12,8 +13,6 @@
 #include <QJsonArray>
 #include "../qtutils/checkableproxymodel.h"
 #include "../qtutils/modelutils.h"
-
-#include <qDebug>
 
 
 Dlg_ProfileScripts_Options::Dlg_ProfileScripts_Options(QWidget *parent) :
@@ -47,6 +46,7 @@ Dlg_ProfileScripts_Options::Dlg_ProfileScripts_Options(QWidget *parent) :
     //m_scripts_model->setDefaultCheckState(false);
     m_scripts_model->setSourceModel(m_scripts_model_base);
     ui->treeView_scripts->setModel(m_scripts_model);
+    ui->treeView_scripts->setDisabled(true);
 
     ui->treeView_scripts->hideColumn(1);        // hide columns showing size, file type, etc.
     ui->treeView_scripts->hideColumn(2);
@@ -73,6 +73,7 @@ Dlg_ProfileScripts_Options::~Dlg_ProfileScripts_Options()
 {
     delete ui;
 
+    delete m_profiles_model;
     delete m_scripts_model_base;
     delete m_scripts_model;
 }
@@ -90,7 +91,7 @@ void Dlg_ProfileScripts_Options::updateProfilesView()
     for (auto it = g_scriptsProfiles.begin(); it != g_scriptsProfiles.end(); it++)
     {
         QStandardItem *newProfileItem = new QStandardItem(it->m_name.c_str());
-        if ((*it).m_defaultProfile)        // set blue text color for the default profile
+        if (it->m_defaultProfile)        // set blue text color for the default profile
             newProfileItem->setForeground(QBrush(QColor("blue")));
         m_profiles_model->appendRow(newProfileItem);
     }
@@ -104,9 +105,10 @@ void Dlg_ProfileScripts_Options::updateScriptsView(QString path)
     //  so you need to map the source index to a proxy model index, which you can then apply.
     QModelIndex rootIndex = m_scripts_model->mapFromSource(rootIndexBase);
     ui->treeView_scripts->setRootIndex(rootIndex);
+    ui->treeView_scripts->setDisabled(false);
 }
 
-bool Dlg_ProfileScripts_Options::checkScriptsFromProfile_loop(const std::string scriptFromProfile, const QModelIndex &proxyParent)
+bool Dlg_ProfileScripts_Options::checkScriptsFromProfile_loop(const std::string& scriptFromProfile, const QModelIndex &proxyParent)
 {
     for (int modelRow = 0; modelRow < m_scripts_model->rowCount(proxyParent); modelRow++)
     {
@@ -137,7 +139,7 @@ void Dlg_ProfileScripts_Options::checkScriptsFromProfile(const ScriptsProfile *s
 {
     // set the check state of the scripts in the treeview
 
-    for (auto it = sp->m_scriptsToLoad.begin(); it != sp->m_scriptsToLoad.end(); it++)
+    for (auto it = sp->m_scriptsToLoad.begin(), end = sp->m_scriptsToLoad.end(); it != end; it++)
     {
         if (!checkScriptsFromProfile_loop(*it, proxyParent))
             appendToLog("Profile \"" + sp->m_name + "\": File \"" + *it + "\" saved in the profile doesn't exist anymore!");
@@ -194,21 +196,19 @@ void Dlg_ProfileScripts_Options::on_lineEdit_editPath_textChanged(const QString 
 
 void Dlg_ProfileScripts_Options::on_pushButton_pathBrowse_clicked()
 {
-    QFileDialog *dlg = new QFileDialog();
-    dlg->setOption(QFileDialog::ShowDirsOnly);
-    dlg->setFileMode(QFileDialog::Directory);
-    dlg->setAcceptMode(QFileDialog::AcceptOpen);
-    dlg->setViewMode(QFileDialog::List);
+    QFileDialog dlg;
+    dlg.setOption(QFileDialog::ShowDirsOnly);
+    dlg.setFileMode(QFileDialog::Directory);
+    dlg.setAcceptMode(QFileDialog::AcceptOpen);
+    dlg.setViewMode(QFileDialog::List);
     if (isValidDirectory(ui->lineEdit_editPath->text().toStdString()))
-         dlg->setDirectory(ui->lineEdit_editPath->text());
+         dlg.setDirectory(ui->lineEdit_editPath->text());
 
-    if (dlg->exec())
+    if (dlg.exec())
     {
-        ui->lineEdit_editPath->setText(dlg->directory().absolutePath());
+        ui->lineEdit_editPath->setText(dlg.directory().absolutePath());
         updateScriptsView(ui->lineEdit_editPath->text());
     }
-
-    delete dlg;
 }
 
 void Dlg_ProfileScripts_Options::saveProfilesToJson()
@@ -260,10 +260,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileAdd_clicked()
     {
         newProfile.m_defaultProfile = true;
         for (size_t i = 0; i < g_scriptsProfiles.size(); i++)
-        {
-            ScriptsProfile *spTemp = &g_scriptsProfiles[i];
-            spTemp->m_defaultProfile = false;
-        }
+            g_scriptsProfiles[i].m_defaultProfile = false;
     }
 
     // Populate the scripts file list in the profile.
@@ -271,6 +268,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileAdd_clicked()
     QStringList selectedScripts = ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(m_scripts_model, ui->treeView_scripts->rootIndex());
     for (int i = 0; i < selectedScripts.count(); i++)
         newProfile.m_scriptsToLoad.push_back(selectedScripts.at(i).toStdString());
+
     g_scriptsProfiles.push_back(newProfile);
 
     // Add item in the profiles list.
@@ -298,7 +296,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileDelete_clicked()
         return;
 
     QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, "Confirm action", "Are you sure to delete the current profile?",
+    reply = QMessageBox::question(this, "Confirm action", "Are you sure you want to delete the selected profile?",
                                     QMessageBox::Yes|QMessageBox::No);
     if (reply == QMessageBox::No)
         return;
@@ -343,13 +341,12 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
     {
         for (size_t i = 0; i < g_scriptsProfiles.size(); i++)
         {
-            QModelIndex iIndex = m_profiles_model->index(i,0);
+            QModelIndex iIndex = m_profiles_model->index((int)i,0);
             QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
 
             if ((int)i != m_currentProfileIndex)
             {
-                ScriptsProfile *spTemp = &g_scriptsProfiles[i];
-                spTemp->m_defaultProfile = false;
+                g_scriptsProfiles[i].m_defaultProfile;
                 iItem->setForeground(QBrush(QColor("black")));    // set black color for non default profiles
             }
             else

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Leviathan</string>
+   <string>Leviathan version 0.1</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -34,21 +34,24 @@
      <x>0</x>
      <y>0</y>
      <width>850</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuProfiles">
     <property name="title">
      <string>Profiles</string>
     </property>
-    <addaction name="actionOptions"/>
-    <addaction name="separator"/>
    </widget>
    <addaction name="menuProfiles"/>
   </widget>
-  <action name="actionOptions">
+  <action name="actionEdit_Scripts_Profiles">
    <property name="text">
-    <string>Options</string>
+    <string>Edit Scripts Profiles</string>
+   </property>
+  </action>
+  <action name="actionEdit_Client_Profiles">
+   <property name="text">
+    <string>Edit Client Profiles</string>
    </property>
   </action>
  </widget>

@@ -1,10 +1,9 @@
 #ifndef PROFILE_OPTIONS_H
 #define PROFILE_OPTIONS_H
 
-#include "../spherescript/scriptsprofile.h"
+#include "../settings/scriptsprofile.h"
 #include <QDialog>
 #include <QModelIndex>
-//#include <map>
 #include <vector>
 
 
@@ -41,15 +40,15 @@ private:
     CheckableProxyModel *m_scripts_model;
     QStandardItemModel *m_profiles_model;
 
-    void updateProfilesView();
-    bool checkScriptsFromProfile_loop(const std::string scriptFromProfile, const QModelIndex &proxyParent);
-    void checkScriptsFromProfile(const ScriptsProfile *sp, const QModelIndex &proxyParent);
-    void updateScriptsView(QString path);
-    void saveProfilesToJson();
-
     std::vector<ScriptsProfile> m_scriptsProfiles;
     //std::map<QStandardItem*, int> m_profilesMap;    // links the item in the profiles list to the number of
     int m_currentProfileIndex = -1;
+
+    void updateProfilesView();
+    bool checkScriptsFromProfile_loop(const std::string& scriptFromProfile, const QModelIndex &proxyParent);
+    void checkScriptsFromProfile(const ScriptsProfile *sp, const QModelIndex &proxyParent);
+    void updateScriptsView(QString path);
+    void saveProfilesToJson();
 };
 
 

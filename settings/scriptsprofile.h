@@ -10,13 +10,14 @@ class ScriptsProfile
 {
 public:
     ScriptsProfile(std::string scriptsPath);
+
     int m_index;
     std::string m_name;
+    bool m_defaultProfile;
     std::string m_scriptsPath;
-    bool m_defaultProfile = false;
-    bool m_useSpheretables = false;
+    bool m_useSpheretables;
     std::vector<std::string> m_scriptsToLoad;
-    void loadDataFromJson();
+
     QJsonObject generateJsonObject();
     static std::vector<ScriptsProfile> readJsonData();
 };

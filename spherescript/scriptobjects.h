@@ -16,10 +16,12 @@
 #define SCRIPTOBJ_TYPE_SPELL 7
 #define SCRIPTOBJ_TYPE_MULTI 8
 
-#define SCRIPTOBJ_NAME_NONE             "<No Name>"
-#define SCRIPTOBJ_DESCRIPTION_NONE_NAME "<No Description>"
-#define SCRIPTCATEGORY_NONE_NAME        "<No Category>"
-#define SCRIPTSUBSECTION_NONE_NAME      "<No Subsection>"
+// Not using a define macro because in this way i can pass the arguments for
+//  findCategory and findSubsection by reference
+const std::string SCRIPTOBJ_NAME_NONE             = "<No Name>";
+const std::string SCRIPTOBJ_DESCRIPTION_NONE_NAME = "<No Description>";
+const std::string SCRIPTCATEGORY_NONE_NAME        = "<No Category>";
+const std::string SCRIPTSUBSECTION_NONE_NAME      = "<No Subsection>";
 
 
 class ScriptCategory;
@@ -29,19 +31,20 @@ class ScriptObj
 {
 public:
     ScriptObj();
-    ~ScriptObj();
+    //~ScriptObj();
     //void writeBlock(std::ifstream &fileStream);
     char m_type;
     ScriptCategory *m_category;
     ScriptSubsection *m_subsection;
     std::string m_description;
     std::string m_name;
-    int m_ID;
+    std::string m_ID;
     std::string m_defname;
+    int m_display;          // ID to display
+    bool m_baseDef;         // Is this a base or a derived char/itemdef? (so is this item body inherited from another chardef?)
     std::string m_dupeItem;
-    unsigned short m_color;
-    std::string m_display;
-    std::string m_scriptFile;
+    std::string m_color;
+    int m_scriptFileIndex;
     int m_scriptLine;           // line in the script file where the [*DEF] block starts
 };
 
@@ -62,7 +65,7 @@ public:
     ~ScriptCategory();
     std::string m_categoryName;
     std::vector<ScriptSubsection*> m_subsections;
-    ScriptSubsection *findSubsection(std::string subsectionName, bool createNew = true);
+    ScriptSubsection *findSubsection(const std::string &subsectionName, bool createNew = true);
 };
 
 class ScriptObjTree
@@ -71,8 +74,28 @@ public:
     //ScriptObjTree();
     ~ScriptObjTree();
     std::vector<ScriptCategory*> m_categories;
-    ScriptCategory *findCategory(std::string categoryName, bool createNew = true); // createNew: create a new category if one named categoryName doesn't exist.
+    ScriptCategory *findCategory(const std::string &categoryName, bool createNew = true); // createNew: create a new category if one named categoryName doesn't exist.
+
+    class ScriptObjTreeIterator;
+    using iterator = ScriptObjTreeIterator;
+    iterator begin();
+    iterator end();
 };
 
+class ScriptObjTree::ScriptObjTreeIterator
+{
+private:
+    ScriptObjTree* m_parentTree;
+    size_t m_currentCategoryIdx;
+    size_t m_currentSubsectionIdx;
+    size_t m_currentObjectIdx;
+
+public:
+    ScriptObjTreeIterator(ScriptObjTree* parentTree, size_t currentCategoryIdx, size_t currentSubsectionIdx, size_t currentObjectIdx);
+    bool operator==(ScriptObjTreeIterator& toCmp) const;
+    bool operator!=(ScriptObjTreeIterator& toCmp) const;
+    ScriptObjTreeIterator operator++();
+    ScriptObj* operator*();
+};
 
 #endif // SCRIPTOBJECTS_H

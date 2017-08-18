@@ -1,33 +1,33 @@
-#include "dlg_parseprogress.h"
-#include "ui_dlg_parseprogress.h"
+#include "subdlg_taskprogress.h"
+#include "ui_subdlg_taskprogress.h"
 
 
-Dlg_ParseProgress::Dlg_ParseProgress(QWidget *parent) :
+SubDlg_TaskProgress::SubDlg_TaskProgress(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::Dlg_ParseProgress)
+    ui(new Ui::SubDlg_TaskProgress)
 {
     ui->setupUi(this);
     //setWindowFlags(Qt::CustomizeWindowHint);    // Don't show window borders or close button. Not needed, since it's a widget and not a dialog.
 }
 
-Dlg_ParseProgress::~Dlg_ParseProgress()
+SubDlg_TaskProgress::~SubDlg_TaskProgress()
 {
     delete ui;
 }
 
-void Dlg_ParseProgress::setProgressMax(int max)
+void SubDlg_TaskProgress::setProgressMax(int max)
 {
     ui->progressBar->setValue(0);
     ui->progressBar->setMaximum(max);
 }
 
-void Dlg_ParseProgress::setProgressVal(int val)
+void SubDlg_TaskProgress::setProgressVal(int val)
 {
     ui->progressBar->setValue(val);
 }
 
 // TODO: dividi in due slots: uno che aggiorna solo la label e l'altro che aggiorna solo il testo
-void Dlg_ParseProgress::setLabelText(QString msg)
+void SubDlg_TaskProgress::setLabelText(QString msg)
 {
     ui->label->setText(msg);
 }

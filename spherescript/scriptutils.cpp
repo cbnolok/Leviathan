@@ -1,10 +1,123 @@
 #include "scriptutils.h"
 #include "common.h"
 #include <cstring>      // for strcmp
+#include <sstream>      // for std::stringstream
+#include <iomanip>      // for std::hex
 #include <stdexcept>    // for std::invalid_argument
 
 
-const char * ScriptUtils::resourceBlocks[ScriptUtils::SCRIPTOBJ_RES_QTY] =
+int ScriptUtils::strToSphereInt(std::string str)   // it's important to work on a copy, since we insert a character in this function
+{
+    // Sphere deals as hexadecimal numbers numerical strings starting both with 0 and 0x, otherwise they are decimals.
+    // This function is needed because stoi deals with numbers starting with 0 as octal, and only 0x as hex.
+
+    if (str.empty())
+        return -1;
+
+    int base = 10;
+    if (str[0]=='0')    // It's an hexadecimal number, or it's simply zero.
+    {
+        if (str.length() > 1)
+        {
+            base = 16;
+
+            // If the hex number isn't in the format "0x..." but is in the format "0...", convert it to the first one, so that
+            //  stoi can recognize it properly.
+            if ( (str[1] != 'x') && (str[1]!='X') )
+                str.insert(1, 1, 'x');
+        }
+    }
+    int ret;
+    try
+    {
+        ret = std::stoi(str, 0 , base);
+    }
+    catch (std::invalid_argument e)
+    {
+        ret = -1;        // If no valid conversion can be done, return -1.
+    }
+
+    return ret;
+}
+
+int ScriptUtils::strToSphereInt(const char *str)
+{
+    std::string stdstr(str);
+    return strToSphereInt(stdstr);
+}
+
+int ScriptUtils::strToSphereInt16(std::string str)
+{
+    int temp = ScriptUtils::strToSphereInt(str);
+    return (temp > UINT16_MAX) ? 0 : temp;
+}
+
+int ScriptUtils::strToSphereInt16(const char *str)
+{
+    std::string stdstr(str);
+    return strToSphereInt16(stdstr);
+}
+
+std::string ScriptUtils::numericalStrFormattedAsSphereInt(int num)
+{
+    std::stringstream stream;
+    stream << "0" << std::noshowbase << std::hex << num;
+    return std::string(stream.str());
+}
+
+std::string ScriptUtils::numericalStrFormattedAsSphereInt(std::string &str)  // return a numerical string formatted as a sphere hex number ("0123")
+{
+    int num = strToSphereInt(str);
+    if (num == -1)
+        return std::string("-1");
+    return numericalStrFormattedAsSphereInt(num);
+}
+
+std::string ScriptUtils::numericalStrFormattedAsSphereInt(const char *str)
+{
+    std::string stdstr(str);
+    return numericalStrFormattedAsSphereInt(stdstr);
+}
+
+
+//-------------
+
+int ScriptUtils::findTableSorted(std::string stringToFind, std::vector<const char*> &table, int tableSize)
+{
+    // Do a binary search (un-cased) on a sorted table.
+    // RETURN: -1 = not found
+
+    // Not using a std::vector<std::string> table because string.compare method is slower than strcmp
+
+    //int iHigh = table.size() - 1; // slower than manually passing the tableSize? (implicit cast form size_t to int)
+    int iHigh = tableSize - 1;
+    if (iHigh < 0)
+        return -1;
+    int iLow = 0;
+
+    // std::string automatically stores the length, so there's no need to use C string + strlen when uppercasing the string
+    strToUpper(stringToFind);
+    const char* stringToFindC = stringToFind.c_str();
+
+    while (iLow <= iHigh)
+    {
+        int i = (iHigh + iLow) >> 1; // / 2;
+
+        int compare = strcmp(stringToFindC, table[i]);
+
+        if (compare == 0)
+            return i;
+        else if (compare < 0)
+            iHigh = i - 1;
+        else
+            iLow = i + 1;
+    }
+
+    return -1;
+}
+
+
+std::vector<const char*> ScriptUtils::resourceBlocks =
 {
     "AAAUNUSED",        // unused / unknown.
     "ACCOUNT",          // Define an account instance.
@@ -70,11 +183,11 @@ const char * ScriptUtils::resourceBlocks[ScriptUtils::SCRIPTOBJ_RES_QTY] =
     "WORLDSCRIPT",		// Define instance of resource in the world. (SAVED in World)
     "WORLDVARS",		// block of global variables
     "WS",				// =WORLDSCRIPT
+    ""
 };
 
 
-//Default Script Objects we have to deal with
-const char * ScriptUtils::objectTags[ScriptUtils::TAG_QTY] =
+std::vector<const char*> ScriptUtils::objectTags
 {
     // these strings have type const char *, so the variable linked to these "table" entries
     //  is a const char * const * (pointer to const pointer to const char)
@@ -83,106 +196,14 @@ const char * ScriptUtils::objectTags[ScriptUtils::TAG_QTY] =
     "DEFNAME",
     "DESCRIPTION",
     "DUPEITEM",
+    "DUPELIST",
     "GROUP",
     "ID",
     "NAME",
     "SUBSECTION",
     "P",
     "POINT",
+    ""
 };
-
-
-int ScriptUtils::findTable(const char * stringToFind, const char * const * table, int count)
-{                                                   // non const pointer to a const pointer to const char
-    // A non-sorted table.
-    // RETURN: -1 = not found
-
-    char * stringToFindUpper = (char*)malloc( (strlen(stringToFind)+1) * sizeof(char) );
-    strcpy(stringToFindUpper, stringToFind);
-    strToUpper(stringToFindUpper);
-
-    for (int i = 0; i < count; i++)
-    {
-        if (!strcmp(table[i], stringToFindUpper))
-        {
-            free(stringToFindUpper);
-            return i;
-        }
-    }
-    free(stringToFindUpper);
-    return -1;
-}
-
-int ScriptUtils::findTableSorted(const char * stringToFind, const char * const * table, int count)
-{
-    // Do a binary search (un-cased) on a sorted table.
-    // RETURN: -1 = not found
-    int iHigh = count - 1;
-    if (iHigh < 0)
-        return -1;
-    int iLow = 0;
-
-    char * stringToFindUpper = (char*)malloc( (strlen(stringToFind)+1) * sizeof(char) );
-    strcpy(stringToFindUpper, stringToFind);
-    strToUpper(stringToFindUpper);
-
-    while (iLow <= iHigh)
-    {
-        int i = (iHigh + iLow) / 2;
-        int compare = strcmp(table[i], (const char*)stringToFindUpper);
-        if (compare == 0)
-        {
-            free(stringToFindUpper);
-            return i;
-        }
-        if (compare > 0)
-            iHigh = i - 1;
-        else
-            iLow = i + 1;
-    }
-
-    free(stringToFindUpper);
-    return -1;
-}
-
-int ScriptUtils::strToSphereInt(std::string str)
-{
-    // Sphere deals as hexadecimal numbers numerical strings starting both with 0 and 0x, otherwise they are decimals.
-    // This function is needed because stoi deals with numbers starting with 0 as octal, and only 0x as hex.
-
-    if (str.empty())
-        return -1;
-
-    int base = 10;
-    if (str[0]=='0')    // It's an hexadecimal number, or it's simply zero.
-    {
-        if (str.length() > 1)
-        {
-            base = 16;
-
-            // If the hex number isn't in the format "0x..." but is in the format "0...", convert it to the first one, so that
-            //  stoi can recognize it properly.
-            if ( (str[1] != 'x') && (str[1]!='X') )
-                str.insert(1, 1, 'x');
-        }
-    }
-    int ret;
-    try
-    {
-        ret = std::stoi(str, 0 , base);
-    }
-    catch (std::invalid_argument e)
-    {
-        ret = -1;        // If no valid conversion can be done, return -1.
-    }
-
-    return ret;
-}
-
-int ScriptUtils::strToSphereInt(const char *str)
-{
-    return strToSphereInt(std::string(str));
-}
-
 
 

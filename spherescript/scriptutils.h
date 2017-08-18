@@ -2,21 +2,28 @@
 #define SCRIPTUTILS_H
 
 #include <string>
+#include <vector>
 
 
 class ScriptUtils
 {
 public:
-    static int findTable(const char * stringToFind, const char * const * table, int count);
-    static int findTableSorted(const char * stringToFind, const char * const * table, int count);
-
-    static const char *resourceBlocks[];
-    static const char *objectTags[];
-
     static int strToSphereInt(std::string str);     // In sphere numbers can be decimal or hexadecimal, not octal.
     static int strToSphereInt(const char *str);
 
+    static int strToSphereInt16(std::string str);   // Utility function to convert hue from string to number (which has actually max size 2 bytes [short], not 4 [int])
+    static int strToSphereInt16(const char *str);
+
+    static std::string numericalStrFormattedAsSphereInt(int num);  // Return a numerical string formatted as a sphere hex number ("0123")
+    static std::string numericalStrFormattedAsSphereInt(std::string &str);
+    static std::string numericalStrFormattedAsSphereInt(const char *str);
+
+
+    static int findTableSorted(std::string stringToFind, std::vector<const char*> &table, int tableSize);
+
+
     // All the script resource blocks in SphereServer.
+
     enum SCRIPTOBJ_RES_TYPE
     {
         // NOTE: SPHERE.INI, SPHERETABLE.SCP are read at start.
@@ -91,21 +98,30 @@ public:
         SCRIPTOBJ_RES_QTY				// Don't care
     };
 
+    static std::vector<const char*> resourceBlocks;
+
+
+    //Default Script Objects we have to deal with
+
     enum TAG_TYPE
     {
-        TAG_CATEGORY = 0,
-        TAG_COLOR,
-        TAG_DEFNAME,
-        TAG_DESCRIPTION,
-        TAG_DUPEITEM,
-        TAG_GROUP,
-        TAG_ID,
-        TAG_NAME,
-        TAG_SUBSECTION,
-        TAG_P,
-        TAG_POINT,
-        TAG_QTY
+        SCRIPTOBJ_TAG_CATEGORY = 0,
+        SCRIPTOBJ_TAG_COLOR,
+        SCRIPTOBJ_TAG_DEFNAME,
+        SCRIPTOBJ_TAG_DESCRIPTION,
+        SCRIPTOBJ_TAG_DUPEITEM,
+        SCRIPTOBJ_TAG_DUPELIST,
+        SCRIPTOBJ_TAG_GROUP,
+        SCRIPTOBJ_TAG_ID,
+        SCRIPTOBJ_TAG_NAME,
+        SCRIPTOBJ_TAG_SUBSECTION,
+        SCRIPTOBJ_TAG_P,
+        SCRIPTOBJ_TAG_POINT,
+        SCRIPTOBJ_TAG_QTY
     };
+
+    static std::vector<const char*> objectTags;
+
 };
 
 
