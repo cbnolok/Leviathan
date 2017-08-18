@@ -14,9 +14,9 @@ References for UO files formats:
 * http://uo.stratics.com/heptazane/fileformats.shtml
 <br>
 Got help (or whole pieces of code) from:
-<br>* AxisII by Ben Croussette (https://github.com/Ben1028/Axis2)
-<br>* Punt's C++/Qt4 Ultima SDK: http://www.ryandor.com/files/punt/3%20-%20Other%20Files%20&%20Utilities/Punt's%20Ultima%20C++%20SDK/
-<br>* UOFiddler/C# (original) Ultima SDK: https://github.com/msturgill/uofiddler
+* AxisII by Ben Croussette (https://github.com/Ben1028/Axis2)<br>
+* Punt's C++/Qt4 Ultima SDK: http://www.ryandor.com/files/punt/3%20-%20Other%20Files%20&%20Utilities/Punt's%20Ultima%20C++%20SDK/<br>
+* UOFiddler/C# (original) Ultima SDK: https://github.com/msturgill/uofiddler<br>
 
 # License
 Licensed under GPL v3.
