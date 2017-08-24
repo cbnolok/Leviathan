@@ -4,24 +4,12 @@
 #include <string>
 #include <deque>
 
-#define EXPORT
-/*
-#if defined(_MSC_VER)
-    //  Microsoft
-    #define EXPORT __declspec(dllexport)
-#elif defined(__GNUC__)
-    //  GCC
-    #define EXPORT __attribute__((visibility("default")))
-#else
-    #define EXPORT
-#endif
-*/
 
 namespace uoppackage
 {
 
 
-class EXPORT UOPError
+class UOPError
 {
     friend class UOPFile;
     friend class UOPHeader;
@@ -44,8 +32,6 @@ public:
 
 
 extern UOPError errorHandler;
-
-void addError(std::string errorString);
 
 
 }

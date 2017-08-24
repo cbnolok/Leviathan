@@ -1,34 +1,37 @@
-/** 
+/**
 *	Ultima Online Package Reader v1.0 by Kons
 *	find me at kons.snok@gmail.com
 *
-*   v2.0 by Nolok
+*   v2.0 and later by Nolok
 *   cbnolok@gmail.com
+*   Current version: 2.0.1
 */
 
 #ifndef _UOPACKAGE_H_
 #define _UOPACKAGE_H_
 
-#include "UOPBlock.h"
-#include "UOPHeader.h"
-#include "UOPFile.h"
+#include <string>
 #include <vector>
 
 
 namespace uoppackage
 {
 
+class UOPFile;
+class UOPHeader;
+class UOPBlock;
 
-class EXPORT UOPPackage
+class UOPPackage
 {
 public:
     //UOPPackage();
     ~UOPPackage();
 
-    static unsigned long long getHash(std::string s);
+    static unsigned long long getHash(const char * const s);
+    static unsigned long long getHash(const std::string &s);
 
     bool load(std::string fileName);
-    UOPFile* getFileByName(std::string filename);
+    UOPFile* getFileByName(const std::string &filename);
     UOPFile* getFileByIndex(int block, int idx) const;
     bool searchByHash(unsigned long long hash, int &block, int &index) const;
 

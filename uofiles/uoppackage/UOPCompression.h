@@ -7,6 +7,7 @@ namespace uoppackage
 
 enum class CompressionFlag
 {
+    uninitialized = -1,
     none = 0,
     zlib = 1
 };

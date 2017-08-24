@@ -34,8 +34,8 @@ private:
     struct UOPAnimationData
     {
         int animFileIdx;        // AnimationFrame(x).uop
-        int blockIdx;
-        int fileIdx;
+        size_t blockIdx;
+        size_t fileIdx;
         unsigned long long hash;
     };
 

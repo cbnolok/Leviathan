@@ -1,4 +1,5 @@
 #include "UOPFile.h"
+#include "UOPError.h"
 #include <cstring> // for memset
 
 #include "zlib.h"
@@ -34,18 +35,15 @@ unsigned int UOPFile::getDataBlockHash() const {
 CompressionFlag UOPFile::getCompression() const {
     return m_compression;
 }
-//std::string UOPFile::FileName() const {
+//const std::string& UOPFile::getFileName() const {
 //return m_FileName;
 //}
 
 
-UOPFile::UOPFile() :
-    size(34), m_index(-1)
-{
-}
-
-UOPFile::UOPFile(int index) :
-    size(34), m_index(index)
+UOPFile::UOPFile(int fileIndex) :
+    m_index(fileIndex),
+    m_dataBlockAddress(0), m_dataBlockLength(0), m_compressedSize(0), m_decompressedSize(0),
+    m_fileHash(0), m_dataBlockHash(0), m_compression(CompressionFlag::uninitialized)
 {
 }
 
@@ -134,6 +132,7 @@ bool UOPFile::unpack(std::ifstream &fin, char* &result, size_t &resultSize) cons
 
             return success;
         }
+
         case CompressionFlag::none:
         {
             result = (char*) malloc(m_compressedSize);
@@ -141,6 +140,9 @@ bool UOPFile::unpack(std::ifstream &fin, char* &result, size_t &resultSize) cons
             resultSize = m_compressedSize;
             return true;
         }
+
+        default:
+            return false;
     }
 
     return false;

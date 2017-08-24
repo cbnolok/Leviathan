@@ -1,7 +1,6 @@
 #ifndef _UOPHEADER_H_
 #define _UOPHEADER_H_
 
-#include "UOPError.h"
 #include <fstream>
 
 
@@ -9,8 +8,11 @@ namespace uoppackage
 {
 
 
-class EXPORT UOPHeader
+class UOPHeader
 {
+public:
+    //const int size = 20;
+
 public:
     UOPHeader();
     //~UOPHeader();

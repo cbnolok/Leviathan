@@ -3,6 +3,8 @@
 #include "../common.h"
 #include "../sysio.h"
 #include "uoppackage/UOPPackage.h"
+#include "uoppackage/UOPBlock.h"
+#include "uoppackage/UOPFile.h"
 #include "uohues.h"
 #include <QImage>
 #include <QGraphicsPixmapItem>
@@ -29,7 +31,7 @@ void UOAnimUOP::buildAnimTable()
     emit notifyTPProgressVal(0);
     emit notifyTPProgressMax(0);
     */
-    int progressVal = 0;
+    unsigned progressVal = 0;
 
     // Parse anim data in each AnimationFrame*.uop
     for (int uopFile_i = 1; uopFile_i <= 4; uopFile_i++)
@@ -58,13 +60,13 @@ void UOAnimUOP::buildAnimTable()
 
                 UOPAnimationData data;
                 data.animFileIdx = uopFile_i;
-                data.blockIdx = (int)block_i;
-                data.fileIdx = (int)file_i;
+                data.blockIdx = block_i;
+                data.fileIdx = file_i;
                 data.hash = curFile->getFileHash();
                 m_animationsData.push_back(data);
             }
 
-            int progressValNow = (int)( (block_i*100)/block_max );
+            unsigned progressValNow = ( (block_i*100)/block_max );
             if (progressValNow > progressVal)
             {
                 progressVal = progressValNow;
@@ -89,23 +91,24 @@ void UOAnimUOP::buildAnimTable()
             char hashString[100];
             sprintf(hashString, "build/animationlegacyframe/%06i/%02i.bin", animId, grpId);
             unsigned long long hash = uoppackage::UOPPackage::getHash(hashString);
-            size_t found = (size_t)-1;
-            for (size_t i = 0, max = m_animationsData.size(); i < max; i++)
+            int found = -1;
+            for (int i = 0, max = (int)m_animationsData.size(); i < max; i++)
             {
                 if (m_animationsData[i].hash == hash)
+                {
                     found = i;
+                    break;
+                }
             }
-            if (found == (size_t)-1)
-                continue;
-
-            m_animationsMatrix[animId][grpId] = &m_animationsData[found];
+            if (found != -1)
+               m_animationsMatrix[animId][grpId] = &m_animationsData[found];
         }
 
-        int progressValNow = (int)( (animId*150)/2048 );
+        unsigned progressValNow = (unsigned)( (animId*150)/2048 );
         if (progressValNow > progressVal)
         {
             progressVal = progressValNow;
-            //emit notifyTPProgressVal(progressVal);
+            //emit notifyTPProgressVal((int)progressVal);
             QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
         }
     }
@@ -265,8 +268,8 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
     memcpy(&palette, decData + decDataOff, 512);
     decDataOff += 512;
 
-    int16_t xCenter, yCenter;
-    int16_t width, height;
+    int_fast16_t xCenter = 0, yCenter = 0;
+    int_fast16_t width = 0, height = 0;
 
     memcpy(&xCenter, decData + decDataOff, 2);
     decDataOff += 2;
@@ -291,15 +294,15 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
     while ( decDataOff < decDataSize )
     {
         // For the header structure read inside uoanimmul.cpp
-        uint32_t header;
+        uint_fast32_t header = 0;
         memcpy(&header, decData + decDataOff, 4);
         decDataOff += 4;
         if ( header == 0x7FFF7FFF )
             break;
 
-        uint32_t xRun = header & 0xFFF;              // take first 12 bytes
-        uint32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
-        uint32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
+        uint_fast32_t xRun = header & 0xFFF;              // take first 12 bytes
+        uint_fast32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
+        uint_fast32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
         // xOffset and yOffset are signed, so we need to compensate for that
         if (xOffset & 512)                  // 512 = 0x200
             xOffset |= (0xFFFFFFFF - 511);  // 511 = 0x1FF
@@ -314,7 +317,7 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
 
         for ( unsigned int k = 0; k < xRun; k++ )
         {
-            uint8_t palette_index = 0;
+            uint_fast8_t palette_index = 0;
             memcpy(&palette_index, decData + decDataOff, 1);
             decDataOff += 1;
 

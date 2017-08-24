@@ -6,11 +6,11 @@ UOAnim::UOAnim(std::string clientPath) :
 {
 }
 
-QImage* UOAnim::drawAnimFrame(int bodyID, int action, int direction, int frame, int hue_index)
+QImage* UOAnim::drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex)
 {
     if (m_UOAnimUOP.animExists(bodyID))
-        return m_UOAnimUOP.drawAnimFrame(bodyID, action, direction, frame, hue_index);
+        return m_UOAnimUOP.drawAnimFrame(bodyID, action, direction, frame, hueIndex);
     else
-        return m_UOAnimMul.drawAnimFrame(bodyID, action, direction, frame, hue_index);
+        return m_UOAnimMul.drawAnimFrame(bodyID, action, direction, frame, hueIndex);
 }
 

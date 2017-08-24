@@ -1,4 +1,5 @@
 #include "UOPBlock.h"
+#include "UOPFile.h"
 
 
 namespace uoppackage
@@ -20,12 +21,10 @@ unsigned long long UOPBlock::getNextBlockAddress() const {
 bool UOPBlock::isEmpty() const {
     return (m_fileCount == 0);
 }
-void UOPBlock::setIndex(int index) {
-    m_index = index;
-}
 
-UOPBlock::UOPBlock():
-    size(12)
+UOPBlock::UOPBlock(int blockIndex) :
+    m_index(blockIndex),
+    m_fileCount(0), m_nextBlockAddress(0)
 {
 }
 
@@ -47,8 +46,9 @@ void UOPBlock::read(std::ifstream& fin)
     m_files.reserve(m_fileCount);
     for (int index = 0; index < m_fileCount; ++index)
     {
-        m_files.push_back(new UOPFile(index));
-        m_files[index]->read( fin );
+        UOPFile* f = new UOPFile(index);
+        f->read( fin );
+        m_files.push_back(f);
     }
 
 }

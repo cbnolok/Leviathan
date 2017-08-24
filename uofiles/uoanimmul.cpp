@@ -147,13 +147,13 @@ bool UOAnimMul::loadBodyConvDef()
 }
 
 
-unsigned int UOAnimMul::getBodyLookupIndex(int body, int action, int direction, int filenum)
+unsigned int UOAnimMul::getBodyLookupIndex(int body, int action, int direction, int animFileNumber)
 {
     // Stygian Abyss stuff is stored in animationframe*.uop.
     // Every animation before Stygian Abyss is stored in anim mul/idx.
 
-    int index = 0;
-    switch (filenum)
+    unsigned index = 0;
+    switch (animFileNumber)
     {
         default:
         case 0:
@@ -166,15 +166,15 @@ unsigned int UOAnimMul::getBodyLookupIndex(int body, int action, int direction, 
             else
                 index = 35000 + ((body - 400) * 175);
                 // 35000 -> 22000 + 13000. Skip this much slots for equip anims
-
             break;
+
         case 1:
             if (body < 200)
                 index = body * 110;
             else
                 index = 22000 + ((body - 200) * 65);
-
             break;
+
         case 2:
             if (body < 300)
                 index = body * 65;
@@ -182,8 +182,8 @@ unsigned int UOAnimMul::getBodyLookupIndex(int body, int action, int direction, 
                 index = 33000 + ((body - 300) * 110);
             else
                 index = 35000 + ((body - 400) * 175);
-
             break;
+
         case 3:
             if (body < 200)
                 index = body * 110;
@@ -191,8 +191,8 @@ unsigned int UOAnimMul::getBodyLookupIndex(int body, int action, int direction, 
                 index = 22000 + ((body - 200) * 65);
             else
                 index = 35000 + ((body - 400) * 175);
-
             break;
+
         case 4:
             if ((body < 200) && (body != 34)) // looks strange, though it works.
                 index = body * 110;
@@ -200,7 +200,6 @@ unsigned int UOAnimMul::getBodyLookupIndex(int body, int action, int direction, 
                 index = 22000 + ((body - 200) * 65);
             else
                 index = 35000 + ((body - 400) * 175);
-
             break;
     }
 
@@ -217,15 +216,15 @@ unsigned int UOAnimMul::getBodyLookupIndex(int body, int action, int direction, 
 
 /////
 
-QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int frame, int hue_index)
+QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex)
 {
-    int animFileNum = 0;
+    int animFileNumber = 0;
 
     auto bodyConvDef_it = m_bodyConvDef.find(bodyID);
     if (bodyConvDef_it != m_bodyConvDef.end())  // key found
     {
         bodyID = bodyConvDef_it->second.newID;
-        animFileNum = bodyConvDef_it->second.newFileNum;
+        animFileNumber = bodyConvDef_it->second.newFileNum;
     }
     else
     {
@@ -233,13 +232,13 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
         if (bodyDef_it != m_bodyDef.end())      // key found
         {
             bodyID = bodyDef_it->second.newID;
-            if (hue_index == 0)
-                hue_index = bodyDef_it->second.newHue;
+            if (hueIndex == 0)
+                hueIndex = bodyDef_it->second.newHue;
         }
     }
 
     std::string animFileStr;
-    switch (animFileNum)
+    switch (animFileNumber)
     {
         case 1:     animFileStr = "anim2";      break;
         case 2:     animFileStr = "anim3";      break;
@@ -248,7 +247,7 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
         default:    animFileStr = "anim";       break;
     }
 
-    unsigned bodyIndex = getBodyLookupIndex(bodyID, action, direction, animFileNum);
+    unsigned bodyIndex = getBodyLookupIndex(bodyID, action, direction, animFileNumber);
 
     unsigned lookup = UOIdx::getLookup(m_clientPath + animFileStr + ".idx", bodyIndex);
     if (lookup == (unsigned)-1)
@@ -287,7 +286,7 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
     int16_t palette[256];
     fs_anim.read(reinterpret_cast<char*>(palette), 2 * 256);
 
-    int16_t frame_count = 0;
+    int_fast16_t frame_count = 0;
     fs_anim.read(reinterpret_cast<char*>(&frame_count), 4);
     if (frame > frame_count)
     {
@@ -295,12 +294,12 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
         return nullptr;
     }
 
-    int32_t* frame_offsets = new int32_t[frame_count];
+    uint32_t* frame_offsets = new uint32_t[frame_count];
     fs_anim.read(reinterpret_cast<char*>(frame_offsets), 4 * frame_count);
     fs_anim.seekg(lookup + (2*256) + frame_offsets[frame], std::ios_base::beg);    // go to the selected frame
 
-    int16_t xCenter, yCenter;
-    int16_t width, height;
+    int_fast16_t xCenter = 0, yCenter = 0;
+    int_fast16_t width = 0, height = 0;
     fs_anim.read(reinterpret_cast<char*>(&xCenter), 2);
     fs_anim.read(reinterpret_cast<char*>(&yCenter), 2);
     fs_anim.read(reinterpret_cast<char*>(&width),   2);
@@ -332,14 +331,14 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
 
         For this piece of code, the MulPatcher source helped A LOT!
         */
-        uint32_t header;
+        uint_fast32_t header = 0;
         fs_anim.read(reinterpret_cast<char*>(&header), 4);
         if ( header == 0x7FFF7FFF )
             break;
 
-        uint32_t xRun = header & 0xFFF;              // take first 12 bytes
-        uint32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
-        uint32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
+        uint_fast32_t xRun = header & 0xFFF;              // take first 12 bytes
+        uint_fast32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
+        uint_fast32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
         // xOffset and yOffset are signed, so we need to compensate for that
         if (xOffset & 512)                  // 512 = 0x200
             xOffset |= (0xFFFFFFFF - 511);  // 511 = 0x1FF
@@ -354,12 +353,12 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
 
         for ( unsigned k = 0; k < xRun; k++ )
         {
-            uint8_t palette_index = 0;
+            uint_fast8_t palette_index = 0;
             fs_anim.read(reinterpret_cast<char*>(&palette_index), 1);
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
-            if (hue_index != 0)
+            if (hueIndex != 0)
             {
-                UOHueEntry hue = g_UOHues->getHue(hue_index);
+                UOHueEntry hue = g_UOHues->getHue(hueIndex);
                 color_argb16 = hue.applyToColor(color_argb16, applyToGrayOnly);
             }
             ARGB32 color_argb32 = argb16_to_argb32(color_argb16);

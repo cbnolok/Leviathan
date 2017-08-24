@@ -17,7 +17,7 @@ UOArt::~UOArt()
 */
 
 
-QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
+QImage* UOArt::drawArt(int id, int hueIndex, bool partialHue)
 {
     /*
     There are three types of art images; land, static, and UO alpha
@@ -44,7 +44,7 @@ QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
     }
     fs_art.seekg(lookup);
 
-    int16_t width = 0, height = 0;
+    int_fast16_t width = 0, height = 0;
     QImage* img = nullptr;
 
 
@@ -83,7 +83,7 @@ QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
         img->fill(0);
 
         // Algorithm from Punt's C++ Ultima SDK
-        uint16_t rawcolor_argb16;
+        uint_fast16_t rawcolor_argb16 = 0;
         int X = 22;
         int Y = 0;
         int linewidth = 2;
@@ -96,9 +96,9 @@ QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
                 ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
                 //if ( (color &0x7FF) == 0 || (color & 0x7FF)==0x7FF )
                 //  continue;
-                if (hue_index != 0)
+                if (hueIndex != 0)
                 {
-                    UOHueEntry hue = g_UOHues->getHue(hue_index);
+                    UOHueEntry hue = g_UOHues->getHue(hueIndex);
                     color_argb16 = hue.applyToColor(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = argb16_to_argb32(color_argb16);
@@ -119,9 +119,9 @@ QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
                 ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
                 //if ( (color &0x7FF) == 0 || (color & 0x7FF)==0x7FF )
                 //  continue;
-                if (hue_index != 0)
+                if (hueIndex != 0)
                 {
-                    UOHueEntry hue = g_UOHues->getHue(hue_index);
+                    UOHueEntry hue = g_UOHues->getHue(hueIndex);
                     color_argb16 = hue.applyToColor(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = argb16_to_argb32(color_argb16);
@@ -163,7 +163,7 @@ QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
         When the line is completed, simply reset X to 0, increase Y, and seek to the next lookup in the lookupTable array and continue.
         */
 
-        uint32_t flags = 0;
+        uint_fast32_t flags = 0;
         fs_art.read(reinterpret_cast<char*>(&flags), 4);
         fs_art.read(reinterpret_cast<char*>(&width), 2);
         fs_art.read(reinterpret_cast<char*>(&height), 2);
@@ -183,7 +183,7 @@ QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
             X=0;
 
             fs_art.seekg(lookups[Y] * 2 + datastart);
-            uint16_t xOffset = 1, xRun = 1;
+            uint_fast16_t xOffset = 1, xRun = 1;
             while (xOffset + xRun != 0)
             {
                 fs_art.read(reinterpret_cast<char*>(&xOffset), 2);
@@ -193,12 +193,12 @@ QImage* UOArt::drawArt(int id, int hue_index, bool partialHue)
                     X += xOffset ;
                     for (unsigned jj=0; jj < xRun; ++jj)
                     {
-                        uint16_t rawcolor_argb16 = 0;
+                        uint_fast16_t rawcolor_argb16 = 0;
                         fs_art.read(reinterpret_cast<char*>(&rawcolor_argb16), 2);
                         ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
-                        if (hue_index != 0)
+                        if (hueIndex != 0)
                         {
-                            UOHueEntry hue = g_UOHues->getHue(hue_index);
+                            UOHueEntry hue = g_UOHues->getHue(hueIndex);
                             color_argb16 = hue.applyToColor(color_argb16, partialHue);
                         }
                         ARGB32 color_argb32 = argb16_to_argb32(color_argb16);

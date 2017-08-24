@@ -1,8 +1,8 @@
 #ifndef _UOPBLOCK_H_
 #define _UOPBLOCK_H_
 
-#include "UOPError.h"
-#include "UOPFile.h"
+// i can't simply forward declare UOPPackage class because i need to declare a friend function here in UOPBlock class
+#include "UOPPackage.h"
 #include <vector>
 #include <fstream>
 
@@ -10,14 +10,16 @@
 namespace uoppackage
 {
 
+class UOPFile;
 
-class EXPORT UOPBlock
+class UOPBlock
 {
 public:
-    const int size; //12
+    //const int size = 12;
 
 public:
-    UOPBlock();
+    //UOPBlock();
+    UOPBlock(int blockIndex);
     ~UOPBlock();
 
     void read(std::ifstream& fin);
@@ -29,15 +31,14 @@ public:
     unsigned long long getNextBlockAddress() const;
     bool isEmpty() const;
 
-    void setIndex(int);
-
-
 private:
     //UOPackage* m_parent;
     int m_index;
     std::vector<UOPFile*> m_files;
     int m_fileCount;
     unsigned long long m_nextBlockAddress;
+
+    friend UOPFile* UOPPackage::getFileByIndex(int block, int idx) const;
 };
 
 

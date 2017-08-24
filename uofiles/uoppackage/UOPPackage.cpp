@@ -1,4 +1,8 @@
 #include "UOPPackage.h"
+#include "UOPError.h"
+#include "UOPBlock.h"
+#include "UOPHeader.h"
+#include "UOPFile.h"
 #include <fstream>
 #include <cstring>
 
@@ -44,7 +48,7 @@ bool UOPPackage::load(std::string fileName)
 
     // Reading UOP Header
     m_header = new UOPHeader;
-    if (! m_header->read(fin))
+    if ( ! m_header->read(fin) )
     {
         ADDERROR("UOPackage: error reading Header");
         return false;
@@ -58,11 +62,8 @@ bool UOPPackage::load(std::string fileName)
     bool iseof = false;
     do
     {
-        UOPBlock* b = new UOPBlock();
-
+        UOPBlock* b = new UOPBlock(index);
         b->read(fin);
-        b->setIndex(index);
-
         m_blocks.push_back(b);
 
         unsigned long long nextbl = b->getNextBlockAddress();
@@ -82,7 +83,12 @@ bool UOPPackage::load(std::string fileName)
 
 UOPFile* UOPPackage::getFileByIndex(int block, int idx) const
 {
-    return m_blocks[block]->getFiles()[idx];
+    //return m_blocks[block]->getFiles()[idx];
+
+    // Making this a friend function to UOPBlock class, so we don't have to call getFiles,
+    //  which creates and copies a new vector
+
+    return m_blocks[block]->m_files[idx];
 }
 
 bool UOPPackage::searchByHash(unsigned long long hash, int& block, int& index) const
@@ -101,7 +107,7 @@ bool UOPPackage::searchByHash(unsigned long long hash, int& block, int& index) c
     return false;
 }
 
-UOPFile* UOPPackage::getFileByName(std::string filename)
+UOPFile* UOPPackage::getFileByName(const std::string &filename)
 {
     unsigned long long hash = UOPPackage::getHash(filename);
     int block = -1, index = -1;
@@ -110,20 +116,23 @@ UOPFile* UOPPackage::getFileByName(std::string filename)
     return nullptr;
 }
 
-unsigned long long UOPPackage::getHash(std::string s)
+
+unsigned long long UOPPackage::getHash(const char * const s)
 {
-    uint32_t eax, ecx, edx, ebx, esi, edi;
+    uint_fast32_t eax, ecx, edx, ebx, esi, edi;
+
+    const uint_fast32_t len = strlen(s);
 
     eax = ecx = edx = 0;
-    ebx = edi = esi = (uint32_t) s.length() + 0xDEADBEEF;
+    ebx = edi = esi = (uint_fast32_t) len + 0xDEADBEEF;
 
-    unsigned int i = 0;
+    uint_fast32_t i = 0;
 
-    for ( i = 0; i + 12 < s.length(); i += 12 )
+    for ( i = 0; i + 12 < len; i += 12 )
     {
-        edi = (uint32_t) ( ( s[ i + 7  ] << 24 ) | ( s[ i + 6  ] << 16 ) | ( s[ i + 5 ] << 8 ) | s[ i + 4 ] ) + edi;
-        esi = (uint32_t) ( ( s[ i + 11 ] << 24 ) | ( s[ i + 10 ] << 16 ) | ( s[ i + 9 ] << 8 ) | s[ i + 8 ] ) + esi;
-        edx = (uint32_t) ( ( s[ i + 3  ] << 24 ) | ( s[ i + 2  ] << 16 ) | ( s[ i + 1 ] << 8 ) | s[ i     ] ) - esi;
+        edi = (uint_fast32_t) ( ( s[ i + 7  ] << 24 ) | ( s[ i + 6  ] << 16 ) | ( s[ i + 5 ] << 8 ) | s[ i + 4 ] ) + edi;
+        esi = (uint_fast32_t) ( ( s[ i + 11 ] << 24 ) | ( s[ i + 10 ] << 16 ) | ( s[ i + 9 ] << 8 ) | s[ i + 8 ] ) + esi;
+        edx = (uint_fast32_t) ( ( s[ i + 3  ] << 24 ) | ( s[ i + 2  ] << 16 ) | ( s[ i + 1 ] << 8 ) | s[ i     ] ) - esi;
 
         edx = ( edx + ebx ) ^ ( esi >> 28 ) ^ ( esi << 4 );
         esi += edi;
@@ -139,24 +148,24 @@ unsigned long long UOPPackage::getHash(std::string s)
         edi += ebx;
     }
 
-    if ( s.length() - i > 0 )
+    if ( len - i > 0 )
     {
-        switch ( s.length() - i )
+        switch ( len - i )
         {
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-            case 12:    esi += (uint32_t) s[ i + 11 ] << 24;
-            case 11:    esi += (uint32_t) s[ i + 10 ] << 16;
-            case 10:    esi += (uint32_t) s[ i + 9  ] << 8;
-            case 9:     esi += (uint32_t) s[ i + 8  ];
-            case 8:     edi += (uint32_t) s[ i + 7  ] << 24;
-            case 7:     edi += (uint32_t) s[ i + 6  ] << 16;
-            case 6:     edi += (uint32_t) s[ i + 5  ] << 8;
-            case 5:     edi += (uint32_t) s[ i + 4  ];
-            case 4:     ebx += (uint32_t) s[ i + 3  ] << 24;
-            case 3:     ebx += (uint32_t) s[ i + 2  ] << 16;
-            case 2:     ebx += (uint32_t) s[ i + 1  ] << 8;
-            case 1:     ebx += (uint32_t) s[ i ];
+            case 12:    esi += (uint_fast32_t) s[ i + 11 ] << 24;
+            case 11:    esi += (uint_fast32_t) s[ i + 10 ] << 16;
+            case 10:    esi += (uint_fast32_t) s[ i + 9  ] << 8;
+            case 9:     esi += (uint_fast32_t) s[ i + 8  ];
+            case 8:     edi += (uint_fast32_t) s[ i + 7  ] << 24;
+            case 7:     edi += (uint_fast32_t) s[ i + 6  ] << 16;
+            case 6:     edi += (uint_fast32_t) s[ i + 5  ] << 8;
+            case 5:     edi += (uint_fast32_t) s[ i + 4  ];
+            case 4:     ebx += (uint_fast32_t) s[ i + 3  ] << 24;
+            case 3:     ebx += (uint_fast32_t) s[ i + 2  ] << 16;
+            case 2:     ebx += (uint_fast32_t) s[ i + 1  ] << 8;
+            case 1:     ebx += (uint_fast32_t) s[ i ];
             break;
             #pragma GCC diagnostic pop
         }
@@ -173,6 +182,75 @@ unsigned long long UOPPackage::getHash(std::string s)
     }
 
     return ( (unsigned long long) esi << 32 ) | eax;
+}
+
+
+unsigned long long UOPPackage::getHash(const std::string &s)
+{
+    uint_fast32_t eax, ecx, edx, ebx, esi, edi;
+
+    const uint_fast32_t len = s.length();
+
+    eax = ecx = edx = 0;
+    ebx = edi = esi = (uint_fast32_t) len + 0xDEADBEEF;
+
+    uint_fast32_t i = 0;
+
+    for ( i = 0; i + 12 < len; i += 12 )
+    {
+        edi = (uint_fast32_t) ( ( s[ i + 7  ] << 24 ) | ( s[ i + 6  ] << 16 ) | ( s[ i + 5 ] << 8 ) | s[ i + 4 ] ) + edi;
+        esi = (uint_fast32_t) ( ( s[ i + 11 ] << 24 ) | ( s[ i + 10 ] << 16 ) | ( s[ i + 9 ] << 8 ) | s[ i + 8 ] ) + esi;
+        edx = (uint_fast32_t) ( ( s[ i + 3  ] << 24 ) | ( s[ i + 2  ] << 16 ) | ( s[ i + 1 ] << 8 ) | s[ i     ] ) - esi;
+
+        edx = ( edx + ebx ) ^ ( esi >> 28 ) ^ ( esi << 4 );
+        esi += edi;
+        edi = ( edi - edx ) ^ ( edx >> 26 ) ^ ( edx << 6 );
+        edx += esi;
+        esi = ( esi - edi ) ^ ( edi >> 24 ) ^ ( edi << 8 );
+        edi += edx;
+        ebx = ( edx - esi ) ^ ( esi >> 16 ) ^ ( esi << 16 );
+        esi += edi;
+        edi = ( edi - ebx ) ^ ( ebx >> 13 ) ^ ( ebx << 19 );
+        ebx += esi;
+        esi = ( esi - edi ) ^ ( edi >> 28 ) ^ ( edi << 4 );
+        edi += ebx;
+    }
+
+    if ( len - i > 0 )
+    {
+        switch ( len - i )
+        {
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+            case 12:    esi += (uint_fast32_t) s[ i + 11 ] << 24;
+            case 11:    esi += (uint_fast32_t) s[ i + 10 ] << 16;
+            case 10:    esi += (uint_fast32_t) s[ i + 9  ] << 8;
+            case 9:     esi += (uint_fast32_t) s[ i + 8  ];
+            case 8:     edi += (uint_fast32_t) s[ i + 7  ] << 24;
+            case 7:     edi += (uint_fast32_t) s[ i + 6  ] << 16;
+            case 6:     edi += (uint_fast32_t) s[ i + 5  ] << 8;
+            case 5:     edi += (uint_fast32_t) s[ i + 4  ];
+            case 4:     ebx += (uint_fast32_t) s[ i + 3  ] << 24;
+            case 3:     ebx += (uint_fast32_t) s[ i + 2  ] << 16;
+            case 2:     ebx += (uint_fast32_t) s[ i + 1  ] << 8;
+            case 1:     ebx += (uint_fast32_t) s[ i ];
+            break;
+            #pragma GCC diagnostic pop
+        }
+
+        esi = ( esi ^ edi ) - ( ( edi >> 18 ) ^ ( edi << 14 ) );
+        ecx = ( esi ^ ebx ) - ( ( esi >> 21 ) ^ ( esi << 11 ) );
+        edi = ( edi ^ ecx ) - ( ( ecx >> 7  ) ^ ( ecx << 25 ) );
+        esi = ( esi ^ edi ) - ( ( edi >> 16 ) ^ ( edi << 16 ) );
+        edx = ( esi ^ ecx ) - ( ( esi >> 28 ) ^ ( esi << 4  ) );
+        edi = ( edi ^ edx ) - ( ( edx >> 18 ) ^ ( edx << 14 ) );
+        eax = ( esi ^ edi ) - ( ( edi >> 8  ) ^ ( edi << 24 ) );
+
+        return ( (unsigned long long) edi << 32 ) | eax;
+    }
+
+    return ( (unsigned long long) esi << 32 ) | eax;
+
 }
 
 

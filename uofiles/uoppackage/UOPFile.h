@@ -1,7 +1,6 @@
 #ifndef _UOPFILE_H_
 #define _UOPFILE_H_
 
-#include "UOPError.h"
 #include "UOPCompression.h"
 #include <fstream>
 
@@ -10,11 +9,13 @@ namespace uoppackage
 {
 
 
-class EXPORT UOPFile
+class UOPFile
 {
 public:
-    UOPFile();
-    UOPFile(int index);
+    //const int size 34;
+
+public:
+    UOPFile(int fileIndex);
     //~UOPFile();
 
     bool read(std::ifstream& fin);
@@ -30,10 +31,7 @@ public:
     unsigned long long getFileHash() const;
     unsigned int getDataBlockHash() const;
     CompressionFlag getCompression() const;
-    //std::string getFileName() const;
-
-public:
-    const int size; //34
+    //const std::string& getFileName() const;
 
 private:
     //UOPBlock* m_parent;

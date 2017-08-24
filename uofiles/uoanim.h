@@ -11,7 +11,7 @@ class UOAnim
 {
 public:
     UOAnim(std::string clientPath);
-    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hue_index);
+    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex);
 
 private:
     UOAnimMul m_UOAnimMul;

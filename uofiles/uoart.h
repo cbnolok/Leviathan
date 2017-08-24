@@ -12,7 +12,7 @@ class UOArt
 public:
     UOArt(std::string clientPath);
     //~UOArt();
-    QImage* drawArt(int id, int hue_index, bool partialHue);
+    QImage* drawArt(int id, int hueIndex, bool partialHue);
     
 private:
     std::string m_clientPath;

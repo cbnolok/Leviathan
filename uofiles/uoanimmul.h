@@ -41,11 +41,11 @@ private:
     bool loadBodyDef();
     bool loadBodyConvDef();
 
-    unsigned int getBodyLookupIndex(int body, int action, int direction, int filenum);   // return the in-file index of the anim we want to show
+    unsigned int getBodyLookupIndex(int body, int action, int direction, int animFileNumber);   // return the in-file index of the anim we want to show
 
 public:
     UOAnimMul(std::string clientPath);
-    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hue_index);
+    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex);
 };
 
 #endif // UOANIMMUL_H

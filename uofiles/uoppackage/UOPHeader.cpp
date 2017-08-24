@@ -1,4 +1,5 @@
 #include "UOPHeader.h"
+#include "UOPError.h"
 
 #define ADDERROR(_x_) errorHandler.m_errorQueue.push_front(_x_)
 
