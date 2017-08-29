@@ -80,14 +80,14 @@ UOHues::UOHues(std::string path_hues)
             //hues[hue_num].index = hue_num;
             // Fill the ColorTable
             fs_hues.read(reinterpret_cast<char*>(&hues[hue_num].color_table), sizeof(hues[hue_num].color_table));
-            //for (unsigned int j = 0; j < sizeof(hues[hue_num].color_table); j++)
+            //for (unsigned int j = 0; j < sizeof(hues[hue_num].color_table); ++j)
             //    hues[hue_num].color_table[j] |= 0x8000;
             // Skip TableStart and TableEnd
             fs_hues.seekg(4, std::ifstream::cur);
             // Read the Hue Name
             //memset(hues[hue_num].name, 0, sizeof(hues[hue_num].name));
             fs_hues.read(reinterpret_cast<char*>(&hues[hue_num].name), sizeof(hues[hue_num].name));
-            hue_num++;
+            ++hue_num;
         }
     }
 }

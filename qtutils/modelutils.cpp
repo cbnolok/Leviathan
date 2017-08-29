@@ -9,7 +9,7 @@ QStringList ModelUtils::extractStringsFromModel(QAbstractItemModel *model, const
 {
     QStringList retVal;
 
-    for(int i = 0; i < model->rowCount(parent); i++)
+    for(int i = 0; i < model->rowCount(parent); ++i)
     {
         QModelIndex idx = model->index(i, 0, parent);
         if(!idx.isValid())
@@ -43,7 +43,7 @@ QStringList ModelUtils::extractStringsFromCheckableProxyModel(CheckableProxyMode
     //  the directories are checked and included in the returned list.
     QStringList retVal;
 
-    for (int i = 0; i < model->rowCount(proxyParent); i++)
+    for (int i = 0; i < model->rowCount(proxyParent); ++i)
     {
         QModelIndex idx = model->index(i, 0, proxyParent);
         if(!idx.isValid())
@@ -80,7 +80,7 @@ QStringList ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(Chec
     QStringList retVal;
     QDirModel *sourceModel = static_cast<QDirModel*>(model->sourceModel());   // if source model is wrong this will crash...
 
-    for (int i = 0; i < model->rowCount(proxyParent); i++)
+    for (int i = 0; i < model->rowCount(proxyParent); ++i)
     {
         const QModelIndex idx = model->index(i, 0, proxyParent);
         if(!idx.isValid())
@@ -107,7 +107,7 @@ QStringList ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(Chec
 
 void ModelUtils::resetCheckedStateCheckableProxyModel(CheckableProxyModel *model, bool value, const QModelIndex &proxyParent)
 {
-    for (int i = 0; i < model->rowCount(proxyParent); i++)
+    for (int i = 0; i < model->rowCount(proxyParent); ++i)
     {
         const QModelIndex idx = model->index(i, 0, proxyParent);
         if(!idx.isValid())

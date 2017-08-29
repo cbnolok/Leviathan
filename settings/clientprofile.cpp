@@ -49,7 +49,7 @@ std::vector<ClientProfile> ClientProfile::readJsonData()
     if (profilesListObj.isEmpty())
         return savedProfiles;
 
-    for (auto it = profilesListObj.begin(), end = profilesListObj.end(); it != end; it++) // for each profile
+    for (auto it = profilesListObj.begin(), end = profilesListObj.end(); it != end; ++it) // for each profile
     {
         QJsonObject profileObj = profilesListObj[it.key()].toObject();
         QJsonValue val = QJsonValue::Undefined;

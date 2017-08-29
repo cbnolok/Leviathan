@@ -46,7 +46,7 @@ void Dlg_ProfileClient_Options::updateProfilesView()
     m_profiles_model->removeRows(0, m_profiles_model->rowCount());
 
     // Load all the profiles.
-    for (auto it = g_clientProfiles.begin(); it != g_clientProfiles.end(); it++)
+    for (auto it = g_clientProfiles.begin(); it != g_clientProfiles.end(); ++it)
     {
         QStandardItem *newProfileItem = new QStandardItem(it->m_name.c_str());
         if (it->m_defaultProfile)        // set blue text color for the default profile
@@ -124,7 +124,7 @@ void Dlg_ProfileClient_Options::on_pushButton_profileAdd_clicked()
     if (ui->checkBox_setDefaultProfile->checkState() == Qt::Checked)
     {
         newProfile.m_defaultProfile = true;
-        for (size_t i = 0; i < g_clientProfiles.size(); i++)
+        for (size_t i = 0; i < g_clientProfiles.size(); ++i)
             g_clientProfiles[i].m_defaultProfile = false;
     }
 
@@ -135,7 +135,7 @@ void Dlg_ProfileClient_Options::on_pushButton_profileAdd_clicked()
     if (newProfile.m_defaultProfile)
     {
         newProfileItem->setForeground(QBrush(QColor("blue")));  // set blue text color for the default profile
-        for (int i = 0; i < m_profiles_model->rowCount(); i++ )
+        for (int i = 0; i < m_profiles_model->rowCount(); ++i )
         {
             QModelIndex iIndex = m_profiles_model->index(i,0);
             QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
@@ -178,7 +178,7 @@ void Dlg_ProfileClient_Options::on_pushButton_profileSave_clicked()
     cp->m_defaultProfile = (ui->checkBox_setDefaultProfile->checkState() == Qt::Unchecked) ? false: true;
     if (cp->m_defaultProfile)
     {
-        for (size_t i = 0; i < g_clientProfiles.size(); i++)
+        for (size_t i = 0; i < g_clientProfiles.size(); ++i)
         {
             QModelIndex iIndex = m_profiles_model->index(i,0);
             QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
@@ -225,7 +225,7 @@ void Dlg_ProfileClient_Options::saveProfilesToJson()
     // Parse back all profiles (plus the new one) in json format.
     QJsonObject mainJsonField;
     QJsonObject clientProfileJsonField;
-    for (size_t i = 0; i < g_clientProfiles.size(); i++)
+    for (size_t i = 0; i < g_clientProfiles.size(); ++i)
         clientProfileJsonField[QString::number((long)i)] = g_clientProfiles[i].generateJsonObject();
     mainJsonField["ClientProfiles"] = clientProfileJsonField;
 

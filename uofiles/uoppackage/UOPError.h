@@ -25,7 +25,7 @@ private:
     std::deque<std::string> m_errorQueue;
 
 public:
-    std::deque<std::string> getErrorQueue() const;
+    const std::deque<std::string> getErrorQueue() const;
     bool errorOccurred() const;
     void clearErrorQueue();     // users have to manually clear the error queue between operations
 };

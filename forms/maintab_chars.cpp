@@ -67,9 +67,9 @@ void MainTab_Chars::updateViews()
     QStandardItem *root = m_organizer_model->invisibleRootItem();
 
     ScriptObjTree *trees[2] = { g_scriptObjTree_Chars, g_scriptObjTree_Spawns };
-    for (int tree_i = 0; tree_i < 2; tree_i++)
+    for (int tree_i = 0; tree_i < 2; ++tree_i)
     {
-        for (size_t category_i = 0; category_i < trees[tree_i]->m_categories.size(); category_i++)
+        for (size_t category_i = 0; category_i < trees[tree_i]->m_categories.size(); ++category_i)
         {
             ScriptCategory *category_inst = trees[tree_i]->m_categories[category_i];
             QStandardItem *category_item = new QStandardItem(category_inst->m_categoryName.c_str());
@@ -77,7 +77,7 @@ void MainTab_Chars::updateViews()
             if (tree_i == 1)
                 category_item->setForeground(QBrush(QColor("red")));
             root->appendRow(category_item);
-            for (size_t subsection_i = 0; subsection_i < category_inst->m_subsections.size(); subsection_i++)
+            for (size_t subsection_i = 0; subsection_i < category_inst->m_subsections.size(); ++subsection_i)
             {
                 ScriptSubsection *subsection_inst = category_inst->m_subsections[subsection_i];
                 QStandardItem *subsectionItem = new QStandardItem(subsection_inst->m_subsectionName.c_str());
@@ -106,7 +106,7 @@ void MainTab_Chars::on_treeView_organizer_clicked(const QModelIndex &index)
     m_objMapScriptToQItem.clear();
 
     /* Populate the object list */
-    for (size_t subsection_i = 0; subsection_i < subsection_inst->m_objects.size(); subsection_i++)
+    for (size_t subsection_i = 0; subsection_i < subsection_inst->m_objects.size(); ++subsection_i)
     {
         // Build the two QStandardItem for each ScriptObj in this Subsection
 

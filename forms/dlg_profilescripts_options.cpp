@@ -88,7 +88,7 @@ void Dlg_ProfileScripts_Options::updateProfilesView()
 
     // Load all the profiles.
     //g_scriptsProfiles = ScriptsProfile::readJsonData();
-    for (auto it = g_scriptsProfiles.begin(); it != g_scriptsProfiles.end(); it++)
+    for (auto it = g_scriptsProfiles.begin(); it != g_scriptsProfiles.end(); ++it)
     {
         QStandardItem *newProfileItem = new QStandardItem(it->m_name.c_str());
         if (it->m_defaultProfile)        // set blue text color for the default profile
@@ -110,7 +110,7 @@ void Dlg_ProfileScripts_Options::updateScriptsView(QString path)
 
 bool Dlg_ProfileScripts_Options::checkScriptsFromProfile_loop(const std::string& scriptFromProfile, const QModelIndex &proxyParent)
 {
-    for (int modelRow = 0; modelRow < m_scripts_model->rowCount(proxyParent); modelRow++)
+    for (int modelRow = 0; modelRow < m_scripts_model->rowCount(proxyParent); ++modelRow)
     {
         const QModelIndex proxyIdx = m_scripts_model->index(modelRow, 0, proxyParent);
         if(!proxyIdx.isValid())
@@ -139,7 +139,7 @@ void Dlg_ProfileScripts_Options::checkScriptsFromProfile(const ScriptsProfile *s
 {
     // set the check state of the scripts in the treeview
 
-    for (auto it = sp->m_scriptsToLoad.begin(), end = sp->m_scriptsToLoad.end(); it != end; it++)
+    for (auto it = sp->m_scriptsToLoad.begin(), end = sp->m_scriptsToLoad.end(); it != end; ++it)
     {
         if (!checkScriptsFromProfile_loop(*it, proxyParent))
             appendToLog("Profile \"" + sp->m_name + "\": File \"" + *it + "\" saved in the profile doesn't exist anymore!");
@@ -227,7 +227,7 @@ void Dlg_ProfileScripts_Options::saveProfilesToJson()
     // Parse back all profiles (plus the new one) in json format.
     QJsonObject mainJsonField;
     QJsonObject scriptsProfileJsonField;
-    for (size_t i = 0; i < g_scriptsProfiles.size(); i++)
+    for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
         scriptsProfileJsonField[QString::number((long)i)] = g_scriptsProfiles[i].generateJsonObject();
     mainJsonField["ScriptsProfiles"] = scriptsProfileJsonField;
 
@@ -259,14 +259,14 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileAdd_clicked()
     if (ui->checkBox_setDefaultProfile->checkState() == Qt::Checked)
     {
         newProfile.m_defaultProfile = true;
-        for (size_t i = 0; i < g_scriptsProfiles.size(); i++)
+        for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
             g_scriptsProfiles[i].m_defaultProfile = false;
     }
 
     // Populate the scripts file list in the profile.
     //fetchSyncCheckableProxyModelSourcedQFileSystemModelCheckedDirRecursive(m_scripts_model, ui->treeView_scripts->rootIndex());
     QStringList selectedScripts = ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(m_scripts_model, ui->treeView_scripts->rootIndex());
-    for (int i = 0; i < selectedScripts.count(); i++)
+    for (int i = 0; i < selectedScripts.count(); ++i)
         newProfile.m_scriptsToLoad.push_back(selectedScripts.at(i).toStdString());
 
     g_scriptsProfiles.push_back(newProfile);
@@ -276,7 +276,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileAdd_clicked()
     if (newProfile.m_defaultProfile)
     {
         newProfileItem->setForeground(QBrush(QColor("blue")));  // set blue text color for the default profile
-        for (int i = 0; i < m_profiles_model->rowCount(); i++ )
+        for (int i = 0; i < m_profiles_model->rowCount(); ++i )
         {
             QModelIndex iIndex = m_profiles_model->index(i,0);
             QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
@@ -339,7 +339,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
     sp->m_defaultProfile = (ui->checkBox_setDefaultProfile->checkState() == Qt::Unchecked) ? false: true;
     if (sp->m_defaultProfile)
     {
-        for (size_t i = 0; i < g_scriptsProfiles.size(); i++)
+        for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
         {
             QModelIndex iIndex = m_profiles_model->index((int)i,0);
             QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
@@ -359,7 +359,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
     {
         QStringList selectedScripts = ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(m_scripts_model, ui->treeView_scripts->rootIndex());
         sp->m_scriptsToLoad.clear();
-        for (int i = 0; i < selectedScripts.count(); i++)
+        for (int i = 0; i < selectedScripts.count(); ++i)
             sp->m_scriptsToLoad.push_back(selectedScripts.at(i).toStdString());
     }
 

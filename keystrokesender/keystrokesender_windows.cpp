@@ -112,7 +112,7 @@ bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTermi
 
     int len = (strlen(str) > 255) ? 255 : (int)strlen(str);
 
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; ++i)
     {
         if (!sendChar(str[i]))
             return false;

@@ -72,7 +72,7 @@ bool UOPPackage::load(std::string fileName)
             iseof = true;
 
         fin.seekg(nextbl, std::ios_base::beg);
-        index++;
+        ++index;
     }
     while ( !iseof );
 
@@ -152,8 +152,10 @@ unsigned long long UOPPackage::getHash(const char * const s)
     {
         switch ( len - i )
         {
+        #if defined(__GNUC__) && !defined(__MINGW32__)  // Warning issued only on linux
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+        #endif
             case 12:    esi += (uint_fast32_t) s[ i + 11 ] << 24;
             case 11:    esi += (uint_fast32_t) s[ i + 10 ] << 16;
             case 10:    esi += (uint_fast32_t) s[ i + 9  ] << 8;
@@ -167,7 +169,9 @@ unsigned long long UOPPackage::getHash(const char * const s)
             case 2:     ebx += (uint_fast32_t) s[ i + 1  ] << 8;
             case 1:     ebx += (uint_fast32_t) s[ i ];
             break;
+        #if defined(__GNUC__) && !defined(__MINGW32__)
             #pragma GCC diagnostic pop
+        #endif
         }
 
         esi = ( esi ^ edi ) - ( ( edi >> 18 ) ^ ( edi << 14 ) );
@@ -220,8 +224,10 @@ unsigned long long UOPPackage::getHash(const std::string &s)
     {
         switch ( len - i )
         {
+        #if defined(__GNUC__) && !defined(__MINGW32__)  // Warning issued only on linux
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+        #endif
             case 12:    esi += (uint_fast32_t) s[ i + 11 ] << 24;
             case 11:    esi += (uint_fast32_t) s[ i + 10 ] << 16;
             case 10:    esi += (uint_fast32_t) s[ i + 9  ] << 8;
@@ -235,7 +241,9 @@ unsigned long long UOPPackage::getHash(const std::string &s)
             case 2:     ebx += (uint_fast32_t) s[ i + 1  ] << 8;
             case 1:     ebx += (uint_fast32_t) s[ i ];
             break;
+        #if defined(__GNUC__) && !defined(__MINGW32__)
             #pragma GCC diagnostic pop
+        #endif
         }
 
         esi = ( esi ^ edi ) - ( ( edi >> 18 ) ^ ( edi << 14 ) );

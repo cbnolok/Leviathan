@@ -24,7 +24,7 @@ QJsonObject ScriptsProfile::generateJsonObject()
     if (!m_useSpheretables)
     {
         QJsonArray scriptsToLoad;
-        for (size_t i = 0; i < m_scriptsToLoad.size(); i++)
+        for (size_t i = 0; i < m_scriptsToLoad.size(); ++i)
             scriptsToLoad.append(m_scriptsToLoad[i].c_str());
 
         obj["ScriptsToLoad"] = scriptsToLoad;
@@ -59,7 +59,7 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
     if (profilesListObj.isEmpty())
         return savedProfiles;
 
-    for (auto it = profilesListObj.begin(), end = profilesListObj.end(); it != end; it++) // for each profile
+    for (auto it = profilesListObj.begin(), end = profilesListObj.end(); it != end; ++it) // for each profile
     {
         QJsonObject profileObj = profilesListObj[it.key()].toObject();
         QJsonValue val = QJsonValue::Undefined;
@@ -96,7 +96,7 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
         {
             // load from a QJsonArray the script file list
             QJsonArray jsonScriptList = profileObj["ScriptsToLoad"].toArray();
-            for (int i = 0; i < jsonScriptList.size(); i++)
+            for (int i = 0; i < jsonScriptList.size(); ++i)
                 profile.m_scriptsToLoad.push_back(jsonScriptList[i].toString().toStdString());
         }
 

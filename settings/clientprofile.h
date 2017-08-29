@@ -10,13 +10,13 @@ class ClientProfile
 public:
     ClientProfile(std::string clientPath);
 
+    QJsonObject generateJsonObject();
+    static std::vector<ClientProfile> readJsonData();
+
     int m_index;
     std::string m_name;
     bool m_defaultProfile;
     std::string m_clientPath;
-
-    QJsonObject generateJsonObject();
-    static std::vector<ClientProfile> readJsonData();
 };
 
 #endif // CLIENTPROFILE_H

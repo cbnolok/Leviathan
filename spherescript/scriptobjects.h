@@ -76,26 +76,31 @@ public:
     std::vector<ScriptCategory*> m_categories;
     ScriptCategory *findCategory(const std::string &categoryName, bool createNew = true); // createNew: create a new category if one named categoryName doesn't exist.
 
-    class ScriptObjTreeIterator;
-    using iterator = ScriptObjTreeIterator;
+    class iterator;
     iterator begin();
     iterator end();
 };
 
-class ScriptObjTree::ScriptObjTreeIterator
+class ScriptObjTree::iterator
 {
+    friend iterator ScriptObjTree::begin();
+    friend iterator ScriptObjTree::end();
 private:
+    iterator(); // constructs an invalid iterator
     ScriptObjTree* m_parentTree;
     size_t m_currentCategoryIdx;
     size_t m_currentSubsectionIdx;
     size_t m_currentObjectIdx;
 
 public:
-    ScriptObjTreeIterator(ScriptObjTree* parentTree, size_t currentCategoryIdx, size_t currentSubsectionIdx, size_t currentObjectIdx);
-    bool operator==(ScriptObjTreeIterator& toCmp) const;
-    bool operator!=(ScriptObjTreeIterator& toCmp) const;
-    ScriptObjTreeIterator operator++();
+    iterator(ScriptObjTree* parentTree, size_t currentCategoryIdx, size_t currentSubsectionIdx, size_t currentObjectIdx);
+    bool operator==(iterator& toCmp) const;
+    bool operator!=(iterator& toCmp) const;
+    iterator operator++();      // pre-increment
+    iterator operator++(int);   // post-increment
     ScriptObj* operator*();
+
+    const size_t kInvalidIdx = (size_t)-1;
 };
 
 #endif // SCRIPTOBJECTS_H

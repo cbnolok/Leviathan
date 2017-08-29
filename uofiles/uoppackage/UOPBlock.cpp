@@ -30,7 +30,7 @@ UOPBlock::UOPBlock(int blockIndex) :
 
 UOPBlock::~UOPBlock()
 {
-    for (auto it = m_files.begin(), end = m_files.end(); it != end; it++)
+    for (auto it = m_files.begin(), end = m_files.end(); it != end; ++it)
         delete *it;
 }
 

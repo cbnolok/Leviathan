@@ -43,7 +43,7 @@ ScriptParser::~ScriptParser()
 void ScriptParser::run()
 {
     g_loadedScriptsProfile = m_profileIndex;
-    // TODO: fai leggere i files da spheretables
+    // TODO: enable reading scripts file from spheretables
     getFilesInDirectorySub(&g_scriptFileList, g_scriptsProfiles[m_profileIndex].m_scriptsPath);
 
 
@@ -54,7 +54,7 @@ void ScriptParser::run()
     emit notifyTPProgressMax(filesNumber);
     //QString msg("Parsing ");
     emit notifyTPMessage("Parsing scripts");
-    for (int i = 0; i < filesNumber; i++)
+    for (int i = 0; i < filesNumber; ++i)
     {
         //emit notifyTPMessage(msg + g_scriptFileList[i].c_str());
         loadFile(i, false);
@@ -71,7 +71,7 @@ void ScriptParser::run()
 
     size_t dupeObjs_num = m_scriptsDupeItems.size();
     int progressVal = 0;
-    for (size_t dupeObj_i = 0; dupeObj_i < dupeObjs_num; dupeObj_i++)
+    for (size_t dupeObj_i = 0; dupeObj_i < dupeObjs_num; ++dupeObj_i)
     {
         bool found = false;
         ScriptObj * dupeObj = m_scriptsDupeItems[dupeObj_i];
@@ -79,7 +79,7 @@ void ScriptParser::run()
             continue;   // error?
 
         bool isDUPEITEMnumerical = isStringNumericHex(dupeObj->m_dupeItem);
-        for (auto it = m_scriptsDupeParents.begin(), end = m_scriptsDupeParents.end(); it != end; it++)
+        for (auto it = m_scriptsDupeParents.begin(), end = m_scriptsDupeParents.end(); it != end; ++it)
         {
             ScriptObj * parentObj = *it;
             //if (!parentObj->m_dupeItem.empty())   // if it's a dupe item
@@ -132,13 +132,12 @@ void ScriptParser::run()
     std::deque<ScriptObj*>*     childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
     size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
     size_t childrenProcessed = 0;
-    for (int tree_i = 0; tree_i < 2; tree_i++)
+    for (int tree_i = 0; tree_i < 2; ++tree_i)
     {
         // Iterate one time for the items and one for the chars
 
-        auto curTree            = trees[tree_i];
         auto curChildObjects    = childObjects[tree_i];
-        for (size_t child_i = 0, child_s = curChildObjects->size(); child_i < child_s; child_i++)
+        for (size_t child_i = 0, child_s = curChildObjects->size(); child_i < child_s; ++child_i)
         {
             // Iterate through each object of the tree.
             // Now look inside each object of each subsection of each category to find the parent object.
@@ -147,54 +146,17 @@ void ScriptParser::run()
             ScriptObj* childObj = (*curChildObjects)[child_i];
             bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
 
-            for (size_t x = 0, xe = curTree->m_categories.size(); x < xe; x++)
-            {
-                ScriptCategory * originalCategory = curTree->m_categories[x];
-                for (size_t y = 0, ye = originalCategory->m_subsections.size(); y < ye; y++)
-                {
-                    ScriptSubsection * z = originalCategory->m_subsections[y];
-                    for (size_t w = 0, we = z->m_objects.size(); w < we; w++)
-                    {
-                        ScriptObj * parentObj = z->m_objects[w];
-                        if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
-                            continue;
-
-                        if (isChildIDNumeric)           // the object has ID = number
-                        {
-                            if (parentObj->m_ID != childObj->m_ID)
-                                continue;
-                        }
-                        else                            // the object has ID = defname
-                        {
-                            if (parentObj->m_defname != childObj->m_ID)
-                                continue;
-                        }
-
-                        found = true;
-                        childObj->m_display = parentObj->m_display;
-                        break;
-                    }
-                    if (found)
-                        break;
-                }
-                if (found)
-                    break;
-            }
-
-            /*
             for (auto it = trees[tree_i]->begin(), end = trees[tree_i]->end(); it != end; ++it)
             {
                 ScriptObj * parentObj = *it;
                 if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
                     continue;
 
-                if (isChildIDNumeric)           // the object has ID = number
-                {
+                if (isChildIDNumeric) {          // the object has ID = number
                     if (parentObj->m_ID != childObj->m_ID)
                         continue;
                 }
-                else                            // the object has ID = defname
-                {
+                else {                           // the object has ID = defname
                     if (parentObj->m_defname != childObj->m_ID)
                         continue;
                 }
@@ -208,10 +170,8 @@ void ScriptParser::run()
                 appendToLog("[WARNING](displayID) Couldn't find Parent Object (" + childObj->m_ID + ") " +
                             "for Child Object -> Defname=" + childObj->m_defname + ", ID=" + childObj->m_ID + ". " +
                             "File: " + g_scriptFileList[childObj->m_scriptFileIndex]);
-            */
 
-
-            childrenProcessed++;
+            ++childrenProcessed;
             int progressValNow = (int)( (childrenProcessed*150)/childItemsNum );
             if (progressValNow > progressVal)
             {
@@ -262,7 +222,7 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             std::getline(fileStream, line);
             if ( fileStream.bad() )
                 break;
-            m_scriptLine++;
+            ++m_scriptLine;
 
             if ( line.find('[') == std::string::npos )
                 continue;
@@ -299,7 +259,7 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             size_t index_argumentLeft = index_keywordRight + 1;
             while ( (blockStr[index_argumentLeft]==' ') || (blockStr[index_argumentLeft]=='\r') )
             {
-                index_argumentLeft++;
+                ++index_argumentLeft;
             }
             if (blockStr[index_argumentLeft]!=']')  // encountered the end of the block: argument not found
             {
@@ -774,12 +734,12 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
             break;
         }
 
-        m_scriptLine++;
+        ++m_scriptLine;
 
         // Remove leading spaces
         size_t linestart = 0;
         while ( isspace(line[linestart]) && linestart < line.length() )
-            linestart++;
+            ++linestart;
 
         // Checking if the block is commented.
         size_t index_comment = line.rfind("//", linestart + 1);     // reverse find, starting from the second character (position 1)
@@ -840,7 +800,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         size_t valueStart, valueEnd;
 
         //  Skip eventual whitespaces before the Value
-        for (valueStart = keywordEnd + 1; valueStart < line.length(); valueStart++)
+        for (valueStart = keywordEnd + 1; valueStart < line.length(); ++valueStart)
         {
             if (!isspace(line[valueStart]))
                 break;
@@ -853,7 +813,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         valueEnd--;
         while ( (valueEnd > valueStart) && (isspace(line[valueEnd]) || line[valueEnd] == '\n') )
             --valueEnd;
-        valueEnd++;     // to have the character number (starting from 1), instead of having the position (0-based)
+        ++valueEnd;     // to have the character number (starting from 1), instead of having the position (0-based)
 
         // Finally separate the keyword from the value.
         std::string keyword = line.substr(keywordStart, keywordEnd - keywordStart);

@@ -65,9 +65,9 @@ void MainTab_Items::updateViews()
     QStandardItem *root = m_organizer_model->invisibleRootItem();
 
     ScriptObjTree *trees[3] = { g_scriptObjTree_Items, g_scriptObjTree_Templates, g_scriptObjTree_Multis };
-    for (int tree_i = 0; tree_i < 3; tree_i++)
+    for (int tree_i = 0; tree_i < 3; ++tree_i)
     {
-        for (size_t category_i = 0; category_i < trees[tree_i]->m_categories.size(); category_i++)
+        for (size_t category_i = 0; category_i < trees[tree_i]->m_categories.size(); ++category_i)
         {
             ScriptCategory *category_inst = trees[tree_i]->m_categories[category_i];
             QStandardItem *category_item = new QStandardItem(category_inst->m_categoryName.c_str());
@@ -77,7 +77,7 @@ void MainTab_Items::updateViews()
             else if (tree_i == 2)
                 category_item->setForeground(QBrush(QColor("orange")));
             root->appendRow(category_item);
-            for (size_t subsection_i = 0; subsection_i < category_inst->m_subsections.size(); subsection_i++)
+            for (size_t subsection_i = 0; subsection_i < category_inst->m_subsections.size(); ++subsection_i)
             {
                 ScriptSubsection *subsection_inst = category_inst->m_subsections[subsection_i];
                 QStandardItem *subsectionItem = new QStandardItem(subsection_inst->m_subsectionName.c_str());
@@ -109,7 +109,7 @@ void MainTab_Items::on_treeView_organizer_clicked(const QModelIndex &index)
     QList<QStandardItem*> dupeItem_rowsElements;
 
     /* Populate the object list */
-    for (size_t subsection_i = 0; subsection_i < subsection_inst->m_objects.size(); subsection_i++)
+    for (size_t subsection_i = 0; subsection_i < subsection_inst->m_objects.size(); ++subsection_i)
     {
         // Build the two QStandardItem for each ScriptObj in this Subsection
 
@@ -169,7 +169,7 @@ void MainTab_Items::on_treeView_organizer_clicked(const QModelIndex &index)
     {
         ScriptObj *dupeObj = m_objMapQItemToScript[dupeItem_rowsElements[dupeItem_rowsElements_i]];
         // If it's a Dupe item, find the parent item inside the same Category and Subsection and append one another.
-        for (auto it = dupeObj->m_subsection->m_objects.begin(); it != dupeObj->m_subsection->m_objects.end(); it++)
+        for (auto it = dupeObj->m_subsection->m_objects.begin(); it != dupeObj->m_subsection->m_objects.end(); ++it)
         {
             if (!(*it)->m_dupeItem.empty())
                 continue;   // it's another dupe item

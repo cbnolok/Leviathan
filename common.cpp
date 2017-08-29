@@ -5,26 +5,26 @@
 
 void strToUpper(std::string &string)
 {
-    for (size_t i = 0; i < string.length(); i++)
+    for (size_t i = 0; i < string.length(); ++i)
         string[i] = toupper(string[i]);
 }
 
 void strToUpper(char *string)
 {
-    for (size_t i = 0; i < strlen(string); i++)
+    for (size_t i = 0; i < strlen(string); ++i)
         string[i] = toupper(string[i]);
 }
 
 
 void strToLower(std::string &string)
 {
-    for (size_t i = 0; i < string.length(); i++)
+    for (size_t i = 0; i < string.length(); ++i)
         string[i] = tolower(string[i]);
 }
 
 void strToLower(char *string)
 {
-    for (size_t i = 0; i < strlen(string); i++)
+    for (size_t i = 0; i < strlen(string); ++i)
         string[i] = tolower(string[i]);
 }
 

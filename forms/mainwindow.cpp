@@ -77,7 +77,7 @@ void MainWindow::onCustom_actionLoadDefaultClientProfile_triggered()
 {
     // Check which Client Profile is the default one
     int defaultProfileIndex = -1;
-    for (size_t i = 0; i < g_clientProfiles.size(); i++)
+    for (size_t i = 0; i < g_clientProfiles.size(); ++i)
     {
         if (g_clientProfiles[i].m_defaultProfile)
         {
@@ -119,7 +119,7 @@ void MainWindow::onCustom_actionLoadDefaultScriptsProfile_triggered()
 {
     // Check which Scripts Profile is the default one
     int defaultProfileIndex = -1;
-    for (size_t i = 0; i < g_scriptsProfiles.size(); i++)
+    for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
     {
         if (g_scriptsProfiles[i].m_defaultProfile)
         {

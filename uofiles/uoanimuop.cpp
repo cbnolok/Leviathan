@@ -2,6 +2,7 @@
 #include "../globals.h"
 #include "../common.h"
 #include "../sysio.h"
+#include "uoppackage/UOPError.h"
 #include "uoppackage/UOPPackage.h"
 #include "uoppackage/UOPBlock.h"
 #include "uoppackage/UOPFile.h"
@@ -34,7 +35,7 @@ void UOAnimUOP::buildAnimTable()
     unsigned progressVal = 0;
 
     // Parse anim data in each AnimationFrame*.uop
-    for (int uopFile_i = 1; uopFile_i <= 4; uopFile_i++)
+    for (int uopFile_i = 1; uopFile_i <= 4; ++uopFile_i)
     {
         std::string path = m_clientPath + "AnimationFrame" + std::to_string(uopFile_i) + ".uop";
 
@@ -47,14 +48,22 @@ void UOAnimUOP::buildAnimTable()
         // Read the data in order to access later to each file by its hash
         uoppackage::UOPPackage& package = m_animUOPs[uopFile_i - 1];
         package.load(path);
+        if (uoppackage::errorHandler.errorOccurred())   // check if there was an error when extracting the uop file
+        {
+            appendToLog("UOPPackage error!");
+            auto errors = uoppackage::errorHandler.getErrorQueue();
+            for (std::string str : errors)
+                appendToLog(str);
+            return;
+        }
 
         auto blocks = package.getBlocks();
 
-        for (size_t block_i = 0, block_max = blocks.size(); block_i < block_max; block_i++)
+        for (size_t block_i = 0, block_max = blocks.size(); block_i < block_max; ++block_i)
         {
             uoppackage::UOPBlock* curBlock = blocks[block_i];
             auto files = curBlock->getFiles();
-            for (size_t file_i = 0, file_max = files.size(); file_i < file_max; file_i++)
+            for (size_t file_i = 0, file_max = files.size(); file_i < file_max; ++file_i)
             {
                 uoppackage::UOPFile* curFile = files[file_i];
 
@@ -84,15 +93,15 @@ void UOAnimUOP::buildAnimTable()
     */
     progressVal = 0;
 
-    for (int animId = 0; animId < 2048; animId++)
+    for (int animId = 0; animId < 2048; ++animId)
     {
-        for (int grpId = 0; grpId < 100; grpId++)
+        for (int grpId = 0; grpId < 100; ++grpId)
         {
             char hashString[100];
             sprintf(hashString, "build/animationlegacyframe/%06i/%02i.bin", animId, grpId);
             unsigned long long hash = uoppackage::UOPPackage::getHash(hashString);
             int found = -1;
-            for (int i = 0, max = (int)m_animationsData.size(); i < max; i++)
+            for (int i = 0, max = (int)m_animationsData.size(); i < max; ++i)
             {
                 if (m_animationsData[i].hash == hash)
                 {
@@ -151,6 +160,15 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
     animFile->unpack(fin, decData, decDataSize);
     fin.close();
 
+    if (uoppackage::errorHandler.errorOccurred())   // check if there was an error when extracting the uop file
+    {
+        appendToLog("UOPPackage error!");
+        auto errors = uoppackage::errorHandler.getErrorQueue();
+        for (std::string str : errors)
+            appendToLog(str);
+        return UOPFrameData{};
+    }
+
     size_t decDataOff = 0;
 
     // read frame header
@@ -189,7 +207,7 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
     //  and separatedly from the pixel data.
     std::vector<UOPFrameData> frameDataVec;
 
-    for (unsigned int frame_i = 0; frame_i < frameCount; frame_i++)
+    for (unsigned int frame_i = 0; frame_i < frameCount; ++frame_i)
     {
         UOPFrameData curFrameData;
         curFrameData.dataStart = decDataOff;
@@ -212,7 +230,7 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
             while (vsize + 1 != curFrameData.frameId)
             {
                 frameDataVec.push_back(UOPFrameData{ });
-                vsize++;
+                ++vsize;
             }
         }
         */
@@ -224,7 +242,7 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
         while (vectorSize != 50)
         {
             frameDataVec.push_back(UOPFrameData{ });
-            vectorSize++;
+            ++vectorSize;
         }
     }
 
@@ -248,7 +266,7 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
         groupID = action;
     else
     {
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; ++i)
         {
             if (m_animationsMatrix[animID][i] != nullptr)
                 groupID = i;
@@ -261,6 +279,11 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
     char* decData = nullptr;    // buffer filled by loadFrameData, it will contain the decompressed animation data
     size_t decDataSize = 0;     // size of the decompressed data (in bytes)
     UOPFrameData frameData = loadFrameData(bodyID, groupID, direction, frame, decData, decDataSize);
+    if (frameData.pixelDataOffset == 0) // uninitialized --> error
+    {
+        delete[] decData;
+        return nullptr;
+    }
 
     size_t decDataOff = frameData.dataStart + frameData.pixelDataOffset;
 
@@ -315,7 +338,7 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
         if (X < 0 || Y < 0 || Y >= height || X >= width)
             continue;
 
-        for ( unsigned int k = 0; k < xRun; k++ )
+        for ( unsigned int k = 0; k < xRun; ++k )
         {
             uint_fast8_t palette_index = 0;
             memcpy(&palette_index, decData + decDataOff, 1);

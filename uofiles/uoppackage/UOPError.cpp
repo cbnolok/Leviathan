@@ -8,11 +8,11 @@ namespace uoppackage
 UOPError errorHandler;
 
 
-std::deque<std::string> UOPError::getErrorQueue() const {
+const std::deque<std::string> UOPError::getErrorQueue() const {
     return m_errorQueue;
 }
 bool UOPError::errorOccurred() const {
-    return m_errorQueue.empty();
+    return !m_errorQueue.empty();
 }
 void UOPError::clearErrorQueue() {
     m_errorQueue.clear();

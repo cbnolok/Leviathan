@@ -93,7 +93,7 @@ bool isWindow(Window &windowToFind, Display *display, Window &winRoot)
     unsigned long windowListSize;
     Window* list = getWindowList(display, winRoot, windowListSize);
 
-    for (unsigned long i = 0; i < windowListSize; i++)
+    for (unsigned long i = 0; i < windowListSize; ++i)
     {
         if (list[i] == windowToFind)
             return true;
@@ -114,7 +114,7 @@ bool KeystrokeSender_Linux::findUOWindow()
 
     // Obtain the ID of the window with the given title.
     m_UOWindow = None;
-    for (unsigned long i = 0; i < windowsCount; i++)
+    for (unsigned long i = 0; i < windowsCount; ++i)
     {
         char* windowName = getWindowName(m_display,list[i]);
         std::string strWindowName(windowName);
@@ -203,7 +203,7 @@ bool KeystrokeSender_Linux::sendString(const char * const str, bool enterTermina
         return false;
 
     bool ret = true;
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; ++i)
     {
         if ( !_sendChar(str[i]) )
         {
@@ -250,7 +250,7 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
     // Obtain the handle of the window with the given title.
     char* windowName;
     Window* UOWindow = NULL;
-    for (unsigned long i = 0; i < windowsCount; i++)
+    for (unsigned long i = 0; i < windowsCount; ++i)
     {
         windowName = getWindowName(display,list[i]);
         std::string strWindowName(windowName);

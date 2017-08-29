@@ -41,9 +41,9 @@ private:
 
     struct UOPFrameData
     {
-        size_t dataStart;
-        //uint16_t frameId;
-        unsigned int pixelDataOffset;
+        size_t dataStart = 0;
+        //uint_fast16_t frameId;
+        unsigned int pixelDataOffset = 0;
     };
 
     std::string m_clientPath;

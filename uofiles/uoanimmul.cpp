@@ -120,14 +120,14 @@ bool UOAnimMul::loadBodyConvDef()
             continue;
 
         int iParams[5];
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; ++i)
             std::istringstream(params[i]) >> iParams[i];
 
         if (iParams[1] == 68)   // anim2
             iParams[1] = 122;
 
         int newAnimfile = 0;        // the count starts from 0, not 1 (so 1 -> anim2)
-        for (int i = 1; i < 5; i++)
+        for (int i = 1; i < 5; ++i)
         {
             if (iParams[i] != -1)
             {
@@ -351,7 +351,7 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
         if (X < 0 || Y < 0 || Y >= height || X >= width)
             continue;
 
-        for ( unsigned k = 0; k < xRun; k++ )
+        for ( unsigned k = 0; k < xRun; ++k )
         {
             uint_fast8_t palette_index = 0;
             fs_anim.read(reinterpret_cast<char*>(&palette_index), 1);

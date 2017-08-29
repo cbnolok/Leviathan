@@ -1,4 +1,5 @@
 #include "sysio.h"
+#include "common.h"
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -36,8 +37,7 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string directory
 {
     // This function checks recursively in the given folder.
     // TODO: right now doesn't get saves and .ini.
-    if (directory[directory.length()] != '/')
-        directory += '/';
+    standardizePath(directory);
 
 #ifdef _WIN32
     HANDLE dir;
