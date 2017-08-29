@@ -1,0 +1,15 @@
+branches:
+  only:
+    - master
+
+shallow_clone: true
+clone_depth: 1
+
+install:
+  - set QTDIR=C:\Qt\5.9\mingw53_32
+  
+  - set PATH=%PATH%;%QTDIR%\bin;C:\MinGW\bin
+  
+build_script:
+  - qmake Leviathan.pro
+  - mingw32-make
