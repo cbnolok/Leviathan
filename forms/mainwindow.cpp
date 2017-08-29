@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "globals.h"
+#include "version.h"
 #include "../spherescript/scriptparser.h"
 #include "maintab_items.h"
 #include "maintab_chars.h"
@@ -17,6 +18,18 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // Setting version in the title bar
+    #define STRINGIFY(x) #x
+    #define TOSTRING(x) STRINGIFY(x)
+    QString version = TOSTRING(LEVIATHAN_VERSION);
+    #undef STRINGIFY
+    #undef TOSTRING
+    #ifndef BUILD_NOT_AUTOMATIC
+        version += "(automated)";
+    #endif
+    this->setWindowTitle(this->windowTitle() + " - version " + version);
+
 
     // Load settings and profiles
     g_settings = Settings::readJsonData();

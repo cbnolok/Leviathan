@@ -4,13 +4,14 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui widgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = Leviathan
 TEMPLATE = app
 
+CONFIG += c++11
 
 SOURCES += \
     common.cpp \
@@ -88,7 +89,8 @@ HEADERS  += \
     keystrokesender/keystrokesender.h \
     forms/subdlg_taskprogress.h \
     settings/settings.h \
-    forms/dlg_settings.h
+    forms/dlg_settings.h \
+    version.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -121,10 +123,8 @@ win32:!unix
         # MinGW
         #   Copy zlib dll to the build directory and dynamically link it
         contains(QT_ARCH, x86_64) {
-            QMAKE_PRE_LINK += $$QMAKE_COPY \"$$PWD\\winlibs\\64\\*.dll\" \"$$DESTDIR\"
             LIBS += -L\"$$PWD\\winlibs\\64\" -lz
         } else {
-            QMAKE_PRE_LINK += $$QMAKE_COPY \"$$PWD\\winlibs\\32\\*.dll\" \"$$DESTDIR\"
             LIBS += -L\"$$PWD\\winlibs\\32\" -lz
         }
     }
@@ -133,11 +133,17 @@ win32:!unix
         #   dynamically link zlib and user32 (the latter for postmessage and such in KeystrokeSender...)
         #   (is user32 automatically dynamically linked by MinGW?)
         contains(QT_ARCH, x86_64) {
-            QMAKE_PRE_LINK += $$QMAKE_COPY \"$$PWD\\winlibs\\64\\*.dll\" \"$$DESTDIR\"
             LIBS += user32.lib \"$$PWD\\winlibs\\64\\zlib1.lib\"
         } else {
-            QMAKE_PRE_LINK += $$QMAKE_COPY \"$$PWD\\winlibs\\32\\*.dll\" \"$$DESTDIR\"
             LIBS += user32.lib \"$$PWD\\winlibs\\32\\zlib1.lib\"
+        }
+    }
+    contains(QMAKE_COPY, copy) {    # When it's compiled by AppVeyor, QMAKE_COPY is cp -f, not copy
+                                    # this way, we'll copy dlls only when building locally on Windows
+        contains(QT_ARCH, x86_64) {
+            QMAKE_PRE_LINK += $$QMAKE_COPY \"$$PWD\\winlibs\\64\\*.dll\" \"$$DESTDIR\"
+        } else {
+            QMAKE_PRE_LINK += $$QMAKE_COPY \"$$PWD\\winlibs\\32\\*.dll\" \"$$DESTDIR\"
         }
     }
 }

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Leviathan - GM assistant for SphereServer - version 0.1</string>
+   <string>Leviathan - GM assistant for SphereServer</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_3">

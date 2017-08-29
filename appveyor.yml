@@ -6,10 +6,28 @@ shallow_clone: true
 clone_depth: 1
 
 install:
+  # Set Qt toolkit path
   - set QTDIR=C:\Qt\5.9\mingw53_32
-  
-  - set PATH=%PATH%;%QTDIR%\bin;C:\MinGW\bin
+
+  # Use MinGW shipped with Qt, since the one on C:\ is different and gives compilation errors!
+  - set PATH=%PATH%;%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin
+
+  # Build Leviathan version file
+  - python appveyor_generateversion.py
   
 build_script:
-  - qmake Leviathan.pro
-  - mingw32-make
+  - qmake Leviathan.pro CONFIG+=release
+  - mingw32-make -j2
+
+#deploy:
+#  release: Leviathan automatic build
+#  description: ''
+#  provider: GitHub
+#  auth_token:
+#    secure: <your encrypted token> # your encrypted token from GitHub
+#  artifact: /.*\.nupkg/            # upload all NuGet packages to release assets
+#  draft: false
+#  prerelease: false
+#  on:
+#    branch: master                 # release from master branch only
+#    appveyor_repo_tag: true        # deploy on tag push only

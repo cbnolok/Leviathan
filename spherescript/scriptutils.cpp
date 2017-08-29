@@ -30,7 +30,7 @@ int ScriptUtils::strToSphereInt(std::string str)   // it's important to work on 
     int ret;
     try
     {
-        ret = stoi(str, 0 , base);
+        ret = std::stoi(str, 0 , base);
     }
     catch (std::invalid_argument e)
     {

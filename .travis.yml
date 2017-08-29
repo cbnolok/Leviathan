@@ -1,0 +1,65 @@
+notifications:
+  email: false
+
+language: cpp
+compiler: gcc
+dist: trusty
+sudo: required
+
+branches:
+  only:
+    - master
+
+git:
+  depth: 1
+
+# preinstalled g++ and Qt versions are SO OLD, we need to update them manually...
+
+before_install:
+  # For g++
+  - sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 1397BC53640DB551
+  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+
+  # For Qt
+  - sudo add-apt-repository --yes ppa:beineri/opt-qt59-trusty
+
+  # Update informations about new available packages 
+  - sudo apt-get update -qq
+
+install:
+  # For g++
+  - sudo apt-get remove g++
+  - sudo apt-get install -qq g++-7
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
+
+  # For Qt
+  - sudo apt-get install -qq qt59base qt59imageformats qt59svg
+
+before_script:
+  # Set up the new Qt environment
+  - QTDIR="/opt/qt59"
+  - PATH="$QTDIR/bin:$PATH"
+  - source /opt/qt59/bin/qt59-env.sh
+
+  # Build Leviathan version file
+  - printf '#ifndef VERSION_H' > version.h
+  - printf '#define VERSION_H' >> version.h
+  - printf '#define LEVIATHAN_VERSION \\' >> version.h
+  - git log -1 --format=%ci >> version.h
+  - printf '#endif // VERSION_H' >> version.h
+
+script:
+  # - g++ --version
+  # - qmake --version
+  - qmake Leviathan.pro CONFIG+=release
+  - make -j2
+
+#deploy:
+#  provider: releases
+#  name: Leviathan automatic build
+#  api_key:
+#    secure: YOUR_API_KEY_ENCRYPTED
+#  file: "FILE TO UPLOAD"
+#  skip_cleanup: true
+#  on:
+#    tags: true
