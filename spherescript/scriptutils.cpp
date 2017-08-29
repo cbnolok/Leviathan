@@ -30,7 +30,7 @@ int ScriptUtils::strToSphereInt(std::string str)   // it's important to work on 
     int ret;
     try
     {
-        ret = std::stoi(str, 0 , base);
+        ret = stoi(str, 0 , base);
     }
     catch (std::invalid_argument e)
     {
@@ -49,7 +49,7 @@ int ScriptUtils::strToSphereInt(const char *str)
 int ScriptUtils::strToSphereInt16(std::string str)
 {
     int temp = ScriptUtils::strToSphereInt(str);
-    return (temp > UINT16_MAX) ? 0 : temp;
+    return (temp > (int)UINT16_MAX) ? 0 : temp;
 }
 
 int ScriptUtils::strToSphereInt16(const char *str)

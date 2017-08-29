@@ -1,5 +1,5 @@
-#ifndef _UOPFILE_H_
-#define _UOPFILE_H_
+#ifndef UOPFILE_H
+#define UOPFILE_H
 
 #include "UOPCompression.h"
 #include <fstream>
@@ -12,7 +12,7 @@ namespace uoppackage
 class UOPFile
 {
 public:
-    //const int size 34;
+    //static const int size 34;
 
 public:
     UOPFile(int fileIndex);
@@ -48,4 +48,5 @@ private:
 
 
 }
-#endif
+
+#endif // UOPFILE_H

@@ -7,8 +7,8 @@
 *   Current version: 2.0.1
 */
 
-#ifndef _UOPACKAGE_H_
-#define _UOPACKAGE_H_
+#ifndef UOPACKAGE_H
+#define UOPACKAGE_H
 
 #include <string>
 #include <vector>
@@ -48,4 +48,4 @@ private:
 
 }
 
-#endif //_UOPACKAGE_H_
+#endif // UOPACKAGE_H

@@ -7,7 +7,6 @@
 // i don't need the whole structure, because i use only a pointer to the class instance.
 class MainTab_Items;
 class MainTab_Chars;
-class Dlg_ProfileScripts_Options;
 
 namespace Ui {
 class MainWindow;
@@ -26,11 +25,18 @@ private slots:
     void onCustom_actionLoadDefaultScriptsProfile_triggered();
     void onCustom_actionEditClientProfiles_triggered();
     void onCustom_actionLoadDefaultClientProfile_triggered();
+    void onCustom_actionSettings_triggered();
+    void loadDefaultProfiles();
 
 private:
     Ui::MainWindow      *ui;
     MainTab_Items       *m_MainTab_Items_inst        = nullptr;
     MainTab_Chars       *m_MainTab_Chars_inst        = nullptr;
+
+    int getDefaultClientProfile();
+    int getDefaultScriptsProfile();
+    void loadClientProfile(int index);
+    void loadScriptProfile(int index);
 };
 
 

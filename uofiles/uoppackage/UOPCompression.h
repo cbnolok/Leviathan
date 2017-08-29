@@ -1,5 +1,5 @@
-#ifndef _UOPCOMPRESSION_H_
-#define _UOPCOMPRESSION_H_
+#ifndef UOPCOMPRESSION_H
+#define UOPCOMPRESSION_H
 
 namespace uoppackage
 {
@@ -15,4 +15,4 @@ enum class CompressionFlag
 
 }
 
-#endif
+#endif // UOPCOMPRESSION_H

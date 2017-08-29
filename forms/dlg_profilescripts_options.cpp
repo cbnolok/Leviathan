@@ -219,12 +219,12 @@ void Dlg_ProfileScripts_Options::saveProfilesToJson()
     if (!jsonFile.open(QIODevice::WriteOnly))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText("Error: can't open ScriptsProfiles.json! Can't save the profiles!");
+        errorDlg.setText("Error: can't open ScriptsProfiles.json! Can't save the Scripts Profiles!");
         errorDlg.exec();
         return;
     }
 
-    // Parse back all profiles (plus the new one) in json format.
+    // Convert all profiles (plus the new one) in Json format.
     QJsonObject mainJsonField;
     QJsonObject scriptsProfileJsonField;
     for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)

@@ -1,5 +1,5 @@
-#ifndef _UOPHEADER_H_
-#define _UOPHEADER_H_
+#ifndef UOPHEADER_H
+#define UOPHEADER_H
 
 #include <fstream>
 
@@ -11,7 +11,7 @@ namespace uoppackage
 class UOPHeader
 {
 public:
-    //const int size = 20;
+    //static const int size = 20;
 
 public:
     UOPHeader();
@@ -37,4 +37,4 @@ private:
 
 
 }
-#endif //_UOPHEADER_H_
+#endif // UOPHEADER_H

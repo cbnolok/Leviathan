@@ -46,7 +46,9 @@ SOURCES += \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
     keystrokesender/keystrokesender.cpp \
-    forms/subdlg_taskprogress.cpp
+    forms/subdlg_taskprogress.cpp \
+    settings/settings.cpp \
+    forms/dlg_settings.cpp
 
 HEADERS  += \
     common.h \
@@ -84,7 +86,9 @@ HEADERS  += \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \
-    forms/subdlg_taskprogress.h
+    forms/subdlg_taskprogress.h \
+    settings/settings.h \
+    forms/dlg_settings.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -93,7 +97,8 @@ FORMS    += \
     forms/maintab_items.ui \
     forms/dlg_profilescripts_options.ui \
     forms/dlg_profileclient_options.ui \
-    forms/subdlg_taskprogress.ui
+    forms/subdlg_taskprogress.ui \
+    forms/dlg_settings.ui
 
 
 Release:DESTDIR     = release

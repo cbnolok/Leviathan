@@ -1,5 +1,5 @@
-#ifndef _UOPBLOCK_H_
-#define _UOPBLOCK_H_
+#ifndef UOPBLOCK_H
+#define UOPBLOCK_H
 
 // i can't simply forward declare UOPPackage class because i need to declare a friend function here in UOPBlock class
 #include "UOPPackage.h"
@@ -15,7 +15,7 @@ class UOPFile;
 class UOPBlock
 {
 public:
-    //const int size = 12;
+    //static const int size = 12;
 
 public:
     //UOPBlock();
@@ -43,4 +43,5 @@ private:
 
 
 }
-#endif
+
+#endif // UOPBLOCK_H

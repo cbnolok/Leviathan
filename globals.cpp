@@ -6,6 +6,8 @@
 #include <QApplication>
 
 
+Settings g_settings;
+
 int g_loadedClientProfile = -1;
 std::vector<ClientProfile> g_clientProfiles;
 

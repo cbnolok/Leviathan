@@ -1,5 +1,5 @@
-#ifndef _UOPERROR_H_
-#define _UOPERROR_H_
+#ifndef UOPERROR_H
+#define UOPERROR_H
 
 #include <string>
 #include <deque>
@@ -17,7 +17,7 @@ class UOPError
     friend class UOPPackage;
 
 public:
-    UOPError() { }
+    //UOPError():
     //UOPError(const UOPError&);
     //void operator=(const UOPError&);
 
@@ -36,4 +36,4 @@ extern UOPError errorHandler;
 
 }
 
-#endif
+#endif // UOPERROR_H

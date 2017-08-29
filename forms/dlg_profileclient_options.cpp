@@ -217,12 +217,12 @@ void Dlg_ProfileClient_Options::saveProfilesToJson()
     if (!jsonFile.open(QIODevice::WriteOnly))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText("Error: can't open ClientProfiles.json! Can't save the profiles!");
+        errorDlg.setText("Error: can't open ClientProfiles.json! Can't save the Client Profiles!");
         errorDlg.exec();
         return;
     }
 
-    // Parse back all profiles (plus the new one) in json format.
+    // Convert all profiles (plus the new one) in Json format.
     QJsonObject mainJsonField;
     QJsonObject clientProfileJsonField;
     for (size_t i = 0; i < g_clientProfiles.size(); ++i)

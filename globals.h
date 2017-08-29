@@ -1,13 +1,15 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include "settings/settings.h"
 #include "settings/clientprofile.h"
 #include "settings/scriptsprofile.h"
 #include "forms/maintab_log.h"
 
 
-// Client/Scripts profiles
+extern Settings g_settings;     // contains general settings
 
+// Client/Scripts profiles
 extern int g_loadedClientProfile;                       // index of the current client profile
 extern std::vector<ClientProfile> g_clientProfiles;     // contains all of the client profiles
 
