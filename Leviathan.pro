@@ -18,17 +18,20 @@ SOURCES += \
     globals.cpp \
     main.cpp \
     sysio.cpp \
-    forms/dlg_profileclient_options.cpp \
-    forms/dlg_profilescripts_options.cpp \
+    forms/mainwindow.cpp \
     forms/maintab_chars.cpp \
     forms/maintab_items.cpp \
     forms/maintab_log.cpp \
-    forms/mainwindow.cpp \
+    forms/dlg_profileclient_options.cpp \
+    forms/dlg_profilescripts_options.cpp \
+    forms/dlg_settings.cpp \
+    forms/subdlg_taskprogress.cpp \
     qtutils/checkableproxymodel.cpp \
     qtutils/delayedexecutiontimer.cpp \
     qtutils/modelutils.cpp \
     settings/clientprofile.cpp \
     settings/scriptsprofile.cpp \
+    settings/settings.cpp \
     spherescript/scriptobjects.cpp \
     spherescript/scriptparser.cpp \
     spherescript/scriptutils.cpp \
@@ -46,26 +49,26 @@ SOURCES += \
     keystrokesender/keystrokesender_common.cpp \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
-    keystrokesender/keystrokesender.cpp \
-    forms/subdlg_taskprogress.cpp \
-    settings/settings.cpp \
-    forms/dlg_settings.cpp
+    keystrokesender/keystrokesender.cpp
 
 HEADERS  += \
     common.h \
     globals.h \
     sysio.h \
-    forms/dlg_profileclient_options.h \
-    forms/dlg_profilescripts_options.h \
+    forms/mainwindow.h \
     forms/maintab_chars.h \
     forms/maintab_items.h \
     forms/maintab_log.h \
-    forms/mainwindow.h \
+    forms/dlg_profileclient_options.h \
+    forms/dlg_profilescripts_options.h \
+    forms/dlg_settings.h \
+    forms/subdlg_taskprogress.h \
     qtutils/checkableproxymodel.h \
     qtutils/delayedexecutiontimer.h \
     qtutils/modelutils.h \
     settings/clientprofile.h \
     settings/scriptsprofile.h \
+    settings/settings.h \
     spherescript/scriptobjects.h \
     spherescript/scriptparser.h \
     spherescript/scriptutils.h \
@@ -87,9 +90,6 @@ HEADERS  += \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \
-    forms/subdlg_taskprogress.h \
-    settings/settings.h \
-    forms/dlg_settings.h \
     version.h
 
 FORMS    += \
@@ -99,8 +99,8 @@ FORMS    += \
     forms/maintab_items.ui \
     forms/dlg_profilescripts_options.ui \
     forms/dlg_profileclient_options.ui \
-    forms/subdlg_taskprogress.ui \
-    forms/dlg_settings.ui
+    forms/dlg_settings.ui \
+    forms/subdlg_taskprogress.ui
 
 
 Release:DESTDIR     = release
