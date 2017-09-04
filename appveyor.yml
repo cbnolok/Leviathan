@@ -19,7 +19,7 @@ build_script:
   - qmake Leviathan.pro CONFIG+=release
   - mingw32-make -j2
 
-after_build:
+deploy_script:
   - cmd: mkdir deploy
   - cmd: copy /Y release\Leviathan.exe deploy
 
@@ -29,7 +29,7 @@ after_build:
   #- cmd: del deploy\*64*.dll
 
   # Copy extra required libs
-  - cmd: copy /Y winlibs\32\zlib1.dll deploy
+  - cmd: copy /Y ..\winlibs\32\zlib1.dll deploy
 
   # Pack everything in a zip
   - cmd: 7z a LeviathanWin32-automated.zip deploy\*
