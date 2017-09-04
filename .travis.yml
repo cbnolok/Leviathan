@@ -21,7 +21,7 @@ before_install:
   - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
 
   # For Qt
-  - sudo add-apt-repository --yes ppa:beineri/opt-qt59-trusty
+  - sudo add-apt-repository --yes ppa:beineri/opt-qt591-trusty
 
   # Update informations about new available packages 
   - sudo apt-get update -qq
@@ -51,6 +51,7 @@ before_script:
 script:
   # - g++ --version
   # - qmake --version
+  - cd src
   - qmake Leviathan.pro CONFIG+=release
   - make -j2
 

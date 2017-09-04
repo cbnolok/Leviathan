@@ -1,3 +1,5 @@
+# This script overwrites the standard version.h, which is used for non-automatic builds
+
 from os import environ
 
 f = open("version.h", "w")

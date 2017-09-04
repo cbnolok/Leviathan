@@ -116,7 +116,7 @@ bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTermi
     {
         if (!sendChar(str[i]))
             return false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        std::this_thread::sleep_for(std::chrono::milliseconds(60));
     }
 
     if (enterTerminated)
