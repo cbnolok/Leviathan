@@ -30,7 +30,7 @@ public:
     int getDecompressedSize() const;
     unsigned long long getFileHash() const;
     unsigned int getDataBlockHash() const;
-    CompressionFlag getCompression() const;
+    CompressionFlag_t getCompression() const;
     //const std::string& getFileName() const;
 
 private:
@@ -42,7 +42,7 @@ private:
     unsigned int m_decompressedSize;
     unsigned long long m_fileHash;
     unsigned int m_dataBlockHash;
-    CompressionFlag m_compression;
+    CompressionFlag_t m_compression;
     //std::string m_fileName;
 };
 

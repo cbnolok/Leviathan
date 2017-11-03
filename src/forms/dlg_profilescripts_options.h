@@ -1,5 +1,5 @@
-#ifndef PROFILE_OPTIONS_H
-#define PROFILE_OPTIONS_H
+#ifndef DLG_PROFILESCRIPTS_OPTIONS_H
+#define DLG_PROFILESCRIPTS_OPTIONS_H
 
 #include "../settings/scriptsprofile.h"
 #include <QDialog>
@@ -41,7 +41,7 @@ private:
     QStandardItemModel *m_profiles_model;
 
     std::vector<ScriptsProfile> m_scriptsProfiles;
-    //std::map<QStandardItem*, int> m_profilesMap;    // links the item in the profiles list to the number of
+    //std::map<QStandardItem*, int> m_profilesMap;    // links the item in the profiles list to the index of the profile
     int m_currentProfileIndex = -1;
 
     void updateProfilesView();
@@ -52,4 +52,4 @@ private:
 };
 
 
-#endif // PROFILE_OPTIONS_H
+#endif // DLG_PROFILESCRIPTS_OPTIONS_H

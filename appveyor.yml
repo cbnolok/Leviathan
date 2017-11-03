@@ -19,9 +19,10 @@ build_script:
   - cd src
   - qmake Leviathan.pro CONFIG+=release
   - mingw32-make -j2
+  - cd ..
+  #- cd %APPVEYOR_BUILD_FOLDER%
 
-deploy_script:
-  - cd ..		# i was in src directory
+after_build:
   - mkdir deploy
   - copy /Y src\release\Leviathan.exe deploy
 
@@ -34,17 +35,21 @@ deploy_script:
   - copy /Y winlibs\32\zlibwapi.dll deploy
 
   # Pack everything in a zip
-  - 7z a LeviathanWin32-automated.zip deploy\*
+  - 7z a LeviathanWin32-automated-%APPVEYOR_REPO_TAG_NAME%.zip deploy\*
 
-#deploy:
-#  release: Leviathan automatic build
-#  description: ''
-#  provider: GitHub
-#  auth_token:
-#    secure: <your encrypted token> # your encrypted token from GitHub
-#  artifact: /.*\.nupkg/            # upload all NuGet packages to release assets
-#  draft: false
-#  prerelease: false
-#  on:
-#    branch: master                 # release from master branch only
-#    appveyor_repo_tag: true        # deploy on tag push only
+artifacts:
+  - path: LeviathanWin32-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+    name: zipbin
+
+deploy:
+  release: $(APPVEYOR_REPO_TAG_NAME)
+  description: ''
+  provider: GitHub
+  auth_token:
+    secure: Hb86lGnsXj56Q4P+Y1pRpovrFJ5Qa/Bn6+Zr9L6Maqmlx978GU3hFhWcqpTD326w
+  artifact: zipbin
+  draft: false
+  prerelease: false
+  on:
+    branch: master                 # release from master branch only
+    appveyor_repo_tag: true        # deploy on tag push only

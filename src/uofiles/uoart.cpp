@@ -17,7 +17,7 @@ UOArt::~UOArt()
 */
 
 
-QImage* UOArt::drawArt(int id, int hueIndex, bool partialHue)
+QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
 {
     /*
     There are three types of art images; land, static, and UO alpha
@@ -29,9 +29,9 @@ QImage* UOArt::drawArt(int id, int hueIndex, bool partialHue)
     */
 
     unsigned lookup = UOIdx::getLookup(m_clientPath + "artidx.mul", id);
-    if (lookup == (unsigned)-1)
+    if (lookup == UOIdx::kInvalidLookup)
     {
-        appendToLog("Error looking up artidx.mul");
+        appendToLog(QString("Error looking up artidx.mul (requested id %1).").arg(id).toStdString());
         return nullptr;
     }
 

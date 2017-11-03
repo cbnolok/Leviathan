@@ -271,22 +271,11 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileAdd_clicked()
 
     g_scriptsProfiles.push_back(newProfile);
 
-    // Add item in the profiles list.
-    QStandardItem *newProfileItem = new QStandardItem(newProfile.m_name.c_str());
-    if (newProfile.m_defaultProfile)
-    {
-        newProfileItem->setForeground(QBrush(QColor("blue")));  // set blue text color for the default profile
-        for (int i = 0; i < m_profiles_model->rowCount(); ++i )
-        {
-            QModelIndex iIndex = m_profiles_model->index(i,0);
-            QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
-            iItem->setForeground(QBrush(QColor("black")));    // set black color for non default profiles
-        }
-    }
-    m_profiles_model->appendRow(newProfileItem);
+    // Refresh the profiles list.
+    updateProfilesView();
+
     // Since the ScriptsProfile instance and the newProfileItem are added sequentially, the index of ScriptsProfile instance
     //  inside the g_scriptsProfiles vector corresponds to the QStandardItem row.
-
     saveProfilesToJson();
 }
 
@@ -335,26 +324,20 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
     ScriptsProfile *sp = &g_scriptsProfiles[m_currentProfileIndex];
     sp->m_name = ui->lineEdit_editName->text().toStdString();
     sp->m_scriptsPath = ui->lineEdit_editPath->text().toStdString();
-
     sp->m_defaultProfile = (ui->checkBox_setDefaultProfile->checkState() == Qt::Unchecked) ? false: true;
     if (sp->m_defaultProfile)
     {
-        for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
+        for (int i = 0, sz = (int)g_scriptsProfiles.size(); i < sz; ++i)
         {
-            QModelIndex iIndex = m_profiles_model->index((int)i,0);
-            QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
-
-            if ((int)i != m_currentProfileIndex)
-            {
-                g_scriptsProfiles[i].m_defaultProfile;
-                iItem->setForeground(QBrush(QColor("black")));    // set black color for non default profiles
-            }
-            else
-                iItem->setForeground(QBrush(QColor("blue")));    // set blue color for the default profile
+            if (i != m_currentProfileIndex)
+                g_scriptsProfiles[i].m_defaultProfile = false;
         }
     }
-
     sp->m_useSpheretables = (ui->checkBox_spheretables->checkState() == Qt::Unchecked) ? false: true;
+
+    // Refresh the profiles list.
+    updateProfilesView();
+
     if (!sp->m_useSpheretables)
     {
         QStringList selectedScripts = ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(m_scripts_model, ui->treeView_scripts->rootIndex());

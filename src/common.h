@@ -2,9 +2,10 @@
 #define COMMON_H
 
 #include <string>
+#include <map>
 
-
-//#define countof(array) sizeof(array)/sizeof(array[0])
+//#define COUNTOF(array) sizeof(array)/sizeof(array[0])
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
 void strToUpper(std::string &string);   // Transforms the pased string to uppercase.
 void strToUpper(char *string);
@@ -17,6 +18,20 @@ bool isStringNumericDec(std::string &s);
 
 void standardizePath(std::string &s);   // Change back slash to forward slash and add (if not present) trailing forward slash
 
+
+template <typename key_t, typename value_t>
+typename std::map<key_t,value_t>::iterator mapSearchByKey(std::map<key_t,value_t> &_map, const value_t _val)
+// returns the iterator to the pair
+{
+    using it_t = typename std::map<key_t,value_t>::iterator;
+    it_t end = _map.end();
+    for (it_t it = _map.begin(); it != end; ++it)
+    {
+        if ( it->second == _val )
+            return it;
+    }
+    return end;
+}
 
 // Function by Marius: https://stackoverflow.com/questions/236129/split-a-string-in-c
 template < class ContainerT >

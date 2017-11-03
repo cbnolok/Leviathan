@@ -6,8 +6,6 @@
 #include "scriptutils.h"
 #include <QCoreApplication> // for QCoreApplication::processEvents();
 
-#include <QDebug>
-
 
 ScriptParser::ScriptParser(int profileIndex) :
     m_profileIndex(profileIndex), m_scriptLine(0)
@@ -43,8 +41,10 @@ ScriptParser::~ScriptParser()
 void ScriptParser::run()
 {
     g_loadedScriptsProfile = m_profileIndex;
+
     // TODO: enable reading scripts file from spheretables
-    getFilesInDirectorySub(&g_scriptFileList, g_scriptsProfiles[m_profileIndex].m_scriptsPath);
+    g_scriptFileList = g_scriptsProfiles[m_profileIndex].m_scriptsToLoad;
+    //getFilesInDirectorySub(&g_scriptFileList, g_scriptsProfiles[m_profileIndex].m_scriptsPath);
 
 
     /*  Store in memory scripts data    */
@@ -128,15 +128,15 @@ void ScriptParser::run()
     emit notifyTPProgressMax(150);
     progressVal = 0;
 
-    ScriptObjTree*              trees[]         = { g_scriptObjTree_Items,  g_scriptObjTree_Chars   };
-    std::deque<ScriptObj*>*     childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
+    ScriptObjTree*              displayID_trees[]         = { g_scriptObjTree_Items,  g_scriptObjTree_Chars   };
+    std::deque<ScriptObj*>*     displayID_childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
     size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
     size_t childrenProcessed = 0;
-    for (int tree_i = 0; tree_i < 2; ++tree_i)
+    for (uint tree_i = 0; tree_i < ARRAY_SIZE(displayID_trees); ++tree_i)
     {
         // Iterate one time for the items and one for the chars
 
-        auto curChildObjects    = childObjects[tree_i];
+        auto curChildObjects    = displayID_childObjects[tree_i];
         for (size_t child_i = 0, child_s = curChildObjects->size(); child_i < child_s; ++child_i)
         {
             // Iterate through each object of the tree.
@@ -146,7 +146,7 @@ void ScriptParser::run()
             ScriptObj* childObj = (*curChildObjects)[child_i];
             bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
 
-            for (auto it = trees[tree_i]->begin(), end = trees[tree_i]->end(); it != end; ++it)
+            for (auto it = displayID_trees[tree_i]->begin(), end = displayID_trees[tree_i]->back_it(); it != end; ++it)
             {
                 ScriptObj * parentObj = *it;
                 if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
@@ -183,6 +183,69 @@ void ScriptParser::run()
         }   // end of child iterating for loop
     }       // end of the tree iterating for loop
 
+
+    /*  Sort alphabetically the categories, the subsections and the objects   */
+
+    // this is important, since we must show the items in alphanetical order in the list views. this can be achieved by
+    //  directly sorting the elements in the Qt views, but without sorting also the elements inside ScriptObjTrees, when
+    //  using the search function and doing "search next" we would jump to an element which is after the given object in the
+    //  (not alphabetically sorted) ScriptObjTree but not after the element shown in the view (alphabetically sorted).
+
+    appendToLog("Sorting the data alphabetically...");
+    emit notifyTPMessage("Sorting the data alphabetically...");
+    emit notifyTPProgressMax(150);
+    progressVal = 0;
+
+    // lambda functions for sorting with std::sort
+    auto _sortCategory      = [](ScriptCategory* a, ScriptCategory* b)      -> bool {return a->m_categoryName   < b->m_categoryName;};
+    auto _sortSubsection    = [](ScriptSubsection* a, ScriptSubsection* b)  -> bool {return a->m_subsectionName < b->m_subsectionName;};
+    auto _sortDescription   = [](ScriptObj* a, ScriptObj* b)                -> bool {return a->m_description    < b->m_description;};
+
+    ScriptObjTree* sorting_trees[] =
+    {   objTree(SCRIPTOBJ_TYPE_ITEM),  objTree(SCRIPTOBJ_TYPE_CHAR), objTree(SCRIPTOBJ_TYPE_DEF), objTree(SCRIPTOBJ_TYPE_AREA),
+        objTree(SCRIPTOBJ_TYPE_SPAWN), objTree(SCRIPTOBJ_TYPE_TEMPLATE), objTree(SCRIPTOBJ_TYPE_SPELL), objTree(SCRIPTOBJ_TYPE_MULTI)
+    };
+
+    // sort categories
+    for (uint tree_i = 0; tree_i < ARRAY_SIZE(sorting_trees); ++tree_i)
+    {
+        auto& categories = sorting_trees[tree_i]->m_categories;
+        std::sort(categories.begin(), categories.end(), _sortCategory);
+    }
+
+    // sort subsections
+    for (uint tree_i = 0; tree_i < ARRAY_SIZE(sorting_trees); ++tree_i)
+    {
+        auto& categories = sorting_trees[tree_i]->m_categories;
+        for (size_t category_i = 0; category_i < categories.size(); ++category_i)
+        {
+            auto& subsections = categories[category_i]->m_subsections;
+            std::sort(subsections.begin(), subsections.end(), _sortSubsection);
+        }
+    }
+
+    // sort objects
+    for (uint tree_i = 0; tree_i < ARRAY_SIZE(sorting_trees); ++tree_i)
+    {
+        auto& categories = sorting_trees[tree_i]->m_categories;
+        for (size_t category_i = 0; category_i < categories.size(); ++category_i)
+        {
+            auto& subsections = categories[category_i]->m_subsections;
+            for (size_t subsection_i = 0; subsection_i < subsections.size(); ++subsection_i)
+            {
+                auto& objects = subsections[subsection_i]->m_objects;
+                std::sort(objects.begin(), objects.end(), _sortDescription);
+
+                int progressValNow = (int)( (subsection_i*150)/subsections.size() );
+                if (progressValNow > progressVal)
+                {
+                    progressVal = progressValNow;
+                    emit notifyTPProgressVal(progressVal);
+                    QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
+                }
+            }
+        }
+    }
 
     appendToLog(std::string("Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\" loaded."));
 }
@@ -751,7 +814,13 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         //  Removing whitespaces and '=' symbols, we should have only "ON@Create"
         // Also, valid assignations are both "DEFNAME= foo" and "DEFNAME  foo".
         std::string tempLine(line);
-        strToUpper(tempLine);       // need to put all to uppercase since std::string::find is case-sensitive.
+        // need to put all to uppercase since std::string::find is case-sensitive.
+        strToUpper(tempLine);
+        // remove whitespaces and '=' symbols
+        std::string charsToRemove(" =");
+        for (size_t i = 0; i < charsToRemove.length(); ++i)
+              tempLine.erase(std::remove(tempLine.begin(), tempLine.end(), charsToRemove[i]), tempLine.end());
+        // now look for our triggers
         size_t prefixPos = tempLine.find("ON@", linestart);
         if (prefixPos != std::string::npos)
         {
@@ -785,14 +854,9 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         {
             delimiterIndex = line.find_first_of(" \r", keywordStart);
             if (delimiterIndex != std::string::npos)
-            {
-                // Go to the first non-whitespace character
-                keywordEnd = delimiterIndex;
-            }
+                keywordEnd = delimiterIndex;    // Go to the first non-whitespace character
             else
-            {
                 continue;   // invalid?
-            }
         }
 
 
@@ -800,8 +864,8 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         size_t valueStart, valueEnd;
 
         //  Skip eventual whitespaces before the Value
-        for (valueStart = keywordEnd + 1; valueStart < line.length(); ++valueStart)
-        {
+        for (valueStart = delimiterIndex + 1; valueStart < line.length(); ++valueStart)
+        {   // i'm using delimiterIndex instead of keywordEnd because the first holds the rightmost delimiter position (the second holds the leftmost)
             if (!isspace(line[valueStart]))
                 break;
         }
@@ -810,7 +874,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         valueEnd = line.find("//", valueStart); // skip comments at the end of the line
         if (valueEnd == std::string::npos)
             valueEnd = line.length();
-        valueEnd--;
+        --valueEnd;
         while ( (valueEnd > valueStart) && (isspace(line[valueEnd]) || line[valueEnd] == '\n') )
             --valueEnd;
         ++valueEnd;     // to have the character number (starting from 1), instead of having the position (0-based)
@@ -941,33 +1005,26 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         }   // this closes the switch clause
     }   // this closes the while loop
 
-    if (!obj->m_dupeItem.empty())
-        goto GOTO_DUPEITEM;
+    // If it's a Dupe Item, skip Category, Subsection and Name assignation: they will be inherited by the Original Item later
+    //  (also most probably they aren't specified in the script).
+    if (obj->m_dupeItem.empty())   // if it's not a dupeitem
+    {
+        if (obj->m_category != nullptr)
+        {
+            obj->m_subsection = obj->m_category->findSubsection(objSubsection);
+            obj->m_subsection->m_objects.push_back(obj);    // Add the newly populated object to the subsection object vector.
+        }
+        else
+        {
+            obj->m_category = objTree(obj->m_type)->findCategory(SCRIPTCATEGORY_NONE_NAME);
+            obj->m_subsection = obj->m_category->findSubsection(objSubsection);
+            obj->m_subsection->m_objects.push_back(obj);
+        }
+        obj->m_subsection->m_category = obj->m_category;
 
-    if (obj->m_category != nullptr)
-    {
-        obj->m_subsection = obj->m_category->findSubsection(objSubsection);
-        obj->m_subsection->m_objects.push_back(obj);    // Add the newly populated object to the subsection object vector.
-    }
-    else
-    {
-        obj->m_category = objTree(obj->m_type)->findCategory(SCRIPTCATEGORY_NONE_NAME);
-        obj->m_subsection = obj->m_category->findSubsection(objSubsection);
-        obj->m_subsection->m_objects.push_back(obj);
-    }
-
-    // Use NAME (or Subsection, if there isn't a name) instead of DESCRIPTION
-    //  if DESCRIPTION == '@' or if there isn't a DESCRIPTION.
-    if (objDescription.empty())
-    {
-        if (!objName.empty())
-            obj->m_description = objName;
-        else if (obj->m_subsection->m_subsectionName != SCRIPTSUBSECTION_NONE_NAME)
-            obj->m_description = obj->m_subsection->m_subsectionName;
-    }
-    else
-    {
-        if ( (objDescription.length() == 1) && (objDescription[0] == '@') )
+        // Use NAME (or Subsection, if there isn't a name) instead of DESCRIPTION
+        //  if DESCRIPTION == '@' or if there isn't a DESCRIPTION.
+        if (objDescription.empty())
         {
             if (!objName.empty())
                 obj->m_description = objName;
@@ -975,12 +1032,31 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
                 obj->m_description = obj->m_subsection->m_subsectionName;
         }
         else
-            obj->m_description = objDescription;
-    }
+        {
+            //if ( (objDescription.length() == 1) && (objDescription[0] == '@') )
+            size_t atPos = objDescription.find_first_of('@');
+            if ( atPos != std::string::npos)    // substitute the @ character
+            {
+                obj->m_description = "";
 
-    // If it's a Dupe Item, skip Category, Subsection and Name assignation: they will be inherited by the Original Item later
-    //  (also most probably they aren't specified in the script).
-    GOTO_DUPEITEM:
+                // keep what's before the '@'
+                if (atPos > 0)
+                    obj->m_description += objDescription.substr(0, atPos);
+
+                // substitute the '@'
+                if (!objName.empty())
+                    obj->m_description += objName;
+                else if (obj->m_subsection->m_subsectionName != SCRIPTSUBSECTION_NONE_NAME)
+                    obj->m_description += obj->m_subsection->m_subsectionName;
+
+                // keep what's after the '@'
+                if ( (atPos + 1) < objDescription.length())
+                    obj->m_description += objDescription.substr(atPos + 1);
+            }
+            else
+                obj->m_description = objDescription;
+        }
+    }
 
     // Detect if the block header argument is the DEFNAME or the ID.
     int objIDHeader =  ScriptUtils::strToSphereInt(objArgument);

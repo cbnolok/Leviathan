@@ -130,22 +130,11 @@ void Dlg_ProfileClient_Options::on_pushButton_profileAdd_clicked()
 
     g_clientProfiles.push_back(newProfile);
 
-    // Add item in the profiles list.
-    QStandardItem *newProfileItem = new QStandardItem(newProfile.m_name.c_str());
-    if (newProfile.m_defaultProfile)
-    {
-        newProfileItem->setForeground(QBrush(QColor("blue")));  // set blue text color for the default profile
-        for (int i = 0; i < m_profiles_model->rowCount(); ++i )
-        {
-            QModelIndex iIndex = m_profiles_model->index(i,0);
-            QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
-            iItem->setForeground(QBrush(QColor("black")));    // set black color for non default profiles
-        }
-    }
-    m_profiles_model->appendRow(newProfileItem);
+    // Refresh the profiles list.
+    updateProfilesView();
+
     // Since the ClientProfile instance and the newProfileItem are added sequentially, the index of ClientProfile instance
     //  inside the g_clientProfiles vector corresponds to the QStandardItem row.
-
     saveProfilesToJson();
 }
 
@@ -180,16 +169,8 @@ void Dlg_ProfileClient_Options::on_pushButton_profileSave_clicked()
     {
         for (int i = 0, sz = (int)g_clientProfiles.size(); i < sz; ++i)
         {
-            QModelIndex iIndex = m_profiles_model->index(i,0);
-            QStandardItem *iItem = m_profiles_model->itemFromIndex(iIndex);
-
-            if ((int)i != m_currentProfileIndex)
-            {
+            if (i != m_currentProfileIndex)
                 g_clientProfiles[i].m_defaultProfile = false;
-                iItem->setForeground(QBrush(QColor("black")));    // set black color for non default profiles
-            }
-            else
-                iItem->setForeground(QBrush(QColor("blue")));    // set blue color for the default profile
         }
     }
 

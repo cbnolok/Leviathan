@@ -6,9 +6,11 @@ compiler: gcc
 dist: trusty
 sudo: required
 
-branches:
-  only:
-    - master
+#https://github.com/travis-ci/travis-ci/issues/6730
+#branches:
+#  only:
+#    - master
+
 
 git:
   depth: 1
@@ -57,14 +59,15 @@ script:
 
 #after_success:
   # Pack everything in a zip
-  #- tar -czf LeviathanLinux64-automated.zip Leviathan
+  - tar -czf LeviathanLinux64-automated-${TRAVIS_TAG}.zip Leviathan
 
-#deploy:
-#  provider: releases
-#  name: Leviathan automatic build
-#  api_key:
-#    secure: YOUR_API_KEY_ENCRYPTED
-#  file: "FILE TO UPLOAD"
-#  skip_cleanup: true
-#  on:
-#    tags: true
+deploy:
+  provider: releases
+  name: $TRAVIS_TAG
+  api_key:
+    secure: $GITHUB_AUTH
+  file: LeviathanLinux64-automated-${TRAVIS_TAG}.zip
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true

@@ -87,7 +87,8 @@ QStringList ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(Chec
             continue;
         const QModelIndex sourceIdx = model->mapToSource(idx);
 
-        bool checked = (idx.data(Qt::CheckStateRole).toInt()==Qt::Checked);
+        int role = idx.data(Qt::CheckStateRole).toInt();
+        bool checked = (role==Qt::Checked) || (role==Qt::PartiallyChecked);
         if ( (extractCheckedOnly && checked) || !extractCheckedOnly )
         {
             if (!sourceModel->isDir(sourceIdx))

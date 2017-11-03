@@ -77,30 +77,35 @@ public:
     ScriptCategory *findCategory(const std::string &categoryName, bool createNew = true); // createNew: create a new category if one named categoryName doesn't exist.
 
     class iterator;
-    iterator begin();
-    iterator end();
+    iterator end();         // invalid iterator (obtained when incrementing an iterator to the last item)
+    iterator begin();       // iterator to first item
+    iterator back_it();     // iterator to last item
 };
 
 class ScriptObjTree::iterator
 {
-    friend iterator ScriptObjTree::begin();
     friend iterator ScriptObjTree::end();
+    friend iterator ScriptObjTree::begin();
+    friend iterator ScriptObjTree::back_it();
 private:
-    iterator(); // constructs an invalid iterator
     ScriptObjTree* m_parentTree;
     size_t m_currentCategoryIdx;
     size_t m_currentSubsectionIdx;
     size_t m_currentObjectIdx;
 
 public:
+    iterator(); // constructs an invalid iterator
     iterator(ScriptObjTree* parentTree, size_t currentCategoryIdx, size_t currentSubsectionIdx, size_t currentObjectIdx);
-    bool operator==(iterator& toCmp) const;
-    bool operator!=(iterator& toCmp) const;
+    void operator=(const iterator& source);
+    bool operator==(const iterator& toCmp) const;
+    bool operator!=(const iterator& toCmp) const;
     iterator operator++();      // pre-increment
     iterator operator++(int);   // post-increment
+    iterator operator--();      // pre-decrement
+    iterator operator--(int);   // post-decrement
     ScriptObj* operator*();
 
-    const size_t kInvalidIdx = (size_t)-1;
+    static const size_t kInvalidIdx = (size_t)-1;
 };
 
 #endif // SCRIPTOBJECTS_H

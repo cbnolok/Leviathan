@@ -4,11 +4,13 @@
 #include "common.h"
 #include "../spherescript/scriptobjects.h"
 #include "../spherescript/scriptutils.h"
-#include "../keystrokesender/keystrokesender.h"
 #include "../uofiles/uoart.h"
+#include "subdlg_searchobj.h"
 #include <QMessageBox>
 #include <QStandardItem>
 #include <QGraphicsPixmapItem>
+#include <QKeyEvent>
+#include "../keystrokesender/keystrokesender.h"     // it has to be the last, because Xlib redefines some Qt macros
 //#include <thread>
 
 
@@ -18,8 +20,11 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    installEventFilter(this);   // catch the keystrokes
+
     // Get ready to send text to the client
     m_keystrokeSender = new keystrokesender::KeystrokeSender();
+    m_scriptSearch = nullptr;
 
     // Create the model for the organizer tree view
     m_organizer_model = new QStandardItemModel(0,0);
@@ -43,7 +48,11 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
     ui->treeView_objList->header()->setDefaultAlignment(Qt::AlignHCenter);
     // Stretch horizontal headers
     ui->treeView_objList->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-    ui->treeView_objList->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    ui->treeView_objList->header()->setSectionResizeMode(1, QHeaderView::Interactive);
+
+    // Set stretch factors to the splitter between the QGraphicsView and the lists layout
+    ui->splitter_img_lists->setStretchFactor(0,3);  // column 0: lists layout
+    ui->splitter_img_lists->setStretchFactor(1,1);  // column 1: QGraphicsView
 }
 
 MainTab_Items::~MainTab_Items()
@@ -55,10 +64,35 @@ MainTab_Items::~MainTab_Items()
     delete m_objList_model;
 }
 
+bool MainTab_Items::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() != QEvent::KeyPress)
+        return QObject::eventFilter(watched, event);
+
+    QKeyEvent* key = static_cast<QKeyEvent*>(event);
+    if ( (key->key()==Qt::Key_F2) || (key->key()==Qt::Key_F3) )
+    {
+        if (g_loadedScriptsProfile == -1)   // no profile loaded
+            return false;
+        if (m_scriptSearch == nullptr)      // i haven't set the search parameters
+            return false;
+
+        if (key->key()==Qt::Key_F3) // search forwards
+            doSearch(false);
+        else                        // search backwards
+            doSearch(true);
+
+        return false;
+    }
+    else
+        return QObject::eventFilter(watched, event);
+}
+
 void MainTab_Items::updateViews()
 {
     // Populate the Model to be applied to the QTreeView
     m_organizer_model->removeRows(0, m_organizer_model->rowCount());
+    m_categoryMap.clear();
     m_subsectionMap.clear();
     m_objList_model->removeRows(0, m_objList_model->rowCount());
     m_objMapQItemToScript.clear();
@@ -71,24 +105,25 @@ void MainTab_Items::updateViews()
     {
         for (size_t category_i = 0; category_i < trees[tree_i]->m_categories.size(); ++category_i)
         {
-            ScriptCategory *category_inst = trees[tree_i]->m_categories[category_i];
-            QStandardItem *category_item = new QStandardItem(category_inst->m_categoryName.c_str());
-            category_item->setSelectable(false);
+            ScriptCategory *categoryInst = trees[tree_i]->m_categories[category_i];
+            QStandardItem *categoryItem = new QStandardItem(categoryInst->m_categoryName.c_str());
+            m_categoryMap[categoryItem] = categoryInst;
+            categoryItem->setSelectable(false);
             if (tree_i == 1)
-                category_item->setForeground(QBrush(QColor("purple")));
+                categoryItem->setForeground(QBrush(QColor("purple")));
             else if (tree_i == 2)
-                category_item->setForeground(QBrush(QColor("orange")));
-            root->appendRow(category_item);
-            for (size_t subsection_i = 0; subsection_i < category_inst->m_subsections.size(); ++subsection_i)
+                categoryItem->setForeground(QBrush(QColor("orange")));
+            root->appendRow(categoryItem);
+            for (size_t subsection_i = 0; subsection_i < categoryInst->m_subsections.size(); ++subsection_i)
             {
-                ScriptSubsection *subsection_inst = category_inst->m_subsections[subsection_i];
-                QStandardItem *subsectionItem = new QStandardItem(subsection_inst->m_subsectionName.c_str());
-                category_item->appendRow(subsectionItem);
-                m_subsectionMap[subsectionItem] = subsection_inst;    // So that i know at which ScriptSubsection each QStandardItem corresponds.
+                ScriptSubsection *subsectionInst = categoryInst->m_subsections[subsection_i];
+                QStandardItem *subsectionItem = new QStandardItem(subsectionInst->m_subsectionName.c_str());
+                categoryItem->appendRow(subsectionItem);
+                m_subsectionMap[subsectionItem] = subsectionInst;    // So that i know at which ScriptSubsection each QStandardItem corresponds.
             }
         }
     }
-    m_organizer_model->sort(0, Qt::AscendingOrder);         // Order alphabetically.
+    //m_organizer_model->sort(0, Qt::AscendingOrder);   // Order alphabetically. -> not needed anymore, since the whole ScriptObjTree is now sorted after the parsing
 }
 
 void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelIndex &selected, const QModelIndex& /* UNUSED deselected */ )
@@ -106,6 +141,10 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
     m_objList_model->removeRows(0,m_objList_model->rowCount());
     m_objMapQItemToScript.clear();
     m_objMapScriptToQItem.clear();
+
+	// disable redrawing the view for every item inserted, so that it will update only once, after all the insertions
+    ui->treeView_organizer->setUpdatesEnabled(false);
+    ui->treeView_objList->setUpdatesEnabled(false);
 
     QStandardItem *root = m_objList_model->invisibleRootItem();
     QList<QStandardItem*> dupeItem_rowsElements;
@@ -171,7 +210,7 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
     {
         ScriptObj *dupeObj = m_objMapQItemToScript[dupeItem_rowsElements[dupeItem_rowsElements_i]];
         // If it's a Dupe item, find the parent item inside the same Category and Subsection and append one another.
-        for (auto it = dupeObj->m_subsection->m_objects.begin(); it != dupeObj->m_subsection->m_objects.end(); ++it)
+        for (auto it = dupeObj->m_subsection->m_objects.begin(), end = dupeObj->m_subsection->m_objects.end(); it != end; ++it)
         {
             if (!(*it)->m_dupeItem.empty())
                 continue;   // it's another dupe item
@@ -188,7 +227,7 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
             else
             {
                 // DUPEITEM property is a string, so a defname
-                if ((*it)->m_defname.compare(dupeObj->m_dupeItem) != 0)
+                if ((*it)->m_defname != (dupeObj->m_dupeItem))
                     continue;
                 QList<QStandardItem*> dupeItem_row;
                 dupeItem_row << dupeItem_rowsElements[dupeItem_rowsElements_i] << dupeItem_rowsElements[dupeItem_rowsElements_i+1];
@@ -198,7 +237,9 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
         }
     }
 
-    m_objList_model->sort(0, Qt::AscendingOrder);  // Order alphabetically.
+    //m_objList_model->sort(0, Qt::AscendingOrder);   // Order alphabetically. -> not needed anymore, since the whole ScriptObjTree is now sorted after the parsing
+    ui->treeView_organizer->setUpdatesEnabled(true);
+    ui->treeView_objList->setUpdatesEnabled(true);
 }
 
 void MainTab_Items::on_treeView_objList_doubleClicked(const QModelIndex &index)
@@ -287,3 +328,75 @@ void MainTab_Items::on_pushButton_remove_clicked()
     }
 }
 
+void MainTab_Items::doSearch(bool backwards)
+{
+    ScriptObj* obj;
+    if (!backwards)     // search forwards
+        obj = m_scriptSearch->next();
+    else                // search backwards
+        obj = m_scriptSearch->previous();
+    if (obj == nullptr) // not found
+    {
+        QMessageBox errorDlg(this);
+        errorDlg.setText("Not found!");
+        errorDlg.exec();
+        return;
+    }
+
+    ScriptCategory* category = obj->m_category;
+    auto categoryIt = mapSearchByKey(m_categoryMap, category);
+    if (categoryIt == m_categoryMap.end())      // not found? odd..
+        return;
+    //QStandardItem* categoryQ = categoryIt->first;
+
+    ScriptSubsection* subsection = obj->m_subsection;
+    auto subsectionIt = mapSearchByKey(m_subsectionMap, subsection);
+    if (subsectionIt == m_subsectionMap.end())  // not found? odd..
+        return;
+    QStandardItem* subsectionQ = subsectionIt->first;
+
+    QModelIndex emptyIdx;
+    QModelIndex subsectionIdx = m_organizer_model->indexFromItem(subsectionQ);
+    //QModelIndex categoryIdx = m_organizer_model->indexFromItem(categoryQ);
+    static QModelIndex prevSubsectionIdx;
+
+    ui->treeView_organizer->scrollTo(subsectionIdx, QAbstractItemView::PositionAtCenter);
+    //ui->treeView_organizer->setExpanded(categoryIdx, true);   // automatically expanded by the select method
+    ui->treeView_organizer->selectionModel()->select(subsectionIdx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
+    if (subsectionIdx != prevSubsectionIdx)
+    {
+        onManual_treeView_organizer_selectionChanged(subsectionIdx, emptyIdx);
+        prevSubsectionIdx = subsectionIdx;
+    }
+
+    QStandardItem* objQ = m_objMapScriptToQItem[obj];   // should check if found/not found?
+    QModelIndex objIdx = m_objList_model->indexFromItem(objQ);
+
+    onManual_treeView_objList_selectionChanged(objIdx, emptyIdx);
+    ui->treeView_objList->scrollTo(objIdx, QAbstractItemView::PositionAtCenter);
+    ui->treeView_objList->selectionModel()->select(objIdx, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Toggle);
+}
+
+void MainTab_Items::on_pushButton_search_clicked()
+{
+    if (g_loadedScriptsProfile == -1)
+        return;
+
+    SubDlg_SearchObj dlg(window());
+    if (!dlg.exec())
+        return;
+
+    const std::vector<ScriptObjTree*> trees =
+    {
+        objTree(SCRIPTOBJ_TYPE_ITEM),
+        objTree(SCRIPTOBJ_TYPE_TEMPLATE),
+        objTree(SCRIPTOBJ_TYPE_MULTI)
+    };
+
+    ScriptSearch::SearchBy_t searchBy;
+    bool caseSensitive;
+    std::string key;
+    dlg.getSearchData(searchBy, caseSensitive, key);
+    m_scriptSearch.reset(new ScriptSearch(trees, searchBy, caseSensitive, key));
+    doSearch(false);
+}

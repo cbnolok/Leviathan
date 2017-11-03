@@ -250,14 +250,18 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
     unsigned bodyIndex = getBodyLookupIndex(bodyID, action, direction, animFileNumber);
 
     unsigned lookup = UOIdx::getLookup(m_clientPath + animFileStr + ".idx", bodyIndex);
-    if (lookup == (unsigned)-1)
+    if (lookup == UOIdx::kInvalidLookup)
+    {
+        appendToLog( QString("Error looking up %1.idx (requested id %2).").arg(animFileStr.c_str(), bodyID).toStdString() );
         return nullptr;
+    }
 
     std::ifstream fs_anim;
     fs_anim.open(m_clientPath + animFileStr + ".mul", std::ifstream::in | std::ifstream::binary);
     if (!fs_anim.is_open())
         return nullptr;
     fs_anim.seekg(lookup, std::ios_base::beg);
+
 
     /*
     AnimationGroup
@@ -283,12 +287,12 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
     If the current chunk header is 0x7FFF7FFF, the image is completed.
     */
 
-    int16_t palette[256];
+    uint16_t palette[256];
     fs_anim.read(reinterpret_cast<char*>(palette), 2 * 256);
 
-    int_fast16_t frame_count = 0;
+    uint32_t frame_count = 0;
     fs_anim.read(reinterpret_cast<char*>(&frame_count), 4);
-    if (frame > frame_count)
+    if (frame > (int)frame_count)
     {
         fs_anim.close();
         return nullptr;
@@ -298,12 +302,13 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
     fs_anim.read(reinterpret_cast<char*>(frame_offsets), 4 * frame_count);
     fs_anim.seekg(lookup + (2*256) + frame_offsets[frame], std::ios_base::beg);    // go to the selected frame
 
-    int_fast16_t xCenter = 0, yCenter = 0;
-    int_fast16_t width = 0, height = 0;
+    int16_t xCenter = 0, yCenter = 0;
+    uint16_t width = 0, height = 0;
     fs_anim.read(reinterpret_cast<char*>(&xCenter), 2);
     fs_anim.read(reinterpret_cast<char*>(&yCenter), 2);
     fs_anim.read(reinterpret_cast<char*>(&width),   2);
     fs_anim.read(reinterpret_cast<char*>(&height),  2);
+
     if (height == 0 || width == 0)
     {
         fs_anim.close();
@@ -331,14 +336,14 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
 
         For this piece of code, the MulPatcher source helped A LOT!
         */
-        uint_fast32_t header = 0;
+        uint32_t header = 0;
         fs_anim.read(reinterpret_cast<char*>(&header), 4);
         if ( header == 0x7FFF7FFF )
             break;
 
-        uint_fast32_t xRun = header & 0xFFF;              // take first 12 bytes
-        uint_fast32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
-        uint_fast32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
+        uint32_t xRun = header & 0xFFF;             // take first 12 bytes
+        int32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
+        int32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
         // xOffset and yOffset are signed, so we need to compensate for that
         if (xOffset & 512)                  // 512 = 0x200
             xOffset |= (0xFFFFFFFF - 511);  // 511 = 0x1FF
@@ -348,12 +353,12 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
         int X = xOffset + xCenter;
         int Y = yOffset + yCenter + height;
 
-        if (X < 0 || Y < 0 || Y >= height || X >= width)
+        if (X < 0 || Y < 0 || Y >= (int)height || X >= (int)width)
             continue;
 
         for ( unsigned k = 0; k < xRun; ++k )
         {
-            uint_fast8_t palette_index = 0;
+            uint8_t palette_index = 0;
             fs_anim.read(reinterpret_cast<char*>(&palette_index), 1);
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
             if (hueIndex != 0)

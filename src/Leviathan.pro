@@ -48,7 +48,9 @@ SOURCES += \
     keystrokesender/keystrokesender_common.cpp \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
-    keystrokesender/keystrokesender.cpp
+    keystrokesender/keystrokesender.cpp \
+    spherescript/scriptsearch.cpp \
+    forms/subdlg_searchobj.cpp
 
 HEADERS  += \
     common.h \
@@ -89,7 +91,9 @@ HEADERS  += \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \
-    version.h
+    version.h \
+    spherescript/scriptsearch.h \
+    forms/subdlg_searchobj.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -99,7 +103,8 @@ FORMS    += \
     forms/dlg_profilescripts_options.ui \
     forms/dlg_profileclient_options.ui \
     forms/dlg_settings.ui \
-    forms/subdlg_taskprogress.ui
+    forms/subdlg_taskprogress.ui \
+    forms/subdlg_searchobj.ui
 
 
 Release:DESTDIR     = release
@@ -132,11 +137,20 @@ win32:!unix
         # Visual Studio
         #   Dynamically link zlib and user32 (the latter for postmessage and such in KeystrokeSender...)
         #   (is user32 automatically dynamically linked by MinGW?)
+
         contains(QT_ARCH, x86_64) {
-            LIBS += user32.lib \"$$PWD\\..\\winlibs\\64\\zlibwapi.lib\"
+            LIBS += -luser32 -L\"$$PWD\\..\\winlibs\\64\" -lzlibwapi
         } else {
-            LIBS += user32.lib \"$$PWD\\..\\winlibs\\32\\zlibwapi.lib\"
+            LIBS += -luser32 -L\"$$PWD\\..\\winlibs\\32\" -lzlibwapi
         }
+        DEFINES += "ZLIB_WINAPI=1"
+        DEFINES += "ZLIB_DLL=1"
+
+        #contains(QT_ARCH, x86_64) {
+        #    LIBS += user32.lib \"$$PWD\\..\\winlibs\\64\\zlibwapi.lib\"
+        #} else {
+        #    LIBS += user32.lib \"$$PWD\\..\\winlibs\\32\\zlibwapi.lib\"
+        #}
         #QMAKE_CXXFLAGS += /wd4068   # disable unknown pragma warning
     }
     contains(QMAKE_COPY, copy) {    # When it's compiled by AppVeyor, QMAKE_COPY is cp -f, not copy

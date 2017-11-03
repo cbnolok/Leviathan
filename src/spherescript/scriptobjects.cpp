@@ -24,9 +24,9 @@ ScriptSubsection::ScriptSubsection(std::string subsectionName) :
 
 ScriptSubsection::~ScriptSubsection()
 {
-    if (!m_objects.size())
+    if (m_objects.empty())
         return;
-    for (size_t i = m_objects.size()-1; i > 0; i--)
+    for (size_t i = m_objects.size() - 1; i > 0; --i)
         delete m_objects[i];
 }
 
@@ -41,9 +41,9 @@ ScriptCategory::ScriptCategory(std::string categoryName) :
 
 ScriptCategory::~ScriptCategory()
 {
-    if (!m_subsections.size())
+    if (m_subsections.empty())
         return;
-    for (size_t i = m_subsections.size()-1; i > 0; i--)
+    for (size_t i = m_subsections.size() - 1; i > 0; --i)
         delete m_subsections[i];
 }
 
@@ -85,9 +85,9 @@ ScriptObjTree::ScriptObjTree()
 
 ScriptObjTree::~ScriptObjTree()
 {
-    if (!m_categories.size())
+    if (m_categories.empty())
         return;
-    for (size_t i = m_categories.size()-1; i > 0; i--)
+    for (size_t i = m_categories.size() - 1; i > 0; --i)
         delete m_categories[i];
 }
 
@@ -115,6 +115,11 @@ ScriptCategory * ScriptObjTree::findCategory(const std::string& categoryName, bo
     return category;
 }
 
+ScriptObjTree::iterator ScriptObjTree::end()
+{
+    auto invalid = ScriptObjTree::iterator::kInvalidIdx;
+    return iterator(this, invalid, invalid, invalid);
+}
 
 ScriptObjTree::iterator ScriptObjTree::begin()
 {
@@ -131,23 +136,23 @@ ScriptObjTree::iterator ScriptObjTree::begin()
             }
         }
     }
-    return iterator();  // invalid iterator
+    return end();
 }
 
-ScriptObjTree::iterator ScriptObjTree::end()
+ScriptObjTree::iterator ScriptObjTree::back_it()
 {
-    if (m_categories.size() == 0)
-        return iterator();  // invalid iterator
+    if (m_categories.empty())
+        return end();
 
     size_t lastCategoryIdx = m_categories.size() - 1;
     ScriptCategory* lastCategory = m_categories[lastCategoryIdx];
-    if (lastCategory->m_subsections.size() == 0)
-        return iterator();
+    if (lastCategory->m_subsections.empty())
+        return end();
 
     size_t lastSubsectionIdx = lastCategory->m_subsections.size() - 1;
     ScriptSubsection* lastSubsection = lastCategory->m_subsections[lastSubsectionIdx];
-    if (lastSubsection->m_objects.size() == 0)
-        return iterator();
+    if (lastSubsection->m_objects.empty())
+        return end();
 
     size_t lastObjectIdx = lastSubsection->m_objects.size() - 1;
 
@@ -169,9 +174,18 @@ ScriptObjTree::iterator::iterator() :
 {
 }
 
-bool ScriptObjTree::iterator::operator==(iterator& toCmp) const
+void ScriptObjTree::iterator::operator=(const iterator& source)
 {
-    if ( (m_currentCategoryIdx == toCmp.m_currentCategoryIdx) &&
+    m_parentTree = source.m_parentTree;
+    m_currentCategoryIdx = source.m_currentCategoryIdx;
+    m_currentSubsectionIdx = source.m_currentSubsectionIdx;
+    m_currentObjectIdx = source.m_currentObjectIdx;
+}
+
+bool ScriptObjTree::iterator::operator==(const iterator& toCmp) const
+{
+    if ( (m_parentTree == toCmp.m_parentTree) &&
+         (m_currentCategoryIdx == toCmp.m_currentCategoryIdx) &&
          (m_currentSubsectionIdx == toCmp.m_currentSubsectionIdx) &&
          (m_currentObjectIdx == toCmp.m_currentObjectIdx) )
         return true;
@@ -179,7 +193,7 @@ bool ScriptObjTree::iterator::operator==(iterator& toCmp) const
         return false;
 }
 
-bool ScriptObjTree::iterator::operator!=(iterator& toCmp) const
+bool ScriptObjTree::iterator::operator!=(const iterator& toCmp) const
 {
     if ( *this == toCmp )
         return false;
@@ -206,10 +220,10 @@ ScriptObjTree::iterator ScriptObjTree::iterator::operator++()   // pre-increment
                 ++ m_currentCategoryIdx;
             else
             {
+                // "end" iterator
                 m_currentObjectIdx = kInvalidIdx;
                 m_currentSubsectionIdx = kInvalidIdx;
                 m_currentCategoryIdx = kInvalidIdx;
-                m_parentTree = nullptr;
             }
         }
     }
@@ -223,9 +237,48 @@ ScriptObjTree::iterator ScriptObjTree::iterator::operator++(int) // post-increme
     return oldIt;
 }
 
+ScriptObjTree::iterator ScriptObjTree::iterator::operator--()   // pre-decrement
+{
+    if (m_currentObjectIdx > 0)
+        -- m_currentObjectIdx;    
+    else
+    {
+        if (m_currentSubsectionIdx > 0)
+            -- m_currentSubsectionIdx;
+        else
+        {
+            if (m_currentCategoryIdx > 0)
+                -- m_currentCategoryIdx;
+            else
+            {
+                // "end" iterator
+                m_currentObjectIdx = kInvalidIdx;
+                m_currentSubsectionIdx = kInvalidIdx;
+                m_currentCategoryIdx = kInvalidIdx;
+                return *this;
+            }
+            // set the current sebsection index to the last subsection of the active category
+            m_currentSubsectionIdx = m_parentTree->m_categories[m_currentCategoryIdx]->m_subsections.size() - 1;
+        }
+        // set the current object index to the last object of the active subsection of the active category
+        m_currentObjectIdx = m_parentTree->m_categories[m_currentCategoryIdx]->m_subsections[m_currentSubsectionIdx]->m_objects.size() - 1;
+    }
+    return *this;
+}
+
+ScriptObjTree::iterator ScriptObjTree::iterator::operator--(int) // post-decrement
+{
+    iterator oldIt = iterator(m_parentTree, m_currentCategoryIdx, m_currentSubsectionIdx, m_currentObjectIdx);
+   --(*this);  // do pre-decrement
+    return oldIt;
+}
+
+
 ScriptObj* ScriptObjTree::iterator::operator*()
 {
     if (m_parentTree == nullptr)
+        return nullptr;
+    else if ( (m_currentCategoryIdx == kInvalidIdx) || (m_currentSubsectionIdx == kInvalidIdx) || (m_currentObjectIdx == kInvalidIdx) )
         return nullptr;
 
     return m_parentTree->

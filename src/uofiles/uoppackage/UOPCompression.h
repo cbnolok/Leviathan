@@ -5,11 +5,11 @@ namespace uoppackage
 {
 
 
-enum class CompressionFlag
+enum class CompressionFlag_t
 {
-    uninitialized = -1,
-    none = 0,
-    zlib = 1
+    Uninitialized = -1,
+    None = 0,
+    ZLib = 1
 };
 
 

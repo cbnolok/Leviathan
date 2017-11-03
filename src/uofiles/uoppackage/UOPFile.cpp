@@ -32,7 +32,7 @@ unsigned long long UOPFile::getFileHash() const {
 unsigned int UOPFile::getDataBlockHash() const {
     return m_dataBlockHash;
 }
-CompressionFlag UOPFile::getCompression() const {
+CompressionFlag_t UOPFile::getCompression() const {
     return m_compression;
 }
 //const std::string& UOPFile::getFileName() const {
@@ -43,7 +43,7 @@ CompressionFlag UOPFile::getCompression() const {
 UOPFile::UOPFile(int fileIndex) :
     m_index(fileIndex),
     m_dataBlockAddress(0), m_dataBlockLength(0), m_compressedSize(0), m_decompressedSize(0),
-    m_fileHash(0), m_dataBlockHash(0), m_compression(CompressionFlag::uninitialized)
+    m_fileHash(0), m_dataBlockHash(0), m_compression(CompressionFlag_t::Uninitialized)
 {
 }
 
@@ -68,8 +68,8 @@ bool UOPFile::read(std::ifstream& fin)
 
     switch ( comprFlag )
     {
-        case 0x0: m_compression = CompressionFlag::none; break;
-        case 0x1: m_compression = CompressionFlag::zlib; break;
+        case 0x0: m_compression = CompressionFlag_t::None; break;
+        case 0x1: m_compression = CompressionFlag_t::ZLib; break;
         default:
             ADDERROR("Unsupported compression type " + std::to_string(comprFlag));
             return false;
@@ -83,7 +83,7 @@ bool UOPFile::unpack(std::ifstream &fin, char* &result, size_t &resultSize) cons
 
     switch ( m_compression )
     {
-        case CompressionFlag::zlib:
+        case CompressionFlag_t::ZLib:
         {
             Byte* sourceData = (Byte*) malloc(m_compressedSize);
             fin.read(reinterpret_cast<char*>(sourceData), m_compressedSize * sizeof(Byte));
@@ -133,7 +133,7 @@ bool UOPFile::unpack(std::ifstream &fin, char* &result, size_t &resultSize) cons
             return success;
         }
 
-        case CompressionFlag::none:
+        case CompressionFlag_t::None:
         {
             result = (char*) malloc(m_compressedSize);
             fin.read(result, m_compressedSize * sizeof(char));

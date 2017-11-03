@@ -131,22 +131,6 @@ bool UOAnimUOP::animExists(int animID)
     return false;
 }
 
-int UOAnimUOP::getLookupAnimID(int body)
-{
-    // List of animation indexes as of 7.0.59.4
-    /*
-    const int notInARange[] = {
-        130, 197, 198, 267, 270, 286, 287, 293, 428, 475,
-        483, 485, 499, 509, 534, 541, 547, 609, 610, 632,
-        647, 650, 652, 705, 707, 708, 753, 769, 795, 826,
-        843, 990, 1279, 1281, 1308, 1309
-    };
-    */
-    // ranges: 320-344, 585-604, 654-678, 690-693, 696-699, 713-743,
-    //  829-832, 1026-1071, 1244-1248, 1251-1255, 1285-1294, 1400-1433
-    return body;
-}
-
 UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int direction, int frame, char* &decData, size_t &decDataSize)
 {
     UOPAnimationData* animData = m_animationsMatrix[animID][groupID];
@@ -247,9 +231,9 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
         }
     }
 
-    //unsigned int dirFrameCount = pixelDataOffsets.size() / 5;   // 5 = number of directions
-    //unsigned int dirFrameStartIdx = dirFrameCount * direction;
-    unsigned int dirFrameStartIdx = (frameCount / 5) * direction;
+    //unsigned dirFrameCount = pixelDataOffsets.size() / 5;   // 5 = number of directions
+    //unsigned dirFrameStartIdx = dirFrameCount * direction;
+    unsigned dirFrameStartIdx = (frameCount / 5) * direction;
 
     // select the frame i want to display
     UOPFrameData &frameData = frameDataVec[frame + dirFrameStartIdx];
@@ -259,17 +243,15 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
 
 QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex)
 {
-    int animID = getLookupAnimID(bodyID);
-
     // select the group (action) we have chosen or, if invalid, the first valid one
     int groupID = -1;
-    if (m_animationsMatrix[animID][action] != nullptr)
+    if (m_animationsMatrix[bodyID][action] != nullptr)
         groupID = action;
     else
     {
         for (int i = 0; i < 100; ++i)
         {
-            if (m_animationsMatrix[animID][i] != nullptr)
+            if (m_animationsMatrix[bodyID][i] != nullptr)
                 groupID = i;
         }
         if (groupID == -1)
@@ -292,8 +274,8 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
     memcpy(&palette, decData + decDataOff, 512);
     decDataOff += 512;
 
-    int_fast16_t xCenter = 0, yCenter = 0;
-    int_fast16_t width = 0, height = 0;
+    int16_t xCenter = 0, yCenter = 0;
+    int16_t width = 0, height = 0;
 
     memcpy(&xCenter, decData + decDataOff, 2);
     decDataOff += 2;
@@ -318,15 +300,15 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
     while ( decDataOff < decDataSize )
     {
         // For the header structure read inside uoanimmul.cpp
-        uint_fast32_t header = 0;
+        uint32_t header = 0;
         memcpy(&header, decData + decDataOff, 4);
         decDataOff += 4;
         if ( header == 0x7FFF7FFF )
             break;
 
-        uint_fast32_t xRun = header & 0xFFF;              // take first 12 bytes
-        uint_fast32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
-        uint_fast32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
+        uint32_t xRun = header & 0xFFF;              // take first 12 bytes
+        uint32_t xOffset = (header >> 22) & 0x3FF;   // take 10 bytes
+        uint32_t yOffset = (header >> 12) & 0x3FF;   // take 10 bytes
         // xOffset and yOffset are signed, so we need to compensate for that
         if (xOffset & 512)                  // 512 = 0x200
             xOffset |= (0xFFFFFFFF - 511);  // 511 = 0x1FF
@@ -339,9 +321,9 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
         if (X < 0 || Y < 0 || Y >= height || X >= width)
             continue;
 
-        for ( unsigned int k = 0; k < xRun; ++k )
+        for ( unsigned k = 0; k < xRun; ++k )
         {
-            uint_fast8_t palette_index = 0;
+            uint8_t palette_index = 0;
             memcpy(&palette_index, decData + decDataOff, 1);
             decDataOff += 1;
 

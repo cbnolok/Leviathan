@@ -130,6 +130,7 @@ void MainWindow::onManual_actionSettings_triggered()
 int MainWindow::getDefaultClientProfile()
 {
     // Check which Client Profile is the default one and return its index
+
     for (size_t i = 0; i < g_clientProfiles.size(); ++i)
     {
         if (g_clientProfiles[i].m_defaultProfile)
@@ -142,6 +143,7 @@ int MainWindow::getDefaultClientProfile()
 int MainWindow::getDefaultScriptsProfile()
 {
     // Check which Scripts Profile is the default one and return its index
+
     for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
     {
         if (g_scriptsProfiles[i].m_defaultProfile)

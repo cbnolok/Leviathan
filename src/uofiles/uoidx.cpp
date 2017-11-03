@@ -9,7 +9,7 @@ unsigned int UOIdx::getLookup(std::string path_idx, unsigned int id)
     // it's fundamental to open the file in binary mode, otherwise tellg and seekg won't work properly...
     fs_idx.open(path_idx, std::ifstream::in | std::ifstream::binary);
     if (!fs_idx.is_open())
-        return (unsigned)-1;
+        return kInvalidLookup;
 
     // Look up in *idx.mul for the offset of the ID in *.mul
     // - Lookup:    size=4. Is either undefined ($FFFFFFFF -1) or the file offset in *.MUL

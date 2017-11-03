@@ -4,7 +4,7 @@
 #include "uoppackage/UOPPackage.h"
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <map>
 
 //#include <QObject>
 
@@ -53,10 +53,9 @@ private:
 
     // sort animationsData by [groupID][animID]:
     // m_animationsMatrix[groupID] contains a map which [animID] contains the UOPAnimationData*
-    std::unordered_map<int, std::unordered_map<int,UOPAnimationData*>> m_animationsMatrix;
+    std::map<int, std::map<int,UOPAnimationData*>> m_animationsMatrix;
 
     void buildAnimTable();
-    int getLookupAnimID(int body);
     UOPFrameData loadFrameData(int animID, int groupID, int direction, int frame, char *&decData, size_t& decDataSize); // decData: buffer for decompressed anim data
 };
 
