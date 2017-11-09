@@ -5,6 +5,8 @@
 #include <thread>
 #include <chrono>
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #include <winuser.h>
 
 
@@ -12,11 +14,11 @@ namespace keystrokesender
 {
 
 
-BOOL CALLBACK KeystrokeSender_Windows::enumWindowsProc(HWND hWnd, LPARAM lParam)
+BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
 {
     KeystrokeSender_Windows *classInstance = reinterpret_cast<KeystrokeSender_Windows*>(lParam);
     int length = GetWindowTextLengthA(hWnd);
-    std::string windowTitle(length+1, '\0');
+    std::string windowTitle(length + 1, '\0');
     length = GetWindowTextA(hWnd, &windowTitle[0], length);
     windowTitle.resize(length);
     if (windowTitle.find(UOClientWindowTitles[CLIENT_CLASSIC]) != std::string::npos)
@@ -91,7 +93,7 @@ bool KeystrokeSender_Windows::sendEnter()
     // KeyDown
     PostMessage(reinterpret_cast<HWND>(m_UOHandle), WM_KEYDOWN, VK_RETURN, (LPARAM)( 1 ));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));
 
     // KeyUp
     PostMessage(reinterpret_cast<HWND>(m_UOHandle), WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1 << 31) ));
@@ -116,7 +118,7 @@ bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTermi
     {
         if (!sendChar(str[i]))
             return false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(60));
+        std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
 
     if (enterTerminated)

@@ -5,6 +5,7 @@
 #include "settings/clientprofile.h"
 #include "settings/scriptsprofile.h"
 #include "forms/maintab_log.h"
+#include "keystrokesender/keystrokesender.h"
 
 
 extern Settings g_settings;     // contains general settings
@@ -16,6 +17,8 @@ extern std::vector<ClientProfile> g_clientProfiles;     // contains all of the c
 extern int g_loadedScriptsProfile;                      // index of the current scripts profile
 extern std::vector<ScriptsProfile> g_scriptsProfiles;   // contains all of the scripts profiles
 extern std::vector<std::string> g_scriptFileList;       // contains the absolute path of each script of the profile loaded
+
+extern keystrokesender::KeystrokeSender g_keystrokeSender;  // utility class to send text to the client
 
 // containers for Sphere Objects: characters, items, maps...
 class ScriptObjTree;

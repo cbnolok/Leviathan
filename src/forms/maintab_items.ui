@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>850</width>
+    <width>900</width>
     <height>350</height>
    </rect>
   </property>
@@ -17,6 +17,12 @@
    <string>Form</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <property name="spacing">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
+   </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -133,6 +139,26 @@
             </widget>
            </item>
            <item>
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_spawner">
+             <property name="text">
+              <string>Spawner</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="pushButton_remove">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -159,6 +185,30 @@
             </widget>
            </item>
            <item>
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_search_back">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../leviathan_resources.qrc">
+               <normaloff>:/icons/icons/ionicons-left.svg</normaloff>:/icons/icons/ionicons-left.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="pushButton_search">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -168,6 +218,21 @@
              </property>
              <property name="text">
               <string>Search</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../leviathan_resources.qrc">
+               <normaloff>:/icons/icons/ionicons-search.svg</normaloff>:/icons/icons/ionicons-search.svg</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_search_next">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../leviathan_resources.qrc">
+               <normaloff>:/icons/icons/ionicons-right.svg</normaloff>:/icons/icons/ionicons-right.svg</iconset>
              </property>
             </widget>
            </item>
@@ -188,7 +253,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
-             <height>40</height>
+             <height>20</height>
             </size>
            </property>
           </spacer>
@@ -226,7 +291,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
-             <height>40</height>
+             <height>20</height>
             </size>
            </property>
           </spacer>
@@ -255,6 +320,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../leviathan_resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

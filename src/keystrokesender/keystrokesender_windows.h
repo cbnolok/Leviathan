@@ -4,9 +4,7 @@
 #ifdef _WIN32
 
 #include "keystrokesender_common.h"
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <windef.h>     // for the definitions of BOOL, CALLBACK, HWND, LPARAM
 
 
 namespace keystrokesender
@@ -15,7 +13,11 @@ namespace keystrokesender
 
 class KeystrokeSender_Windows
 {
+    friend BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam);
+
 public:
+    bool canSend();
+
     bool sendChar(const char ch);
     bool sendEnter();
     bool sendString(const char * const str, bool enterTerminated = true);
@@ -27,9 +29,7 @@ protected:
 private:
     long* m_UOHandle = 0;
 
-    static BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam);
     bool findUOWindow();
-    bool canSend();
 };
 
 

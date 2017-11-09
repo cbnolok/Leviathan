@@ -12,6 +12,8 @@ TEMPLATE = app
 
 CONFIG += c++11
 
+RESOURCES = leviathan_resources.qrc
+
 SOURCES += \
     common.cpp \
     globals.cpp \
@@ -24,6 +26,8 @@ SOURCES += \
     forms/dlg_profileclient_options.cpp \
     forms/dlg_profilescripts_options.cpp \
     forms/dlg_settings.cpp \
+    forms/subdlg_searchobj.cpp \
+    forms/subdlg_spawn.cpp \
     forms/subdlg_taskprogress.cpp \
     qtutils/checkableproxymodel.cpp \
     qtutils/delayedexecutiontimer.cpp \
@@ -33,6 +37,7 @@ SOURCES += \
     settings/settings.cpp \
     spherescript/scriptobjects.cpp \
     spherescript/scriptparser.cpp \
+    spherescript/scriptsearch.cpp \
     spherescript/scriptutils.cpp \
     uofiles/uoppackage/UOPError.cpp \
     uofiles/uoppackage/UOPBlock.cpp \
@@ -48,9 +53,7 @@ SOURCES += \
     keystrokesender/keystrokesender_common.cpp \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
-    keystrokesender/keystrokesender.cpp \
-    spherescript/scriptsearch.cpp \
-    forms/subdlg_searchobj.cpp
+    keystrokesender/keystrokesender.cpp
 
 HEADERS  += \
     common.h \
@@ -63,6 +66,8 @@ HEADERS  += \
     forms/dlg_profileclient_options.h \
     forms/dlg_profilescripts_options.h \
     forms/dlg_settings.h \
+    forms/subdlg_searchobj.h \
+    forms/subdlg_spawn.h \
     forms/subdlg_taskprogress.h \
     qtutils/checkableproxymodel.h \
     qtutils/delayedexecutiontimer.h \
@@ -72,6 +77,7 @@ HEADERS  += \
     settings/settings.h \
     spherescript/scriptobjects.h \
     spherescript/scriptparser.h \
+    spherescript/scriptsearch.h \
     spherescript/scriptutils.h \
     uofiles/uoppackage/UOPBlock.h \
     uofiles/uoppackage/UOPCompression.h \
@@ -91,9 +97,7 @@ HEADERS  += \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \
-    version.h \
-    spherescript/scriptsearch.h \
-    forms/subdlg_searchobj.h
+    version.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -104,7 +108,8 @@ FORMS    += \
     forms/dlg_profileclient_options.ui \
     forms/dlg_settings.ui \
     forms/subdlg_taskprogress.ui \
-    forms/subdlg_searchobj.ui
+    forms/subdlg_searchobj.ui \
+    forms/subdlg_spawn.ui
 
 
 Release:DESTDIR     = release

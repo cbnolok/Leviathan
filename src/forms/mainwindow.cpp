@@ -32,9 +32,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     // Load settings and profiles
-    g_settings = Settings::readJsonData();
-    g_clientProfiles = ClientProfile::readJsonData();
-    g_scriptsProfiles = ScriptsProfile::readJsonData();
+    g_settings.updateFromJson();
+    g_clientProfiles = ClientProfile::createFromJson();
+    g_scriptsProfiles = ScriptsProfile::createFromJson();
 
     /*  Setting up the menubar */
 
@@ -58,12 +58,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->menuProfiles->addAction(actionLoadDefaultScriptsProfile);
     connect(actionLoadDefaultScriptsProfile, SIGNAL(triggered(bool)), this, SLOT(onManual_actionLoadDefaultScriptsProfile_triggered()));
 
-    // TODO: aggiungi un'azione per caricare ogni singolo profilo (in un submenu?)
+    // TODO: add in a submenu the actions to load every single, stored profile
 
     // Generate Settings entry
-    ui->menuProfiles->addSeparator();
+    //ui->menuProfiles->addSeparator();
     QAction *actionSettings = new QAction("Settings", this);
-    ui->menuProfiles->addAction(actionSettings);
+    //ui->menuProfiles->addAction(actionSettings);
+    ui->menuBar->addAction(actionSettings);
     connect(actionSettings, SIGNAL(triggered(bool)), this, SLOT(onManual_actionSettings_triggered()));
 
 
@@ -125,6 +126,19 @@ void MainWindow::onManual_actionSettings_triggered()
 {
     Dlg_Settings dlg(this);
     dlg.exec();
+}
+
+void MainWindow::on_checkBox_onTop_toggled(bool checked)
+{
+    if (checked)
+        setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+    else
+        setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
+
+    // From Qt Wiki:
+    // Note: This function calls setParent() when changing the flags for a window, causing the widget
+    // to be hidden. You must call show() to make the widget visible again..
+    show();
 }
 
 int MainWindow::getDefaultClientProfile()
@@ -205,5 +219,4 @@ void MainWindow::loadScriptProfile(int index)
     m_MainTab_Chars_inst->updateViews();
     m_MainTab_Items_inst->updateViews();
 }
-
 

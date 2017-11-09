@@ -6,8 +6,9 @@ SubDlg_TaskProgress::SubDlg_TaskProgress(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::SubDlg_TaskProgress)
 {
-    ui->setupUi(this);
     //setWindowFlags(Qt::CustomizeWindowHint);    // Don't show window borders or close button. Not needed, since it's a widget and not a dialog.
+
+    ui->setupUi(this);
 }
 
 SubDlg_TaskProgress::~SubDlg_TaskProgress()

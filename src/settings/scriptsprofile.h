@@ -12,7 +12,7 @@ public:
     ScriptsProfile(std::string scriptsPath);
 
     QJsonObject generateJsonObject();
-    static std::vector<ScriptsProfile> readJsonData();
+    static std::vector<ScriptsProfile> createFromJson();
 
     int m_index;
     std::string m_name;

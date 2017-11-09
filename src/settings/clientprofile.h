@@ -11,7 +11,7 @@ public:
     ClientProfile(std::string clientPath);
 
     QJsonObject generateJsonObject();
-    static std::vector<ClientProfile> readJsonData();
+    static std::vector<ClientProfile> createFromJson();
 
     int m_index;
     std::string m_name;

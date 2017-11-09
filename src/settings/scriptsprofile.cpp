@@ -5,6 +5,9 @@
 #include <QJsonParseError>
 #include <QFile>
 
+// workaround for a bug in Qt: if a key is not existant, sometimes the returned value is null, instead of undefined
+#define QJSONVAL_ISVALID(qjsonvalue) (!qjsonvalue.isUndefined() && !qjsonvalue.isNull())
+
 
 ScriptsProfile::ScriptsProfile(std::string scriptsPath) :
         m_name("Unnamed"), m_defaultProfile(false), m_scriptsPath(scriptsPath), m_useSpheretables(false)
@@ -33,7 +36,7 @@ QJsonObject ScriptsProfile::generateJsonObject()
     return obj;
 }
 
-std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
+std::vector<ScriptsProfile> ScriptsProfile::createFromJson()
 {
     std::vector<ScriptsProfile> savedProfiles;
 
@@ -65,7 +68,7 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
         QJsonValue val = QJsonValue::Undefined;
 
         val = profileObj["Path"];
-        if (val == QJsonValue::Undefined)
+        if ( ! QJSONVAL_ISVALID(val) )
         {
             appendToLog("Error loading profile number " + it.key().toStdString() + ". Invalid path");
             continue;
@@ -74,22 +77,19 @@ std::vector<ScriptsProfile> ScriptsProfile::readJsonData()
         ScriptsProfile profile(val.toString().toStdString());
 
         val = profileObj["Name"];
-        if (val != QJsonValue::Undefined)
+        if (QJSONVAL_ISVALID(val))
             profile.m_name = val.toString().toStdString();
 
-        val = QJsonValue::Undefined;
         val = profileObj["DefaultProfile"];
-        if (val != QJsonValue::Undefined)
+        if (QJSONVAL_ISVALID(val))
             profile.m_defaultProfile = val.toBool();
 
-        val = QJsonValue::Undefined;
         val = profileObj["LoadFromSpheretables"];
-        if (val != QJsonValue::Undefined)
+        if (QJSONVAL_ISVALID(val))
             profile.m_useSpheretables = val.toBool();
 
-        val = QJsonValue::Undefined;
         val = profileObj["Path"];
-        if (val != QJsonValue::Undefined)
+        if (QJSONVAL_ISVALID(val))
             profile.m_scriptsPath = val.toString().toStdString();
 
         if (!profile.m_useSpheretables)

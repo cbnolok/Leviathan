@@ -6,11 +6,11 @@
 #include <QModelIndex>
 #include <vector>
 
-
 class QDirModel;
 class QStandardItemModel;
 class CheckableProxyModel;
 class ScriptObj;
+
 
 namespace Ui {
 class Dlg_ProfileScripts_Options;

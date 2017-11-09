@@ -5,9 +5,12 @@
 #include <QJsonParseError>
 #include <QFile>
 
+// workaround for a bug in Qt: if a key is not existant, sometimes the returned value is null, instead of undefined
+#define QJSONVAL_ISVALID(qjsonvalue) (!qjsonvalue.isUndefined() && !qjsonvalue.isNull())
+
 
 Settings::Settings() :
-    m_loadDefaultProfilesAtStartup(m_kDefault_loadDefaultProfilesAtStartup)
+    m_loadDefaultProfilesAtStartup(true), m_customSpawnCmd(".spawn %1,%2,%3,%4,%5")
 {
 }
 
@@ -16,20 +19,19 @@ QJsonObject Settings::generateJsonObject()
     // Build the json object.
     QJsonObject obj;
     obj["LoadDefaultProfilesAtStartup"] = m_loadDefaultProfilesAtStartup;
+    obj["CustomSpawnCmd"] = QString::fromStdString(m_customSpawnCmd);
 
     return obj;
 }
 
-Settings Settings::readJsonData()
+bool Settings::updateFromJson()
 {
-    Settings savedSettings;
-
     QFile jsonFile;
     jsonFile.setFileName("Settings.json");
     if (!jsonFile.open(QIODevice::ReadOnly))
     {
         appendToLog("Error: can't open Settings.json! Not existant or missing permissions");
-        return savedSettings;
+        return false;
     }
 
     const QByteArray fileContent = jsonFile.readAll();
@@ -40,19 +42,22 @@ Settings Settings::readJsonData()
 
     QJsonObject mainObj = doc.object();
     if (mainObj.isEmpty())
-        return savedSettings;
+        return false;
 
-    QJsonObject settingsObj = mainObj["Settings"].toObject();   // usare find?
+    QJsonObject settingsObj = mainObj["Settings"].toObject();
     if (settingsObj.isEmpty())
-        return savedSettings;
+        return false;
 
     QJsonValue val = QJsonValue::Undefined;
 
     val = settingsObj["LoadDefaultProfilesAtStartup"];
-    if (val == QJsonValue::Undefined)
-        savedSettings.m_loadDefaultProfilesAtStartup = m_kDefault_loadDefaultProfilesAtStartup;
+    if (QJSONVAL_ISVALID(val))
+        m_loadDefaultProfilesAtStartup = val.toBool();
 
-    return savedSettings;
+    val = settingsObj["CustomSpawnCmd"];
+    if (QJSONVAL_ISVALID(val))
+        m_customSpawnCmd = val.toString().toStdString();
 
+    return true;
 }
 

@@ -6,11 +6,11 @@
 #include "../spherescript/scriptutils.h"
 #include "../uofiles/uoart.h"
 #include "subdlg_searchobj.h"
+#include "subdlg_spawn.h"
 #include <QMessageBox>
 #include <QStandardItem>
 #include <QGraphicsPixmapItem>
 #include <QKeyEvent>
-#include "../keystrokesender/keystrokesender.h"     // it has to be the last, because Xlib redefines some Qt macros
 //#include <thread>
 
 
@@ -22,8 +22,6 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
 
     installEventFilter(this);   // catch the keystrokes
 
-    // Get ready to send text to the client
-    m_keystrokeSender = new keystrokesender::KeystrokeSender();
     m_scriptSearch = nullptr;
 
     // Create the model for the organizer tree view
@@ -59,7 +57,6 @@ MainTab_Items::~MainTab_Items()
 {
     delete ui;
 
-    delete m_keystrokeSender;
     delete m_organizer_model;
     delete m_objList_model;
 }
@@ -69,19 +66,24 @@ bool MainTab_Items::eventFilter(QObject* watched, QEvent* event)
     if (event->type() != QEvent::KeyPress)
         return QObject::eventFilter(watched, event);
 
-    QKeyEvent* key = static_cast<QKeyEvent*>(event);
-    if ( (key->key()==Qt::Key_F2) || (key->key()==Qt::Key_F3) )
-    {
+    QKeyEvent* keyEv = static_cast<QKeyEvent*>(event);
+    if ( (keyEv->key()==Qt::Key_F2) || (keyEv->key()==Qt::Key_F3) )
+    {   // pressed F1 or F2
         if (g_loadedScriptsProfile == -1)   // no profile loaded
             return false;
         if (m_scriptSearch == nullptr)      // i haven't set the search parameters
             return false;
 
-        if (key->key()==Qt::Key_F3) // search forwards
+        if (keyEv->key()==Qt::Key_F3)   // search forwards
             doSearch(false);
-        else                        // search backwards
+        else                            // search backwards
             doSearch(true);
 
+        return false;
+    }
+    else if ( (keyEv->key()==Qt::Key_F) && (keyEv->modifiers() & Qt::ControlModifier) )
+    {   // presset CTRL + F
+        on_pushButton_search_clicked();
         return false;
     }
     else
@@ -254,10 +256,10 @@ void MainTab_Items::on_treeView_objList_doubleClicked(const QModelIndex &index)
 
     QModelIndex IDIndex(m_objList_model->index(index.row(), 1, index.parent()));
 
-    if (!m_keystrokeSender->sendString((".add " + IDIndex.data().toString().toStdString()).c_str()))
+    if (!g_keystrokeSender.sendString((".add " + IDIndex.data().toString().toStdString()).c_str()))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(m_keystrokeSender->getErrorString().c_str());
+        errorDlg.setText(g_keystrokeSender.getErrorString().c_str());
         errorDlg.exec();
     }
 }
@@ -275,6 +277,8 @@ void MainTab_Items::onManual_treeView_objList_selectionChanged(const QModelIndex
         return;
 
     ScriptObj *script = m_objMapQItemToScript[obj_item];
+    emit selectedScriptObjChanged(script);
+
     int id = 0x4000 + script->m_display;
     int hue = ScriptUtils::strToSphereInt16(script->m_color);
     if (hue < 0)    // template or random expr (not supported yet) or strange string
@@ -309,10 +313,10 @@ void MainTab_Items::on_pushButton_add_clicked()
     if (!selection->hasSelection())
         return;
 
-    if (!m_keystrokeSender->sendString((".add " + selection->selectedRows(1)[0].data().toString().toStdString()).c_str()))
+    if (!g_keystrokeSender.sendString((".add " + selection->selectedRows(1)[0].data().toString().toStdString()).c_str()))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(m_keystrokeSender->getErrorString().c_str());
+        errorDlg.setText(g_keystrokeSender.getErrorString().c_str());
         errorDlg.exec();
     }
 }
@@ -320,10 +324,10 @@ void MainTab_Items::on_pushButton_add_clicked()
 void MainTab_Items::on_pushButton_remove_clicked()
 {
     const char command[]=".remove";
-    if (!m_keystrokeSender->sendString(command))
+    if (!g_keystrokeSender.sendString(command))
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(m_keystrokeSender->getErrorString().c_str());
+        errorDlg.setText(g_keystrokeSender.getErrorString().c_str());
         errorDlg.exec();
     }
 }
@@ -399,4 +403,39 @@ void MainTab_Items::on_pushButton_search_clicked()
     dlg.getSearchData(searchBy, caseSensitive, key);
     m_scriptSearch.reset(new ScriptSearch(trees, searchBy, caseSensitive, key));
     doSearch(false);
+}
+
+void MainTab_Items::on_pushButton_search_back_clicked()
+{
+    if (g_loadedScriptsProfile == -1)   // no profile loaded
+        return;
+    if (m_scriptSearch == nullptr)      // i haven't set the search parameters
+        return;
+
+    doSearch(true);    // search backwards
+}
+
+void MainTab_Items::on_pushButton_search_next_clicked()
+{
+    if (g_loadedScriptsProfile == -1)   // no profile loaded
+        return;
+    if (m_scriptSearch == nullptr)      // i haven't set the search parameters
+        return;
+
+       doSearch(false);    // search forwards
+}
+
+void MainTab_Items::on_pushButton_spawner_clicked()
+{
+    SubDlg_Spawn* spawner = new SubDlg_Spawn();
+    connect(this, SIGNAL(selectedScriptObjChanged(ScriptObj*)), spawner, SLOT(onCust_selectedObj_changed(ScriptObj*)));
+    spawner->show();
+
+    // get the selected object and update the spawner dialog with the current object
+    QItemSelectionModel *selection = ui->treeView_objList->selectionModel();
+    if (!selection->hasSelection())
+        return;
+    QStandardItem* qitem = m_objList_model->itemFromIndex( selection->selectedRows(0)[0] );
+    ScriptObj *script = m_objMapQItemToScript[qitem];
+    emit selectedScriptObjChanged(script);
 }

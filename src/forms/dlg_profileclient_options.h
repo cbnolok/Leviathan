@@ -6,8 +6,8 @@
 #include <QModelIndex>
 #include <vector>
 
-
 class QStandardItemModel;
+
 
 namespace Ui {
 class Dlg_ProfileClient_Options;

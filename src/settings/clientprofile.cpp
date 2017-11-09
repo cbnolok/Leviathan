@@ -5,6 +5,9 @@
 #include <QJsonParseError>
 #include <QFile>
 
+// workaround for a bug in Qt: if a key is not existant, sometimes the returned value is null, instead of undefined
+#define QJSONVAL_ISVALID(qjsonvalue) (!qjsonvalue.isUndefined() && !qjsonvalue.isNull())
+
 
 ClientProfile::ClientProfile(std::string clientPath) :
         m_name("Unnamed"), m_defaultProfile(false), m_clientPath(clientPath)
@@ -23,7 +26,7 @@ QJsonObject ClientProfile::generateJsonObject()
     return obj;
 }
 
-std::vector<ClientProfile> ClientProfile::readJsonData()
+std::vector<ClientProfile> ClientProfile::createFromJson()
 {
     std::vector<ClientProfile> savedProfiles;
 
@@ -55,7 +58,7 @@ std::vector<ClientProfile> ClientProfile::readJsonData()
         QJsonValue val = QJsonValue::Undefined;
 
         val = profileObj["Path"];
-        if (val == QJsonValue::Undefined)
+        if ( ! QJSONVAL_ISVALID(val) )
         {
             appendToLog("Error loading Client Profile number " + it.key().toStdString() + ". Invalid path");
             continue;
@@ -64,17 +67,15 @@ std::vector<ClientProfile> ClientProfile::readJsonData()
         ClientProfile profile(val.toString().toStdString());
 
         val = profileObj["Name"];
-        if (val != QJsonValue::Undefined)
+        if (QJSONVAL_ISVALID(val))
             profile.m_name = val.toString().toStdString();
 
-        val = QJsonValue::Undefined;
         val = profileObj["DefaultProfile"];
-        if (val != QJsonValue::Undefined)
+        if (QJSONVAL_ISVALID(val))
             profile.m_defaultProfile = val.toBool();
 
-        val = QJsonValue::Undefined;
         val = profileObj["Path"];
-        if (val != QJsonValue::Undefined)
+        if (QJSONVAL_ISVALID(val))
             profile.m_clientPath = val.toString().toStdString();
 
         savedProfiles.push_back(profile);

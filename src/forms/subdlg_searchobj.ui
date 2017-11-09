@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>375</width>
-    <height>107</height>
+    <height>126</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,15 +23,31 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0" colspan="3">
-      <widget class="QLabel" name="label_2">
+     <item row="2" column="1">
+      <widget class="QPushButton" name="pushButton_cancel">
+       <property name="minimumSize">
+        <size>
+         <width>60</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="text">
-        <string>Use F3 for Find Next, and F2 for Find Previous</string>
+        <string>Cancel</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
      <item row="1" column="0" colspan="3">
       <widget class="QLineEdit" name="lineEdit_value"/>
+     </item>
+     <item row="3" column="0" colspan="3">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Press F3 for Find Next, and F2 for Find Previous.</string>
+       </property>
+      </widget>
      </item>
      <item row="2" column="2">
       <widget class="QPushButton" name="pushButton_ok">
@@ -53,16 +69,10 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="pushButton_cancel">
-       <property name="minimumSize">
-        <size>
-         <width>60</width>
-         <height>0</height>
-        </size>
-       </property>
+     <item row="4" column="0" colspan="3">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Cancel</string>
+        <string>Press Ctrl + F to open this window.</string>
        </property>
       </widget>
      </item>
@@ -129,6 +139,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>lineEdit_value</tabstop>
+  <tabstop>checkBox_casesensitive</tabstop>
+  <tabstop>pushButton_cancel</tabstop>
+  <tabstop>pushButton_ok</tabstop>
+  <tabstop>radioButton_id</tabstop>
+  <tabstop>radioButton_defname</tabstop>
+  <tabstop>radioButton_description</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

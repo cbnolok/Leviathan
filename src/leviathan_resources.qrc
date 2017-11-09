@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/images"/>
+    <qresource prefix="/icons">
+        <file>../icons/ionicons-left.svg</file>
+        <file>../icons/ionicons-right.svg</file>
+        <file>../icons/ionicons-search.svg</file>
+    </qresource>
+</RCC>

@@ -17,6 +17,8 @@ Dlg_ProfileClient_Options::Dlg_ProfileClient_Options(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Dlg_ProfileClient_Options)
 {
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);   // disable the '?' (what's this) in the title bar
+
     ui->setupUi(this);
 
     /* Profiles View */
@@ -32,8 +34,6 @@ Dlg_ProfileClient_Options::Dlg_ProfileClient_Options(QWidget *parent) :
 Dlg_ProfileClient_Options::~Dlg_ProfileClient_Options()
 {
     delete ui;
-
-    delete m_profiles_model;
 }
 
 
@@ -118,7 +118,9 @@ void Dlg_ProfileClient_Options::on_pushButton_profileAdd_clicked()
     }
 
     // Create a new profile.
-    ClientProfile newProfile(ui->lineEdit_editPath->text().toStdString());
+    std::string profileDir = ui->lineEdit_editPath->text().toStdString();
+    standardizePath(profileDir);
+    ClientProfile newProfile(profileDir);
     if (! ui->lineEdit_editName->text().isEmpty() )
         newProfile.m_name = ui->lineEdit_editName->text().toStdString();
     if (ui->checkBox_setDefaultProfile->checkState() == Qt::Checked)
@@ -163,6 +165,7 @@ void Dlg_ProfileClient_Options::on_pushButton_profileSave_clicked()
     ClientProfile *cp = &g_clientProfiles[m_currentProfileIndex];
     cp->m_name = ui->lineEdit_editName->text().toStdString();
     cp->m_clientPath = ui->lineEdit_editPath->text().toStdString();
+    standardizePath(cp->m_clientPath);
 
     cp->m_defaultProfile = (ui->checkBox_setDefaultProfile->checkState() == Qt::Unchecked) ? false: true;
     if (cp->m_defaultProfile)

@@ -5,15 +5,12 @@
 #include <QWidget>
 #include <memory>   // for smart pointers
 
-
-namespace keystrokesender {
-class KeystrokeSender;
-}
 class ScriptCategory;
 class ScriptSubsection;
 class ScriptObj;
 class QStandardItem;
 class QStandardItemModel;
+
 
 namespace Ui {
 class MainTab_Chars;
@@ -31,6 +28,9 @@ public:
 protected:
     bool eventFilter(QObject* watched, QEvent* event);
 
+signals:
+    void selectedScriptObjChanged(ScriptObj* selected);
+
 private slots:
     void onManual_treeView_organizer_selectionChanged(const QModelIndex &selected, const QModelIndex& /* UNUSED deselected */);
     void on_treeView_objList_doubleClicked(const QModelIndex &index);
@@ -39,6 +39,9 @@ private slots:
     void on_pushButton_summon_clicked();
     void on_pushButton_remove_clicked();
     void on_pushButton_search_clicked();
+    void on_pushButton_search_back_clicked();
+    void on_pushButton_search_next_clicked();
+    void on_pushButton_spawner_clicked();
 
 private:
     Ui::MainTab_Chars *ui;
@@ -51,7 +54,6 @@ private:
     QStandardItemModel *m_organizer_model;
     QStandardItemModel *m_objList_model;
 
-    keystrokesender::KeystrokeSender *m_keystrokeSender;
     std::unique_ptr<ScriptSearch> m_scriptSearch;
 
     void doSearch (bool backwards);

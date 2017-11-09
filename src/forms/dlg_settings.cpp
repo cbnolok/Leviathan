@@ -11,11 +11,12 @@ Dlg_Settings::Dlg_Settings(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Dlg_Settings)
 {
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);   // disable the '?' (what's this) in the title bar
+
     ui->setupUi(this);
-    // dunno why, but this window cames with a '?' button in the title bar... i have to disable it manually
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     ui->checkBox_loadDefaultProfilesAtStartup->setChecked(g_settings.m_loadDefaultProfilesAtStartup);
+    ui->lineEdit_spawn->setText( QString::fromStdString(g_settings.m_customSpawnCmd) );
 }
 
 Dlg_Settings::~Dlg_Settings()
@@ -32,7 +33,7 @@ void Dlg_Settings::on_buttonBox_accepted()
 {
     g_settings.m_loadDefaultProfilesAtStartup = m_loadDefaultProfilesAtStartup;
 
-    // Open the file in which we store the Scripts Profiles.
+    // Open the file in which we store the Settings.
     QFile jsonFile;
     jsonFile.setFileName("Settings.json");
     if (!jsonFile.open(QIODevice::WriteOnly))

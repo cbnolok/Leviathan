@@ -4,6 +4,7 @@
 #include "../spherescript/scriptsearch.h"
 #include <QDialog>
 
+
 namespace Ui {
 class SubDlg_SearchObj;
 }
@@ -19,7 +20,6 @@ public:
 
 private slots:
     void on_pushButton_ok_clicked();
-
     void on_pushButton_cancel_clicked();
 
 private:

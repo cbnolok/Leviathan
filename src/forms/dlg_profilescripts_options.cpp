@@ -19,6 +19,8 @@ Dlg_ProfileScripts_Options::Dlg_ProfileScripts_Options(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Dlg_ProfileScripts_Options)
 {
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);   // disable the '?' (what's this) in the title bar
+
     ui->setupUi(this);
 
     /* Profiles View */
@@ -72,10 +74,6 @@ Dlg_ProfileScripts_Options::Dlg_ProfileScripts_Options(QWidget *parent) :
 Dlg_ProfileScripts_Options::~Dlg_ProfileScripts_Options()
 {
     delete ui;
-
-    delete m_profiles_model;
-    delete m_scripts_model_base;
-    delete m_scripts_model;
 }
 
 // TODO: fai che ogni volta che segni un profilo come default controlli se ci sono altri profili default e li togli
@@ -87,7 +85,7 @@ void Dlg_ProfileScripts_Options::updateProfilesView()
     m_profiles_model->removeRows(0, m_profiles_model->rowCount());
 
     // Load all the profiles.
-    //g_scriptsProfiles = ScriptsProfile::readJsonData();
+    //g_scriptsProfiles = ScriptsProfile::createFromJson();
     for (auto it = g_scriptsProfiles.begin(); it != g_scriptsProfiles.end(); ++it)
     {
         QStandardItem *newProfileItem = new QStandardItem(it->m_name.c_str());
@@ -253,7 +251,9 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileAdd_clicked()
     }
 
     // Create a new profile.
-    ScriptsProfile newProfile(ui->lineEdit_editPath->text().toStdString());
+    std::string profileDir = ui->lineEdit_editPath->text().toStdString();
+    standardizePath(profileDir);
+    ScriptsProfile newProfile(profileDir);
     if (! ui->lineEdit_editName->text().isEmpty() )
         newProfile.m_name = ui->lineEdit_editName->text().toStdString();
     if (ui->checkBox_setDefaultProfile->checkState() == Qt::Checked)
@@ -324,6 +324,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
     ScriptsProfile *sp = &g_scriptsProfiles[m_currentProfileIndex];
     sp->m_name = ui->lineEdit_editName->text().toStdString();
     sp->m_scriptsPath = ui->lineEdit_editPath->text().toStdString();
+    standardizePath(sp->m_scriptsPath);
     sp->m_defaultProfile = (ui->checkBox_setDefaultProfile->checkState() == Qt::Unchecked) ? false: true;
     if (sp->m_defaultProfile)
     {

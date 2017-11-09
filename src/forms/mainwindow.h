@@ -3,10 +3,9 @@
 
 #include <QMainWindow>
 
-
-// i don't need the whole structure, because i use only a pointer to the class instance.
 class MainTab_Items;
 class MainTab_Chars;
+
 
 namespace Ui {
 class MainWindow;
@@ -26,7 +25,8 @@ private slots:
     void onManual_actionEditClientProfiles_triggered();
     void onManual_actionLoadDefaultClientProfile_triggered();
     void onManual_actionSettings_triggered();
-    void loadDefaultProfiles();
+    void on_checkBox_onTop_toggled(bool checked);
+    void loadDefaultProfiles();    
 
 private:
     Ui::MainWindow      *ui;

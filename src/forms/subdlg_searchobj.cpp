@@ -1,11 +1,16 @@
 #include "subdlg_searchobj.h"
 #include "ui_subdlg_searchobj.h"
+#include <QTimer>
+
 
 SubDlg_SearchObj::SubDlg_SearchObj(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SubDlg_SearchObj)
 {
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
     ui->setupUi(this);
+    QTimer::singleShot(50, ui->lineEdit_value, SLOT(setFocus()));
 }
 
 void SubDlg_SearchObj::getSearchData(ScriptSearch::SearchBy_t &searchBy, bool &caseSensitive, std::string &key)

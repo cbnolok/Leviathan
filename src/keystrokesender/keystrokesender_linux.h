@@ -19,7 +19,8 @@ namespace keystrokesender
 
 class KeystrokeSender_Linux
 {
-public:   
+public:
+    bool canSend();
     bool sendChar(const char ch);
     bool sendEnter();
     bool sendString(const char * const str, bool enterTerminated = true);
@@ -34,7 +35,6 @@ private:
     Window      m_UOWindow      = 0;
 
     bool findUOWindow();
-    bool canSend();
     bool _sendChar(const char ch);
 };
 

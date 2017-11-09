@@ -252,7 +252,7 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
     unsigned lookup = UOIdx::getLookup(m_clientPath + animFileStr + ".idx", bodyIndex);
     if (lookup == UOIdx::kInvalidLookup)
     {
-        appendToLog( QString("Error looking up %1.idx (requested id %2).").arg(animFileStr.c_str(), bodyID).toStdString() );
+        appendToLog( QString("Error looking up %1.idx (requested id %2).").arg(animFileStr.c_str(), QString::number(bodyID)).toStdString() );
         return nullptr;
     }
 

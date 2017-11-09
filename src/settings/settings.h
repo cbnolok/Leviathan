@@ -1,6 +1,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include <string>
 #include <QJsonObject>
 
 
@@ -10,10 +11,10 @@ public:
     Settings();
 
     QJsonObject generateJsonObject();
-    static Settings readJsonData();
+    bool updateFromJson();
 
-    static const bool m_kDefault_loadDefaultProfilesAtStartup = true;
     bool m_loadDefaultProfilesAtStartup;
+    std::string m_customSpawnCmd;
 };
 
 #endif // SETTINGS_H
