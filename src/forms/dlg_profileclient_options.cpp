@@ -33,6 +33,8 @@ Dlg_ProfileClient_Options::Dlg_ProfileClient_Options(QWidget *parent) :
 
 Dlg_ProfileClient_Options::~Dlg_ProfileClient_Options()
 {
+    delete m_profiles_model;
+
     delete ui;
 }
 

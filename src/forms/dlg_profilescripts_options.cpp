@@ -73,6 +73,10 @@ Dlg_ProfileScripts_Options::Dlg_ProfileScripts_Options(QWidget *parent) :
 
 Dlg_ProfileScripts_Options::~Dlg_ProfileScripts_Options()
 {
+    delete m_profiles_model;
+    delete m_scripts_model;
+    delete m_scripts_model_base;
+
     delete ui;
 }
 
