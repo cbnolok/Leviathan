@@ -15,7 +15,7 @@ int g_loadedScriptsProfile = -1;
 std::vector<ScriptsProfile> g_scriptsProfiles;
 std::vector<std::string> g_scriptFileList;
 
-keystrokesender::KeystrokeSender g_keystrokeSender;
+keystrokesender::KeystrokeSender g_keystrokeSender(true);
 
 ScriptObjTree *g_scriptObjTree_Chars        = nullptr;
 ScriptObjTree *g_scriptObjTree_Spawns       = nullptr;

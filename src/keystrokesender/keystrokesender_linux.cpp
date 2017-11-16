@@ -25,6 +25,10 @@
 namespace keystrokesender
 {
 
+KeystrokeSender_Linux::KeystrokeSender_Linux(bool setFocusToWindow) :
+    m_setFocusToWindow(setFocusToWindow)
+{
+}
 
 /*  Convenience X functions */
 
@@ -102,6 +106,20 @@ bool isWindow(Window &windowToFind, Display *display, Window &winRoot)
     return false;
 }
 
+// from: https://stackoverflow.com/questions/2858263/how-do-i-bring-a-processes-window-to-the-foreground-on-x-windows-c
+void setForegroundWindow(Display *display, Window window)   // set the desktop's topmost window
+{
+    XEvent event = { 0 };
+    event.xclient.type = ClientMessage;
+    event.xclient.serial = 0;
+    event.xclient.send_event = True;
+    event.xclient.message_type = XInternAtom( display, "_NET_ACTIVE_WINDOW", False);
+    event.xclient.window = window;
+    event.xclient.format = 32;
+
+    XSendEvent( display, DefaultRootWindow(display), False, SubstructureRedirectMask | SubstructureNotifyMask, &event );
+    XMapRaised( display, window );
+}
 
 
 /* Implementation for Leviathan */
@@ -167,6 +185,9 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
     if ( !findUOWindow() )
         return false;
 
+	if (m_setFocusToWindow)
+        setForegroundWindow(m_display, m_UOWindow);
+
     bool ret = _sendChar(ch);
 
     // Done.
@@ -176,9 +197,35 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
     return ret;
 }
 
-bool KeystrokeSender_Linux::sendEnter()
+bool KeystrokeSender_Linux::_sendEnter()
 {
     return sendChar((char)XK_Return);
+}
+
+bool KeystrokeSender_Linux::sendEnter()
+{
+	// Obtain the X11 display.
+    m_display = XOpenDisplay(NULL);
+    if (m_display == NULL)
+        return false;
+
+    // Get the root window for the current display.
+    m_rootWindow = XDefaultRootWindow(m_display);
+
+    // Find the window where to send the keystroke.
+    if ( !findUOWindow() )
+        return false;
+
+	if (m_setFocusToWindow)
+        setForegroundWindow(m_display, m_UOWindow);
+
+    bool ret = _sendEnter();
+
+	// Done.
+    XCloseDisplay(m_display);
+    m_display = NULL;
+
+    return ret;
 }
 
 bool KeystrokeSender_Linux::sendString(const char * const str, bool enterTerminated)
@@ -203,6 +250,9 @@ bool KeystrokeSender_Linux::sendString(const char * const str, bool enterTermina
     if ( !findUOWindow() )
         return false;
 
+	if (m_setFocusToWindow)
+        setForegroundWindow(m_display, m_UOWindow);
+
     bool ret = true;
     for (int i = 0; i < len; ++i)
     {
@@ -211,12 +261,12 @@ bool KeystrokeSender_Linux::sendString(const char * const str, bool enterTermina
             ret = false;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
 
-    if (enterTerminated)
+    if (enterTerminated && ret)
     {
-        if ( !_sendChar((char)XK_Return) )
+        if ( !_sendEnter() )
             ret = false;
     }
 
@@ -299,6 +349,11 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
 
 
 }
+
+// undef some ugly Xlib macros...
+#undef True
+#undef False
+#undef None
 
 #endif // !_WIN32
 

@@ -141,6 +141,11 @@ void MainWindow::on_checkBox_onTop_toggled(bool checked)
     show();
 }
 
+void MainWindow::on_checkBox_focus_toggled(bool checked)
+{
+    g_keystrokeSender.setSetFocusToWindow(checked);
+}
+
 int MainWindow::getDefaultClientProfile()
 {
     // Check which Client Profile is the default one and return its index
@@ -219,4 +224,5 @@ void MainWindow::loadScriptProfile(int index)
     m_MainTab_Chars_inst->updateViews();
     m_MainTab_Items_inst->updateViews();
 }
+
 

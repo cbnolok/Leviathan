@@ -76,6 +76,23 @@
          </spacer>
         </item>
         <item>
+         <widget class="QCheckBox" name="checkBox_focus">
+          <property name="text">
+           <string>Focus the client window after sending a command</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QCheckBox" name="checkBox_onTop">
           <property name="text">
            <string>Always on top</string>

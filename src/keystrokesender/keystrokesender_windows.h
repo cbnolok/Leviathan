@@ -16,6 +16,8 @@ class KeystrokeSender_Windows
     friend BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam);
 
 public:
+    KeystrokeSender_Windows(bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
+
     bool canSend();
 
     bool sendChar(const char ch);
@@ -23,11 +25,12 @@ public:
     bool sendString(const char * const str, bool enterTerminated = true);
 
 protected:
+    bool m_setFocusToWindow;
     KSError m_error = KSERR_OK;
     UOClientType m_clientType = CLIENT_UNK;
 
 private:
-    long* m_UOHandle = 0;
+    HWND m_UOHandle = 0;
 
     bool findUOWindow();
 };

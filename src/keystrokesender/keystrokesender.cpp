@@ -4,6 +4,10 @@
 namespace keystrokesender
 {
 
+void KeystrokeSender::setSetFocusToWindow(bool value) {
+    m_setFocusToWindow = value;
+}
+
 KSError KeystrokeSender::getError() const {
     return m_error;
 }

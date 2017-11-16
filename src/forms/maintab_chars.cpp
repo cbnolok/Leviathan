@@ -241,9 +241,12 @@ void MainTab_Chars::onManual_treeView_objList_selectionChanged(const QModelIndex
     emit selectedScriptObjChanged(script);
 
     int id = script->m_display;
+    ui->label_id->setText("ID: 0" + QString::number(id, 16) + " (" + QString::number(id, 10) + ")");
+
     int hue = ScriptUtils::strToSphereInt16(script->m_color);
     if (hue < 0)    // template or random expr (not supported yet) or strange string
         hue = 0;
+
     QImage* frameimg = g_UOAnim->drawAnimFrame(id, 0, 1, 0, hue);
     if (frameimg == nullptr)
         return;

@@ -26,6 +26,7 @@ private slots:
     void onManual_actionLoadDefaultClientProfile_triggered();
     void onManual_actionSettings_triggered();
     void on_checkBox_onTop_toggled(bool checked);
+    void on_checkBox_focus_toggled(bool checked);
     void loadDefaultProfiles();    
 
 private:

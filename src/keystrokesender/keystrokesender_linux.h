@@ -20,12 +20,16 @@ namespace keystrokesender
 class KeystrokeSender_Linux
 {
 public:
+    KeystrokeSender_Linux(bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
+
     bool canSend();
+
     bool sendChar(const char ch);
     bool sendEnter();
     bool sendString(const char * const str, bool enterTerminated = true);
 
 protected:
+    bool m_setFocusToWindow;
     KSError m_error = KSERR_OK;
     UOClientType m_clientType = CLIENT_UNK;
 
@@ -36,6 +40,7 @@ private:
 
     bool findUOWindow();
     bool _sendChar(const char ch);
+    bool _sendEnter();
 };
 
 

@@ -13,6 +13,11 @@
 namespace keystrokesender
 {
 
+KeystrokeSender_Windows::KeystrokeSender_Windows(bool setFocusToWindow) :
+    m_setFocusToWindow(setFocusToWindow)
+{
+}
+
 
 BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
 {
@@ -24,13 +29,13 @@ BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
     if (windowTitle.find(UOClientWindowTitles[CLIENT_CLASSIC]) != std::string::npos)
     {
         classInstance->m_clientType = CLIENT_CLASSIC;
-        classInstance->m_UOHandle = reinterpret_cast<long*>(hWnd);
+        classInstance->m_UOHandle = hWnd;
         return FALSE;
     }
     else if (windowTitle.find(UOClientWindowTitles[CLIENT_ENHANCED]) != std::string::npos)
     {
         classInstance->m_clientType = CLIENT_ENHANCED;
-        classInstance->m_UOHandle = reinterpret_cast<long*>(hWnd);
+        classInstance->m_UOHandle = hWnd;
         return FALSE;
     }
     return TRUE;
@@ -55,11 +60,11 @@ bool KeystrokeSender_Windows::canSend()
         if (!findUOWindow())
             return false;
     }
-    if (IsWindow(reinterpret_cast<HWND>(m_UOHandle)))
+    if (IsWindow(m_UOHandle))
     {
         std::string windowName;
         windowName.resize(101);
-        GetWindowTextA(reinterpret_cast<HWND>(m_UOHandle), &windowName[0], 100);
+        GetWindowTextA(m_UOHandle, &windowName[0], 100);
         if ( (m_clientType == CLIENT_CLASSIC) && (windowName.find(UOClientWindowTitles[CLIENT_CLASSIC]) != std::string::npos) )
             return true;
         else if ( (m_clientType == CLIENT_ENHANCED) && (windowName.find(UOClientWindowTitles[CLIENT_ENHANCED]) != std::string::npos) )
@@ -70,7 +75,7 @@ bool KeystrokeSender_Windows::canSend()
             return false;
     }
     else
-        return false;
+        return findUOWindow();
     return true;
 }
 
@@ -79,7 +84,10 @@ bool KeystrokeSender_Windows::sendChar(const char ch)
     if (!canSend())
         return false;
 
-    PostMessage(reinterpret_cast<HWND>(m_UOHandle), WM_CHAR, ch, 0);
+    if (m_setFocusToWindow)
+        SetForegroundWindow(m_UOHandle);
+
+    PostMessage(m_UOHandle, WM_CHAR, ch, 0);
     return true;
 }
 
@@ -88,15 +96,18 @@ bool KeystrokeSender_Windows::sendEnter()
     if (!canSend())
         return false;
 
+    if (m_setFocusToWindow)
+        SetForegroundWindow(m_UOHandle);
+
     // Also the WM_CHAR works for the enter key
 
     // KeyDown
-    PostMessage(reinterpret_cast<HWND>(m_UOHandle), WM_KEYDOWN, VK_RETURN, (LPARAM)( 1 ));
+    PostMessage(m_UOHandle, WM_KEYDOWN, VK_RETURN, (LPARAM)( 1 ));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(40));
 
     // KeyUp
-    PostMessage(reinterpret_cast<HWND>(m_UOHandle), WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1 << 31) ));
+    PostMessage(m_UOHandle, WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1 << 31) ));
 
     return true;
 }
@@ -109,8 +120,12 @@ bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTermi
         return false;
     }
 
-// TODO: cansend(); so i can detect the client type
-// TODO: if Enhanched Client (or KR? or UO3D?), for windows use SendInput instead of PostMessage and
+    // In the past (maybe because of how older versions of the Enhanced Client were coded), PostMessage didn't work
+    //  for EC but only for the Classic Client, so we needed to use SendInput, which required the receiver window to
+    //  be the foreground window.
+
+    if (m_setFocusToWindow)
+        SetForegroundWindow(m_UOHandle);
 
     int len = (strlen(str) > 255) ? 255 : (int)strlen(str);
 

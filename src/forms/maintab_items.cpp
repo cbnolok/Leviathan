@@ -279,11 +279,14 @@ void MainTab_Items::onManual_treeView_objList_selectionChanged(const QModelIndex
     ScriptObj *script = m_objMapQItemToScript[obj_item];
     emit selectedScriptObjChanged(script);
 
-    int id = 0x4000 + script->m_display;
+    int id = script->m_display;
+    ui->label_id->setText("ID: 0" + QString::number(id, 16) + " (" + QString::number(id, 10) + ")");
+
     int hue = ScriptUtils::strToSphereInt16(script->m_color);
     if (hue < 0)    // template or random expr (not supported yet) or strange string
         hue = 0;
-    QImage* art = g_UOArt->drawArt(id, hue, false);
+
+    QImage* art = g_UOArt->drawArt(0x4000 + id, hue, false);
     if (art == nullptr)
         return;
 
