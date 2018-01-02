@@ -15,17 +15,26 @@ struct ScriptSearch
         Description
     };
 
-    /*
-    typedef struct SearchData_s
+    enum class LastOperation_t
     {
-        SearchBy_t searchBy;
-        bool caseSensitive;
-        std::string key;
+        None,
+        Next,
+        Previous
+    };
+
+    typedef struct SearchData_s // to comfortably pass the data relating to a search session
+    {
+        SearchBy_t      searchBy;
+        bool            caseSensitive;
+        std::string     key;
+
+        bool            initialized;    // needed by SubDlg_SearchObj
+        SearchData_s(): initialized(false) {}
     } SearchData_t;
-    */
+
 
 public:
-    ScriptSearch(const std::vector<ScriptObjTree *> &trees, SearchBy_t searchBy, bool caseSensitive, std::string key);
+    ScriptSearch(const std::vector<ScriptObjTree *> &trees, SearchData_t data);
     ScriptObj* next();
     ScriptObj* previous();
 
@@ -39,13 +48,7 @@ private:
     ScriptObjTree::iterator m_it;
     size_t m_lastFoundTreeIdx;
     ScriptObjTree::iterator m_it_lastFound;
-
-    enum class LastOperation_t
-    {
-        None,
-        Next,
-        Previous
-    } m_lastOperation;
+    LastOperation_t m_lastOperation;
 
     ScriptObj *isMatch();
 };

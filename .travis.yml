@@ -47,6 +47,10 @@ before_script:
   - printf '#ifndef VERSION_H\n' > src/version.h
   - printf '#define VERSION_H\n' >> src/version.h
   - printf '#define LEVIATHAN_VERSION \\\n' >> src/version.h
+  - |
+    if [[ -z "$TRAVIS_TAG" ]]; then
+        printf "$TRAVIS_TAG - " >> src/version.h
+    fi 
   - git log -1 --format=%ci >> src/version.h
   - printf '\n#endif // VERSION_H' >> src/version.h
 
@@ -59,7 +63,7 @@ script:
 
 #after_success:
   # Pack everything in a zip
-  - tar -czf LeviathanLinux64-automated-${TRAVIS_TAG}.zip Leviathan ../icons
+  - tar -czf LeviathanLinux64-automated-${TRAVIS_TAG}.zip Leviathan
 
 deploy:
   provider: releases

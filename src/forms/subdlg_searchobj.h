@@ -16,7 +16,10 @@ class SubDlg_SearchObj : public QDialog
 public:
     explicit SubDlg_SearchObj(QWidget *parent = 0);
     ~SubDlg_SearchObj();
-    void getSearchData(ScriptSearch::SearchBy_t &searchBy, bool &caseSensitive, std::string &key);
+
+    ScriptSearch::SearchData_t getSearchData();
+    void setSearchData(ScriptSearch::SearchData_t data);
+
 
 private slots:
     void on_pushButton_ok_clicked();

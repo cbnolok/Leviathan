@@ -20,14 +20,17 @@ public:
     ~MainWindow();
 
 private slots:
+    void on_tabWidget_currentChanged(int /* UNUSED: index */);
     void onManual_actionEditScriptsProfiles_triggered();
     void onManual_actionLoadDefaultScriptsProfile_triggered();
     void onManual_actionEditClientProfiles_triggered();
     void onManual_actionLoadDefaultClientProfile_triggered();
     void onManual_actionSettings_triggered();
+    void onManual_actionLoadClientProfile_mapped(int index);
+    void onManual_actionLoadScriptsProfile_mapped(int index);
     void on_checkBox_onTop_toggled(bool checked);
     void on_checkBox_focus_toggled(bool checked);
-    void loadDefaultProfiles();    
+    void loadDefaultProfiles();
 
 private:
     Ui::MainWindow      *ui;

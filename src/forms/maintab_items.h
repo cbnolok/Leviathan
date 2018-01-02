@@ -59,6 +59,7 @@ private:
     QStandardItemModel *m_objList_model;
 
     std::unique_ptr<ScriptSearch> m_scriptSearch;
+    ScriptSearch::SearchData_t m_lastSearchData;
 
     void doSearch (bool backwards);
 };

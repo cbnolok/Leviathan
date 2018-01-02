@@ -15,7 +15,7 @@ bool isValidFile(std::string filePath)
 {
     struct stat info;
 
-    if(stat( filePath.c_str(), &info ) != 0)
+    if (stat( filePath.c_str(), &info ) != 0)
         return false;
     else
         return true;
@@ -25,9 +25,9 @@ bool isValidDirectory(std::string directoryPath)
 {
     struct stat info;
 
-    if(stat( directoryPath.c_str(), &info ) != 0)
+    if (stat( directoryPath.c_str(), &info ) != 0)
         return false;
-    else if(info.st_mode & S_IFDIR)
+    else if (info.st_mode & S_IFDIR)
         return true;
     else
         return false;

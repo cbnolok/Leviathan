@@ -309,21 +309,27 @@ void MainTab_Chars::doSearch(bool backwards)
         return;
     }
 
+    // look up the m_categoryMap map to see if we have loaded the QStandardItem corresponding to the ScriptCategory of the object
     ScriptCategory* category = obj->m_category;
-    auto categoryIt = mapSearchByKey(m_categoryMap, category);
+    auto categoryIt = mapSearchByKey(m_categoryMap, category);          // it's an iterator
     if (categoryIt == m_categoryMap.end())      // not found? odd..
         return;
     //QStandardItem* categoryQ = categoryIt->first;
 
+    // look up the m_subsectionMap map to see if we have loaded the QStandardItem corresponding to the ScriptSubsection of the object
     ScriptSubsection* subsection = obj->m_subsection;
-    auto subsectionIt = mapSearchByKey(m_subsectionMap, subsection);
+    auto subsectionIt = mapSearchByKey(m_subsectionMap, subsection);    // it's an iterator
     if (subsectionIt == m_subsectionMap.end())  // not found? odd..
         return;
     QStandardItem* subsectionQ = subsectionIt->first;
 
+    // now that i have the subsection's QStandardItem, get its QModelIndex
     QModelIndex emptyIdx;
     QModelIndex subsectionIdx = m_organizer_model->indexFromItem(subsectionQ);
     //QModelIndex categoryIdx = m_organizer_model->indexFromItem(categoryQ);
+
+    // store the previous loaded subsection: if the current subsection is the same of the previous, there's no need to
+    //  empty and load again the whole subsection list
     static QModelIndex prevSubsectionIdx;
 
     ui->treeView_organizer->scrollTo(subsectionIdx, QAbstractItemView::PositionAtCenter);
@@ -331,7 +337,7 @@ void MainTab_Chars::doSearch(bool backwards)
     ui->treeView_organizer->selectionModel()->select(subsectionIdx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
     if (subsectionIdx != prevSubsectionIdx)
     {
-        onManual_treeView_organizer_selectionChanged(subsectionIdx, emptyIdx);
+        onManual_treeView_organizer_selectionChanged(subsectionIdx, emptyIdx);  // load the new subsection into treeView_objList
         prevSubsectionIdx = subsectionIdx;
     }
 
@@ -339,6 +345,7 @@ void MainTab_Chars::doSearch(bool backwards)
     QModelIndex objIdx = m_objList_model->indexFromItem(objQ);
 
     onManual_treeView_objList_selectionChanged(objIdx, emptyIdx);
+    ui->treeView_objList->setFocus();
     ui->treeView_objList->scrollTo(objIdx, QAbstractItemView::PositionAtCenter);
     ui->treeView_objList->selectionModel()->select(objIdx, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Toggle);
 }
@@ -349,6 +356,8 @@ void MainTab_Chars::on_pushButton_search_clicked()
         return;
 
     SubDlg_SearchObj dlg(window());
+    if (m_lastSearchData.initialized)
+        dlg.setSearchData(m_lastSearchData);
     if (!dlg.exec())
         return;
 
@@ -358,11 +367,8 @@ void MainTab_Chars::on_pushButton_search_clicked()
         objTree(SCRIPTOBJ_TYPE_SPAWN)
     };
 
-    ScriptSearch::SearchBy_t searchBy;
-    bool caseSensitive;
-    std::string key;
-    dlg.getSearchData(searchBy, caseSensitive, key);
-    m_scriptSearch.reset(new ScriptSearch(trees, searchBy, caseSensitive, key));
+    m_lastSearchData = dlg.getSearchData();
+    m_scriptSearch.reset(new ScriptSearch(trees, m_lastSearchData));
     doSearch(false);
 }
 

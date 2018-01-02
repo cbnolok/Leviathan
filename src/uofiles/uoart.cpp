@@ -44,7 +44,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
     }
     fs_art.seekg(lookup);
 
-    int_fast16_t width = 0, height = 0;
+    int16_t width = 0, height = 0;
     QImage* img = nullptr;
 
 
@@ -83,7 +83,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
         img->fill(0);
 
         // Algorithm from Punt's C++ Ultima SDK
-        uint_fast16_t rawcolor_argb16 = 0;
+        uint16_t rawcolor_argb16 = 0;
         int X = 22;
         int Y = 0;
         int linewidth = 2;
@@ -163,7 +163,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
         When the line is completed, simply reset X to 0, increase Y, and seek to the next lookup in the lookupTable array and continue.
         */
 
-        uint_fast32_t flags = 0;
+        uint32_t flags = 0;
         fs_art.read(reinterpret_cast<char*>(&flags), 4);
         fs_art.read(reinterpret_cast<char*>(&width), 2);
         fs_art.read(reinterpret_cast<char*>(&height), 2);
@@ -183,7 +183,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
             X=0;
 
             fs_art.seekg(lookups[Y] * 2 + datastart);
-            uint_fast16_t xOffset = 1, xRun = 1;
+            uint16_t xOffset = 1, xRun = 1;
             while (xOffset + xRun != 0)
             {
                 fs_art.read(reinterpret_cast<char*>(&xOffset), 2);
@@ -193,7 +193,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
                     X += xOffset ;
                     for (unsigned jj=0; jj < xRun; ++jj)
                     {
-                        uint_fast16_t rawcolor_argb16 = 0;
+                        uint16_t rawcolor_argb16 = 0;
                         fs_art.read(reinterpret_cast<char*>(&rawcolor_argb16), 2);
                         ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
                         if (hueIndex != 0)

@@ -3,12 +3,12 @@
 #include <cstring>
 
 ScriptSearch::ScriptSearch
-    (const std::vector<ScriptObjTree *> &trees, SearchBy_t searchBy, bool caseSensitive, std::string key) :
-    m_trees(trees), m_searchBy(searchBy), m_caseSensitive(caseSensitive), m_key(key),
+    (const std::vector<ScriptObjTree *> &trees, SearchData_t data) :
+    m_trees(trees), m_searchBy(data.searchBy), m_caseSensitive(data.caseSensitive), m_key(data.key),
     m_curTreeIdx(0), m_it(m_trees[0]->begin()), m_lastFoundTreeIdx(0), m_it_lastFound(m_trees[0]->end()),
     m_lastOperation(LastOperation_t::None)
 {
-    if (!caseSensitive)
+    if (!data.caseSensitive)
         strToUpper(m_key);
 }
 

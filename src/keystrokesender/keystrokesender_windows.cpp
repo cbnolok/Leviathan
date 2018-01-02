@@ -9,6 +9,8 @@
 #include <windows.h>
 #include <winuser.h>
 
+const int delayKeystrokes = 50; //milliseconds
+
 
 namespace keystrokesender
 {
@@ -104,7 +106,7 @@ bool KeystrokeSender_Windows::sendEnter()
     // KeyDown
     PostMessage(m_UOHandle, WM_KEYDOWN, VK_RETURN, (LPARAM)( 1 ));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    std::this_thread::sleep_for(std::chrono::milliseconds(delayKeystrokes));
 
     // KeyUp
     PostMessage(m_UOHandle, WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1 << 31) ));
@@ -133,7 +135,7 @@ bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTermi
     {
         if (!sendChar(str[i]))
             return false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayKeystrokes));
     }
 
     if (enterTerminated)

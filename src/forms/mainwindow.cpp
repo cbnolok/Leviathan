@@ -11,6 +11,7 @@
 #include "dlg_profileclient_options.h"
 #include "dlg_profilescripts_options.h"
 #include <QTimer>
+#include <QSignalMapper>
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -20,10 +21,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     // Setting version in the title bar
-    #define STRINGIFY(x) #x
-    #define TOSTRING(x) STRINGIFY(x)
+    #define _STRINGIFY(x) #x
+    #define TOSTRING(x) _STRINGIFY(x)
     QString version = TOSTRING(LEVIATHAN_VERSION);
-    #undef STRINGIFY
+    #undef _STRINGIFY
     #undef TOSTRING
     #ifndef BUILD_NOT_AUTOMATIC
         version += "(automated)";
@@ -39,30 +40,62 @@ MainWindow::MainWindow(QWidget *parent) :
     /*  Setting up the menubar */
 
     // Generate Client Profiles menu entries
-    QAction *actionEditClientProfiles = new QAction("Edit Client Profiles", this);
+    QAction *actionEditClientProfiles = new QAction("Edit Client Profiles", nullptr);
     ui->menuProfiles->addAction(actionEditClientProfiles);
     connect(actionEditClientProfiles, SIGNAL(triggered(bool)), this, SLOT(onManual_actionEditClientProfiles_triggered()));
 
-    QAction *actionLoadDefaultClientProfile = new QAction("Load default Client Profile", this);
+    QAction *actionLoadDefaultClientProfile = new QAction("Load default Client Profile", nullptr);
     ui->menuProfiles->addAction(actionLoadDefaultClientProfile);
     connect(actionLoadDefaultClientProfile, SIGNAL(triggered(bool)), this, SLOT(onManual_actionLoadDefaultClientProfile_triggered()));
+
+    if (!g_clientProfiles.empty())
+    {
+        QMenu *menuLoadClientProfile = new QMenu("Load Client Profile...", nullptr);
+        QSignalMapper* clientProfilesSignalMapper = new QSignalMapper();
+        std::vector<QAction*> clientProfileActions;
+        for (size_t i = 0; i < g_clientProfiles.size(); ++i)
+        {
+            clientProfileActions.emplace_back(new QAction(g_clientProfiles[i].m_name.c_str(), nullptr));
+            menuLoadClientProfile->addAction(clientProfileActions[i]);
+            connect(clientProfileActions[i], SIGNAL(triggered()), clientProfilesSignalMapper, SLOT(map()));
+            clientProfilesSignalMapper->setMapping(clientProfileActions[i], (int)i);
+        }
+        connect(clientProfilesSignalMapper, SIGNAL(mapped(int)), this, SLOT(onManual_actionLoadClientProfile_mapped(int)));
+        ui->menuProfiles->addMenu(menuLoadClientProfile);
+    }
 
     ui->menuProfiles->addSeparator();
 
     // Generate Scripts Profiles menu entries
-    QAction *actionEditScriptsProfiles = new QAction("Edit Scripts Profiles", this);
+    QAction *actionEditScriptsProfiles = new QAction("Edit Scripts Profiles", nullptr);
     ui->menuProfiles->addAction(actionEditScriptsProfiles);
     connect(actionEditScriptsProfiles, SIGNAL(triggered(bool)), this, SLOT(onManual_actionEditScriptsProfiles_triggered()));
 
-    QAction *actionLoadDefaultScriptsProfile = new QAction("Load default Scripts Profile", this);
+    QAction *actionLoadDefaultScriptsProfile = new QAction("Load default Scripts Profile", nullptr);
     ui->menuProfiles->addAction(actionLoadDefaultScriptsProfile);
     connect(actionLoadDefaultScriptsProfile, SIGNAL(triggered(bool)), this, SLOT(onManual_actionLoadDefaultScriptsProfile_triggered()));
+
+    if (!g_scriptsProfiles.empty())
+    {
+        QMenu *menuLoadScriptsProfile = new QMenu("Load Scripts Profile...", nullptr);
+        QSignalMapper* scriptsProfilesSignalMapper = new QSignalMapper();
+        std::vector<QAction*> scriptsProfileActions;
+        for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
+        {
+            scriptsProfileActions.emplace_back(new QAction(g_scriptsProfiles[i].m_name.c_str(), nullptr));
+            menuLoadScriptsProfile->addAction(scriptsProfileActions[i]);
+            connect(scriptsProfileActions[i], SIGNAL(triggered()), scriptsProfilesSignalMapper, SLOT(map()));
+            scriptsProfilesSignalMapper->setMapping(scriptsProfileActions[i], (int)i);
+        }
+        connect(scriptsProfilesSignalMapper, SIGNAL(mapped(int)), this, SLOT(onManual_actionLoadScriptsProfile_mapped(int)));
+        ui->menuProfiles->addMenu(menuLoadScriptsProfile);
+    }
 
     // TODO: add in a submenu the actions to load every single, stored profile
 
     // Generate Settings entry
     //ui->menuProfiles->addSeparator();
-    QAction *actionSettings = new QAction("Settings", this);
+    QAction *actionSettings = new QAction("Settings", nullptr);
     //ui->menuProfiles->addAction(actionSettings);
     ui->menuBar->addAction(actionSettings);
     connect(actionSettings, SIGNAL(triggered(bool)), this, SLOT(onManual_actionSettings_triggered()));
@@ -92,6 +125,11 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+
+void MainWindow::on_tabWidget_currentChanged(int /* UNUSED: index */)
+{
+    ui->tabWidget->currentWidget()->setFocus();     // i need the keyboard focus to be able to use CTRL + F to start a search
+}
 
 /* Menu bar actions */
 
@@ -126,6 +164,16 @@ void MainWindow::onManual_actionSettings_triggered()
 {
     Dlg_Settings dlg(this);
     dlg.exec();
+}
+
+void MainWindow::onManual_actionLoadClientProfile_mapped(int index)
+{
+    loadClientProfile(index);
+}
+
+void MainWindow::onManual_actionLoadScriptsProfile_mapped(int index)
+{
+    loadScriptProfile(index);
 }
 
 void MainWindow::on_checkBox_onTop_toggled(bool checked)
@@ -224,5 +272,4 @@ void MainWindow::loadScriptProfile(int index)
     m_MainTab_Chars_inst->updateViews();
     m_MainTab_Items_inst->updateViews();
 }
-
 
