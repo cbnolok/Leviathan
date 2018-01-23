@@ -1,7 +1,7 @@
 #include "scriptparser.h"
 #include "../globals.h"
-#include "../common.h"
-#include "../sysio.h"
+#include "../cpputils.h"
+#include "../cpputils_sysio.h"
 #include "scriptobjects.h"
 #include "scriptutils.h"
 #include <QCoreApplication> // for QCoreApplication::processEvents();
@@ -202,8 +202,8 @@ void ScriptParser::run()
     auto _sortDescription   = [](ScriptObj* a, ScriptObj* b)                -> bool {return a->m_description    < b->m_description;};
 
     ScriptObjTree* sorting_trees[] =
-    {   objTree(SCRIPTOBJ_TYPE_ITEM),  objTree(SCRIPTOBJ_TYPE_CHAR), objTree(SCRIPTOBJ_TYPE_DEF), objTree(SCRIPTOBJ_TYPE_AREA),
-        objTree(SCRIPTOBJ_TYPE_SPAWN), objTree(SCRIPTOBJ_TYPE_TEMPLATE), objTree(SCRIPTOBJ_TYPE_SPELL), objTree(SCRIPTOBJ_TYPE_MULTI)
+    {   getScriptObjTree(SCRIPTOBJ_TYPE_ITEM),  getScriptObjTree(SCRIPTOBJ_TYPE_CHAR), getScriptObjTree(SCRIPTOBJ_TYPE_DEF), getScriptObjTree(SCRIPTOBJ_TYPE_AREA),
+        getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN), getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE), getScriptObjTree(SCRIPTOBJ_TYPE_SPELL), getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
     };
 
     // sort categories
@@ -889,7 +889,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         switch (ScriptUtils::findTableSorted(keyword, ScriptUtils::objectTags, ScriptUtils::SCRIPTOBJ_TAG_QTY - 1))
         {
         case ScriptUtils::SCRIPTOBJ_TAG_CATEGORY:
-            obj->m_category = objTree(obj->m_type)->findCategory(value);
+            obj->m_category = getScriptObjTree(obj->m_type)->findCategory(value);
             break;
         case ScriptUtils::SCRIPTOBJ_TAG_SUBSECTION:
             objSubsection = value;
@@ -1016,7 +1016,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         }
         else
         {
-            obj->m_category = objTree(obj->m_type)->findCategory(SCRIPTCATEGORY_NONE_NAME);
+            obj->m_category = getScriptObjTree(obj->m_type)->findCategory(SCRIPTCATEGORY_NONE_NAME);
             obj->m_subsection = obj->m_category->findSubsection(objSubsection);
             obj->m_subsection->m_objects.push_back(obj);
         }

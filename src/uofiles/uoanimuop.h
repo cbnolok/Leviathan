@@ -4,29 +4,20 @@
 #include "uoppackage/UOPPackage.h"
 #include <string>
 #include <vector>
-#include <map>
-
-//#include <QObject>
+#include <functional>   // for std::function (callback)
 
 
 class QImage;
 
-class UOAnimUOP //: QObject
+class UOAnimUOP
 {
-    /*
-    Q_OBJECT
-    // Need it to be a QObject to have signals and slots, in order to send progress info to the other thread.
-
-signals:
-    // TP: Task Progress (notify the progress status to SubDlg_TaskProgress)
-    void notifyTPProgressMax(int max);
-    void notifyTPProgressVal(int val);
-    void notifyTPMessage(QString msg);
-*/
 public:
-    UOAnimUOP(std::string clientPath);
+    UOAnimUOP(std::string clientPath, std::function<void(int)> reportProgress);
     //~UOAnimUOP();
 
+    bool isLoading() const {
+        return m_isLoading;
+    }
     bool animExists(int animID);
     QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex);
 
@@ -51,11 +42,13 @@ private:
 
     std::vector<UOPAnimationData> m_animationsData;
 
-    // sort animationsData by [groupID][animID]:
-    // m_animationsMatrix[groupID] contains a map which [animID] contains the UOPAnimationData*
-    std::map<int, std::map<int,UOPAnimationData*>> m_animationsMatrix;
+    // sort animationsData by [animID][groupID]:
+    static const int kAnimIdMax = 2048;   // animation ID
+    static const int kGroupIdMax = 100;   // action ID
+    UOPAnimationData* m_animationsMatrix[kAnimIdMax][kGroupIdMax];
+    bool m_isLoading;
 
-    void buildAnimTable();
+    void buildAnimTable(std::function<void(int)> reportProgress);
     UOPFrameData loadFrameData(int animID, int groupID, int direction, int frame, char *&decData, size_t& decDataSize); // decData: buffer for decompressed anim data
 };
 

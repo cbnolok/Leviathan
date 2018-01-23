@@ -1,5 +1,5 @@
-#include "sysio.h"
-#include "common.h"
+#include "cpputils_sysio.h"
+#include <algorithm>    // for std::replace
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -11,7 +11,14 @@
 #include <sys/stat.h>
 
 
-bool isValidFile(std::string filePath)
+void standardizePath(std::string &s)
+{
+    std::replace(s.begin(), s.end(), '\\', '/');
+    if (s[s.length() - 1] != '/')
+        s += '/';
+}
+
+bool isValidFile(const std::string& filePath)
 {
     struct stat info;
 
@@ -21,7 +28,7 @@ bool isValidFile(std::string filePath)
         return true;
 }
 
-bool isValidDirectory(std::string directoryPath)
+bool isValidDirectory(const std::string& directoryPath)
 {
     struct stat info;
 

@@ -1,5 +1,5 @@
 #include "scriptutils.h"
-#include "common.h"
+#include "cpputils.h"
 #include <cstring>      // for strcmp
 #include <sstream>      // for std::stringstream
 #include <iomanip>      // for std::hex

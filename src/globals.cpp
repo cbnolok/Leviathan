@@ -3,10 +3,9 @@
 #include "uofiles/uohues.h"
 #include "uofiles/uoart.h"
 #include "uofiles/uoanim.h"
-#include <QApplication>
 
 
-Settings g_settings;
+AppSettings g_settings;
 
 int g_loadedClientProfile = -1;
 std::vector<ClientProfile> g_clientProfiles;
@@ -15,7 +14,7 @@ int g_loadedScriptsProfile = -1;
 std::vector<ScriptsProfile> g_scriptsProfiles;
 std::vector<std::string> g_scriptFileList;
 
-keystrokesender::KeystrokeSender g_keystrokeSender(true);
+bool g_sendKeystrokeAndFocusClient = true;
 
 ScriptObjTree *g_scriptObjTree_Chars        = nullptr;
 ScriptObjTree *g_scriptObjTree_Spawns       = nullptr;
@@ -26,7 +25,7 @@ ScriptObjTree *g_scriptObjTree_Areas        = nullptr;
 ScriptObjTree *g_scriptObjTree_Spells       = nullptr;
 ScriptObjTree *g_scriptObjTree_Multis       = nullptr;
 
-ScriptObjTree * objTree(int objType)
+ScriptObjTree * getScriptObjTree(int objType)
 {
     switch (objType)
     {
@@ -69,7 +68,7 @@ UOHues *g_UOHues = nullptr;
 UOArt  *g_UOArt  = nullptr;
 UOAnim *g_UOAnim = nullptr;
 
-void loadClientFiles()
+void loadClientFiles(std::function<void(int)> reportProgress)
 {
     if (g_loadedClientProfile == -1)
         return;
@@ -82,13 +81,9 @@ void loadClientFiles()
 
     appendToLog("Loading Client Profile \"" + g_clientProfiles[g_loadedClientProfile].m_name + "\"...");
 
-    QApplication::processEvents();
     g_UOHues = new UOHues(clientFolder + "hues.mul");
-    QApplication::processEvents();
     g_UOArt  = new UOArt (clientFolder);
-    QApplication::processEvents();
-    g_UOAnim = new UOAnim(clientFolder);
-    QApplication::processEvents();
+    g_UOAnim = new UOAnim(clientFolder, reportProgress);
 
     appendToLog("Client Profile \"" + g_clientProfiles[g_loadedClientProfile].m_name + "\" loaded.");
 }

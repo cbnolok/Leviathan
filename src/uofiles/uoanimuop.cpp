@@ -1,7 +1,7 @@
 #include "uoanimuop.h"
 #include "../globals.h"
-#include "../common.h"
-#include "../sysio.h"
+#include "../cpputils.h"
+#include "../cpputils_sysio.h"
 #include "uoppackage/UOPError.h"
 #include "uoppackage/UOPPackage.h"
 #include "uoppackage/UOPBlock.h"
@@ -9,33 +9,31 @@
 #include "uohues.h"
 #include <QImage>
 #include <QGraphicsPixmapItem>
-#include <QApplication>
 
 
-UOAnimUOP::UOAnimUOP(std::string clientPath) :
-    m_clientPath(clientPath)
+UOAnimUOP::UOAnimUOP(std::string clientPath, std::function<void(int)> reportProgress) :
+    m_clientPath(clientPath), m_isLoading(false)
 {
-    buildAnimTable();
+    buildAnimTable(reportProgress);
 }
 
 //UOAnimUOP::~UOAnimUOP()
 //{
 //}
 
-void UOAnimUOP::buildAnimTable()
+void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
 {
+    m_isLoading = true;
+    memset((void*)m_animationsMatrix, 0, sizeof(m_animationsMatrix[0][0]) * kAnimIdMax * kGroupIdMax);
+
     // We need to know which animations are in the uop files
 
     appendToLog("Building UOP animations table...");
-    /*
-    emit notifyTPMessage("Loading client files...\nParsing AnimationFrame UOP files...");
-    emit notifyTPProgressVal(0);
-    emit notifyTPProgressMax(0);
-    */
-    unsigned progressVal = 0;
+    int progressVal = 0;
 
     // Parse anim data in each AnimationFrame*.uop
-    for (int uopFile_i = 1; uopFile_i <= 4; ++uopFile_i)
+    const int uopFileCount = 4;
+    for (int uopFile_i = 1; uopFile_i <= uopFileCount; ++uopFile_i)
     {
         std::string path = m_clientPath + "AnimationFrame" + std::to_string(uopFile_i) + ".uop";
 
@@ -75,30 +73,32 @@ void UOAnimUOP::buildAnimTable()
                 m_animationsData.push_back(data);
             }
 
-            unsigned progressValNow = (unsigned)( (block_i*100)/block_max );
-            if (progressValNow > progressVal)
+            // it's so fast we can even do not report progress (or use OpenMP)...
+            /*
+            int progressValNow = ( ((block_i*100)/(block_max-1)) / (uopFileCount - uopFile_i + 1) );
+            if ( reportProgress && (progressValNow > progressVal) )
             {
                 progressVal = progressValNow;
-                QCoreApplication::processEvents();  // Update the UI to see the progress bar moving
+                reportProgress(progressVal);    // it's a bit of a mess to pass the progress to the main Qt thread...
             }
+            */
         }
     }
 
     // Find the groups for each animation we have found
     //  (groups are different actions but they do not have sequential numbers)
 
-    /*
-    emit notifyTPMessage("Loading client files...\nBuilding UOP animations table...");
-    emit notifyTPProgressMax(150);
-    */
     progressVal = 0;
 
-    for (int animId = 0; animId < 2048; ++animId)
+    // It would be more logical to have animId as outer loop and groupId as inner loop, but the kGroupIdMax is < than kAnimIdMax,
+    //  so this way we create the threads much less often.
+    for (int groupId = 0; groupId < kGroupIdMax; ++groupId)
     {
-        for (int grpId = 0; grpId < 100; ++grpId)
+        #pragma omp parallel for schedule(static)   // split the workload between some threads with OpenMP!
+        for (int animId = 0; animId < kAnimIdMax; ++animId)
         {
             char hashString[100];
-            sprintf(hashString, "build/animationlegacyframe/%06i/%02i.bin", animId, grpId);
+            sprintf(hashString, "build/animationlegacyframe/%06i/%02i.bin", animId, groupId);
             unsigned long long hash = uoppackage::UOPPackage::getHash(hashString);
             int found = -1;
             for (int i = 0, max = (int)m_animationsData.size(); i < max; ++i)
@@ -110,24 +110,27 @@ void UOAnimUOP::buildAnimTable()
                 }
             }
             if (found != -1)
-               m_animationsMatrix[animId][grpId] = &m_animationsData[found];
+               m_animationsMatrix[animId][groupId] = &m_animationsData[found];
         }
 
-        unsigned progressValNow = (unsigned)( (animId*150)/2048 );
-        if (progressValNow > progressVal)
+        int progressValNow = ( (groupId*100)/kGroupIdMax );
+        if ( reportProgress && (progressValNow > progressVal) )
         {
             progressVal = progressValNow;
-            //emit notifyTPProgressVal((int)progressVal);
-            QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
+            reportProgress(progressVal);    // it's a bit of a mess to pass the progress to the main Qt thread...
         }
-    }
 
+    }
+    m_isLoading = false;
 }
 
 bool UOAnimUOP::animExists(int animID)
 {
-    if (m_animationsMatrix.find(animID) != m_animationsMatrix.end())
-        return true;
+    for (int i = 0; i < kGroupIdMax; ++i)
+    {
+        if (m_animationsMatrix[animID][i] != nullptr)   // do we have almost an action (group) for this animId?
+            return true;
+    }
     return false;
 }
 
@@ -249,7 +252,7 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
         groupID = action;
     else
     {
-        for (int i = 0; i < 100; ++i)
+        for (int i = 0; i < kGroupIdMax; ++i)
         {
             if (m_animationsMatrix[bodyID][i] != nullptr)
                 groupID = i;
@@ -330,7 +333,7 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
             if (hueIndex != 0)
             {
-                UOHueEntry hue = g_UOHues->getHue(hueIndex);
+                UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
                 color_argb16 = hue.applyToColor(color_argb16, applyToGrayOnly);
             }
             ARGB32 color_argb32 = argb16_to_argb32(color_argb16);

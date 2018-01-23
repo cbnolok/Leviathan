@@ -1,7 +1,6 @@
 #ifdef _WIN32
 
 #include "keystrokesender_windows.h"
-#include <string>
 #include <thread>
 #include <chrono>
 
@@ -9,10 +8,10 @@
 #include <windows.h>
 #include <winuser.h>
 
-const int delayKeystrokes = 50; //milliseconds
+const int kDelayKeystrokes = 50; //milliseconds
 
 
-namespace keystrokesender
+namespace ks
 {
 
 KeystrokeSender_Windows::KeystrokeSender_Windows(bool setFocusToWindow) :
@@ -106,7 +105,7 @@ bool KeystrokeSender_Windows::sendEnter()
     // KeyDown
     PostMessage(m_UOHandle, WM_KEYDOWN, VK_RETURN, (LPARAM)( 1 ));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(delayKeystrokes));
+    std::this_thread::sleep_for(std::chrono::milliseconds(kDelayKeystrokes));
 
     // KeyUp
     PostMessage(m_UOHandle, WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1 << 31) ));
@@ -114,9 +113,9 @@ bool KeystrokeSender_Windows::sendEnter()
     return true;
 }
 
-bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTerminated)
+bool KeystrokeSender_Windows::sendString(const std::string &str, bool enterTerminated)
 {
-    if ( (strlen(str) < 1) )
+    if ( str.length() < 1 )
     {
         m_error = KSERR_STRINGSHORT;
         return false;
@@ -129,13 +128,13 @@ bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTermi
     if (m_setFocusToWindow)
         SetForegroundWindow(m_UOHandle);
 
-    int len = (strlen(str) > 255) ? 255 : (int)strlen(str);
+    int len = (str.length() > 255) ? 255 : (int)str.length();
 
     for (int i = 0; i < len; ++i)
     {
         if (!sendChar(str[i]))
             return false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(delayKeystrokes));
+        std::this_thread::sleep_for(std::chrono::milliseconds(kDelayKeystrokes));
     }
 
     if (enterTerminated)
@@ -145,6 +144,131 @@ bool KeystrokeSender_Windows::sendString(const char * const str, bool enterTermi
     }
 
     return true;
+}
+
+bool KeystrokeSender_Windows::sendStrings(const std::vector<std::string>& strings, bool enterTerminated)
+{
+    for (const std::string& str : strings)
+    {
+        if (!sendString(str, enterTerminated))
+            return false;
+    }
+
+    return true;
+}
+
+
+/* static functions */
+
+KSError KeystrokeSender_Windows::sendCharFast(const char ch, bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks(setFocusToWindow);
+    ks.sendChar(ch);
+    return ks.m_error;
+}
+
+KSError KeystrokeSender_Windows::sendEnterFast(bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks(setFocusToWindow);
+    ks.sendEnter();
+    return ks.m_error;
+}
+
+KSError KeystrokeSender_Windows::sendStringFast(const std::string& str, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks(setFocusToWindow);
+    ks.sendString(str, enterTerminated);
+    return ks.m_error;
+}
+
+KSError KeystrokeSender_Windows::sendStringsFast(const std::vector<std::string>& strings, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks(setFocusToWindow);
+    for (const std::string& str : strings)
+    {
+        ks.sendString(str, enterTerminated);
+        if (ks.m_error != KSERR_OK)
+            return ks.m_error;
+    }
+    return ks.m_error;
+}
+
+
+/* Static async functions */
+
+KSError KeystrokeSender_Windows::sendCharFastAsync(const char ch, bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks_check(setFocusToWindow);
+    if (!ks_check.canSend())
+        return ks_check.m_error;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+             KeystrokeSender_Windows ks_thread(setFocusToWindow);
+            ks_thread.sendChar(ch);
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+}
+
+KSError KeystrokeSender_Windows::sendEnterFastAsync(bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks_check(setFocusToWindow);
+    if (!ks_check.canSend())
+        return ks_check.m_error;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+             KeystrokeSender_Windows ks_thread(setFocusToWindow);
+            ks_thread.sendEnter();
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+}
+
+KSError KeystrokeSender_Windows::sendStringFastAsync(const std::string& str, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks_check(setFocusToWindow);
+    if (!ks_check.canSend())
+        return ks_check.m_error;
+
+    if ( str.length() < 1 )
+        return KSERR_STRINGSHORT;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+            KeystrokeSender_Windows ks_thread(setFocusToWindow);
+            ks_thread.sendString(str, enterTerminated);
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+}
+
+KSError KeystrokeSender_Windows::sendStringsFastAsync(const std::vector<std::string> &strings, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Windows ks_check(setFocusToWindow);
+    if (!ks_check.canSend())
+        return ks_check.m_error;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+            KeystrokeSender_Windows ks_thread(setFocusToWindow);
+            ks_thread.sendStrings(strings, enterTerminated);
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 

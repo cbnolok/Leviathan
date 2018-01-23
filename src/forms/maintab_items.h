@@ -5,7 +5,7 @@
 #include <QWidget>
 #include <memory>   // for smart pointers
 
-namespace keystrokesender {
+namespace ks {
 class KeystrokeSender;
 }
 class ScriptCategory;

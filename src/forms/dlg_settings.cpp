@@ -1,7 +1,7 @@
 #include "dlg_settings.h"
 #include "ui_dlg_settings.h"
 #include "../globals.h"
-#include "../settings/settings.h"
+#include "../settings/appsettings.h"
 #include <QMessageBox>
 #include <QFile>
 #include <QJsonDocument>

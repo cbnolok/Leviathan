@@ -1,6 +1,6 @@
 #include "keystrokesender_common.h"
 
-namespace keystrokesender
+namespace ks
 {
 
 

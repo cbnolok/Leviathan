@@ -1,5 +1,5 @@
 #include "uoanimmul.h"
-#include "../common.h"
+#include "../cpputils.h"
 #include "../globals.h"
 #include "uoidx.h"
 #include "uohues.h"
@@ -363,7 +363,7 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
             if (hueIndex != 0)
             {
-                UOHueEntry hue = g_UOHues->getHue(hueIndex);
+                UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
                 color_argb16 = hue.applyToColor(color_argb16, applyToGrayOnly);
             }
             ARGB32 color_argb32 = argb16_to_argb32(color_argb16);

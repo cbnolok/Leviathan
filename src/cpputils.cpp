@@ -1,6 +1,5 @@
-#include "common.h"
+#include "cpputils.h"
 #include <cstring>      // for strlen
-#include <algorithm>    // for std::replace
 
 
 void strToUpper(std::string &string)
@@ -62,13 +61,6 @@ bool isStringNumericDec(std::string &s)
     strtol(s.c_str(), &p, 0);
     return *p == 0;
     */
-}
-
-void standardizePath(std::string &s)
-{
-    std::replace(s.begin(), s.end(), '\\', '/');
-    if (s[s.length() - 1] != '/')
-        s += '/';
 }
 
 

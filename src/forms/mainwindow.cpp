@@ -5,6 +5,7 @@
 #include "../spherescript/scriptparser.h"
 #include "maintab_items.h"
 #include "maintab_chars.h"
+#include "maintab_tools.h"
 #include "maintab_log.h"
 #include "subdlg_taskprogress.h"
 #include "dlg_settings.h"
@@ -107,8 +108,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->insertTab(0, m_MainTab_Items_inst, "Items");
     m_MainTab_Chars_inst = new MainTab_Chars();
     ui->tabWidget->insertTab(1, m_MainTab_Chars_inst, "Chars");
+    m_MainTab_Tools_inst = new MainTab_Tools();
+    ui->tabWidget->insertTab(2, m_MainTab_Tools_inst, "Tools");
     g_MainTab_Log_inst = new MainTab_Log();
-    ui->tabWidget->insertTab(2, g_MainTab_Log_inst, "Log");          // this is a global class
+    ui->tabWidget->insertTab(3, g_MainTab_Log_inst, "Log");          // this is a global class
 
 
     /* Startup-time operations */
@@ -191,7 +194,7 @@ void MainWindow::on_checkBox_onTop_toggled(bool checked)
 
 void MainWindow::on_checkBox_focus_toggled(bool checked)
 {
-    g_keystrokeSender.setSetFocusToWindow(checked);
+    g_sendKeystrokeAndFocusClient = checked;
 }
 
 int MainWindow::getDefaultClientProfile()
@@ -246,7 +249,8 @@ void MainWindow::loadClientProfile(int index)
 
     // Loading stuff
     progressDlg.setLabelText("Loading client files...");
-    loadClientFiles();  // in common.cpp
+    auto setProgress = [](int /*i*/) {QApplication::processEvents();}; //{ progressDlg.setProgressVal(i); };
+    loadClientFiles(setProgress);  // in common.cpp
 
     progressDlg.close();
 }

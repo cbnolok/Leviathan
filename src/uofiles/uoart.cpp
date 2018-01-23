@@ -48,7 +48,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
     QImage* img = nullptr;
 
 
-    if (id <= 0x4000)
+    if (id <= kItemsOffset)
     {
         // Read land tile
 
@@ -98,7 +98,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
                 //  continue;
                 if (hueIndex != 0)
                 {
-                    UOHueEntry hue = g_UOHues->getHue(hueIndex);
+                    UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
                     color_argb16 = hue.applyToColor(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = argb16_to_argb32(color_argb16);
@@ -121,7 +121,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
                 //  continue;
                 if (hueIndex != 0)
                 {
-                    UOHueEntry hue = g_UOHues->getHue(hueIndex);
+                    UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
                     color_argb16 = hue.applyToColor(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = argb16_to_argb32(color_argb16);
@@ -198,7 +198,7 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
                         ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
                         if (hueIndex != 0)
                         {
-                            UOHueEntry hue = g_UOHues->getHue(hueIndex);
+                            UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
                             color_argb16 = hue.applyToColor(color_argb16, partialHue);
                         }
                         ARGB32 color_argb32 = argb16_to_argb32(color_argb16);

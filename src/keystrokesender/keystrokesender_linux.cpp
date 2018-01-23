@@ -22,12 +22,17 @@
 // !!! To compile this file, the following linker instructions are needed: -L/usr/X11R6/lib -lX11 !!!
 
 
-namespace keystrokesender
+namespace ks
 {
 
 KeystrokeSender_Linux::KeystrokeSender_Linux(bool setFocusToWindow) :
     m_setFocusToWindow(setFocusToWindow)
 {
+}
+
+KeystrokeSender_Linux::~KeystrokeSender_Linux()
+{
+    detach();
 }
 
 /*  Convenience X functions */
@@ -155,6 +160,34 @@ bool KeystrokeSender_Linux::findUOWindow()
     return false;
 }
 
+bool KeystrokeSender_Linux::attach()
+{
+    // Obtain the X11 display.
+    m_display = XOpenDisplay(NULL);
+    if (m_display == NULL)
+        return false;
+
+    // Get the root window for the current display.
+    m_rootWindow = XDefaultRootWindow(m_display);
+
+    // Find the window where to send the keystroke.
+    if ( !findUOWindow() )
+    {
+        XCloseDisplay(m_display);
+        m_display = NULL;
+        return false;
+    }
+    return true;
+}
+
+void KeystrokeSender_Linux::detach()
+{
+    if (m_display != NULL)
+    {
+        XCloseDisplay(m_display);
+        m_display = NULL;
+    }
+}
 
 bool KeystrokeSender_Linux::_sendChar(const char ch)
 {
@@ -173,16 +206,7 @@ bool KeystrokeSender_Linux::_sendChar(const char ch)
 
 bool KeystrokeSender_Linux::sendChar(const char ch)
 {
-    // Obtain the X11 display.
-    m_display = XOpenDisplay(NULL);
-    if (m_display == NULL)
-        return false;
-
-    // Get the root window for the current display.
-    m_rootWindow = XDefaultRootWindow(m_display);
-
-    // Find the window where to send the keystroke.
-    if ( !findUOWindow() )
+    if (!attach())
         return false;
 
 	if (m_setFocusToWindow)
@@ -190,10 +214,7 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
 
     bool ret = _sendChar(ch);
 
-    // Done.
-    XCloseDisplay(m_display);
-    m_display = NULL;
-
+    detach();
     return ret;
 }
 
@@ -204,16 +225,7 @@ bool KeystrokeSender_Linux::_sendEnter()
 
 bool KeystrokeSender_Linux::sendEnter()
 {
-	// Obtain the X11 display.
-    m_display = XOpenDisplay(NULL);
-    if (m_display == NULL)
-        return false;
-
-    // Get the root window for the current display.
-    m_rootWindow = XDefaultRootWindow(m_display);
-
-    // Find the window where to send the keystroke.
-    if ( !findUOWindow() )
+    if (!attach())
         return false;
 
 	if (m_setFocusToWindow)
@@ -221,62 +233,195 @@ bool KeystrokeSender_Linux::sendEnter()
 
     bool ret = _sendEnter();
 
-	// Done.
-    XCloseDisplay(m_display);
-    m_display = NULL;
-
+    detach();
     return ret;
 }
 
-bool KeystrokeSender_Linux::sendString(const char * const str, bool enterTerminated)
+bool KeystrokeSender_Linux::_sendString(const std::string& str, bool enterTerminated)
 {
-    if ( (strlen(str) < 1) )
+    int len = (str.length() > 255) ? 255 : str.length();
+
+    for (int i = 0; i < len; ++i)
+    {
+        if ( !_sendChar(str[i]) )
+            return false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    }
+
+    if (enterTerminated)
+    {
+        if ( !_sendEnter() )
+            return false;
+    }
+
+    return true;
+}
+
+
+bool KeystrokeSender_Linux::sendString(const std::string& str, bool enterTerminated)
+{
+    if ( str.length() < 1 )
     {
         m_error = KSERR_STRINGSHORT;
         return false;
     }
 
-    int len = (strlen(str) > 255) ? 255 : strlen(str);
-
-    // Obtain the X11 display.
-    m_display = XOpenDisplay(NULL);
-    if (m_display == NULL)
-        return false;
-
-    // Get the root window for the current display.
-    m_rootWindow = XDefaultRootWindow(m_display);
-
-    // Find the window where to send the keystroke.
-    if ( !findUOWindow() )
+    if (!attach())
         return false;
 
 	if (m_setFocusToWindow)
         setForegroundWindow(m_display, m_UOWindow);
 
+    bool ret = _sendString(str, enterTerminated);
+
+    detach();
+    return ret;
+}
+
+bool KeystrokeSender_Linux::sendStrings(const std::vector<std::string>& strings, bool enterTerminated)
+{
+    if (!attach())
+        return false;
+
+    if (m_setFocusToWindow)
+        setForegroundWindow(m_display, m_UOWindow);
+
     bool ret = true;
-    for (int i = 0; i < len; ++i)
+    for (const std::string& str : strings)
     {
-        if ( !_sendChar(str[i]) )
+        if ( str.length() < 1 )
+        {
+            m_error = KSERR_STRINGSHORT;
+            ret = false;
+            break;
+        }
+        if (!_sendString(str, enterTerminated))
         {
             ret = false;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
 
-    if (enterTerminated && ret)
-    {
-        if ( !_sendEnter() )
-            ret = false;
-    }
-
-    // Done.
-    XCloseDisplay(m_display);
-    m_display = NULL;
-
+    detach();
     return ret;
 }
 
+
+/* static functions */
+
+KSError KeystrokeSender_Linux::sendCharFast(const char ch, bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks(setFocusToWindow);
+    ks.sendChar(ch);
+    return ks.m_error;
+}
+
+KSError KeystrokeSender_Linux::sendEnterFast(bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks(setFocusToWindow);
+    ks.sendEnter();
+    return ks.m_error;
+}
+
+KSError KeystrokeSender_Linux::sendStringFast(const std::string& str, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks(setFocusToWindow);
+    ks.sendString(str, enterTerminated);
+    return ks.m_error;
+}
+
+KSError KeystrokeSender_Linux::sendStringsFast(const std::vector<std::string>& strings, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks(setFocusToWindow);
+    ks.sendStrings(strings, enterTerminated);
+    return ks.m_error;
+}
+
+
+/* Static async functions */
+
+KSError KeystrokeSender_Linux::sendCharFastAsync(const char ch, bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks_check(setFocusToWindow);
+    bool check = ks_check.attach();
+    ks_check.detach();
+    if (!check)
+        return ks_check.m_error;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+             KeystrokeSender_Linux ks_thread(setFocusToWindow);
+            ks_thread.sendChar(ch);
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+}
+
+KSError KeystrokeSender_Linux::sendEnterFastAsync(bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks_check(setFocusToWindow);
+    bool check = ks_check.attach();
+    ks_check.detach();
+    if (!check)
+        return ks_check.m_error;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+             KeystrokeSender_Linux ks_thread(setFocusToWindow);
+            ks_thread.sendEnter();
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+}
+
+KSError KeystrokeSender_Linux::sendStringFastAsync(const std::string& str, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks_check(setFocusToWindow);
+    bool check = ks_check.attach();
+    ks_check.detach();
+    if (!check)
+        return ks_check.m_error;
+
+    if ( str.length() < 1 )
+        return KSERR_STRINGSHORT;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+            KeystrokeSender_Linux ks_thread(setFocusToWindow);
+            ks_thread.sendString(str, enterTerminated);
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+}
+
+KSError KeystrokeSender_Linux::sendStringsFastAsync(const std::vector<std::string> &strings, bool enterTerminated, bool setFocusToWindow)
+{
+    KeystrokeSender_Linux ks_check(setFocusToWindow);
+    bool check = ks_check.attach();
+    ks_check.detach();
+    if (!check)
+        return ks_check.m_error;
+
+    // send the keys asynchronously, so that i don't pause the calling thread
+    std::thread sender(
+        [=] () -> void
+        {
+            KeystrokeSender_Linux ks_thread(setFocusToWindow);
+            ks_thread.sendStrings(strings, enterTerminated);
+        });
+    sender.detach();
+
+    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+}
 
 
 /*

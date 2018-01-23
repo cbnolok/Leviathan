@@ -1,0 +1,29 @@
+#ifndef MAINTAB_Tools_H
+#define MAINTAB_Tools_H
+
+#include <QWidget>
+
+class Dlg_HuePicker;
+
+
+namespace Ui {
+class MainTab_Tools;
+}
+
+class MainTab_Tools : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit MainTab_Tools(QWidget *parent = 0);
+    ~MainTab_Tools();
+
+private slots:
+    void on_pushButton_huePicker_clicked();
+
+private:
+    Ui::MainTab_Tools *ui;
+    Dlg_HuePicker* m_dlg_huepicker;
+};
+
+#endif // MAINTAB_Tools_H

@@ -1,14 +1,14 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include "settings/settings.h"
+#include <functional>
+#include "settings/appsettings.h"
 #include "settings/clientprofile.h"
 #include "settings/scriptsprofile.h"
 #include "forms/maintab_log.h"
-#include "keystrokesender/keystrokesender.h"
 
 
-extern Settings g_settings;     // contains general settings
+extern AppSettings g_settings;     // contains general settings
 
 // Client/Scripts profiles
 extern int g_loadedClientProfile;                       // index of the current client profile
@@ -18,7 +18,7 @@ extern int g_loadedScriptsProfile;                      // index of the current 
 extern std::vector<ScriptsProfile> g_scriptsProfiles;   // contains all of the scripts profiles
 extern std::vector<std::string> g_scriptFileList;       // contains the absolute path of each script of the profile loaded
 
-extern keystrokesender::KeystrokeSender g_keystrokeSender;  // utility class to send text to the client
+extern bool g_sendKeystrokeAndFocusClient;              // for KeystrokeSender
 
 // containers for Sphere Objects: characters, items, maps...
 class ScriptObjTree;
@@ -31,7 +31,7 @@ extern ScriptObjTree *g_scriptObjTree_Areas;
 extern ScriptObjTree *g_scriptObjTree_Spells;
 extern ScriptObjTree *g_scriptObjTree_Multis;
 
-ScriptObjTree * objTree(int objType);           // returns the right global object tree for the given script item type
+ScriptObjTree * getScriptObjTree(int objType);           // returns the right global object tree for the given script item type
 
 
 // Log stuff
@@ -52,7 +52,7 @@ extern UOArt *g_UOArt;
 class UOAnim;
 extern UOAnim *g_UOAnim;
 
-void loadClientFiles();
+void loadClientFiles(std::function<void(int)> reportProgress);
 
 
 #endif // GLOBALS_H

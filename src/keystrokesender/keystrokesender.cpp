@@ -1,7 +1,7 @@
 #include "keystrokesender.h"
 
 
-namespace keystrokesender
+namespace ks
 {
 
 void KeystrokeSender::setSetFocusToWindow(bool value) {
@@ -15,9 +15,12 @@ KSError KeystrokeSender::getError() const {
 std::string KeystrokeSender::getErrorString() const {
     return KSErrorString[m_error];
 }
-
 UOClientType KeystrokeSender::getClientType() const {
     return m_clientType;
+}
+
+std::string KeystrokeSender::getErrorStringStatic(KSError err) {
+    return KSErrorString[err];
 }
 
 }

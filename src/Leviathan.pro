@@ -15,10 +15,8 @@ CONFIG += c++11
 RESOURCES = leviathan_resources.qrc
 
 SOURCES += \
-    common.cpp \
     globals.cpp \
     main.cpp \
-    sysio.cpp \
     forms/mainwindow.cpp \
     forms/maintab_chars.cpp \
     forms/maintab_items.cpp \
@@ -34,7 +32,6 @@ SOURCES += \
     qtutils/modelutils.cpp \
     settings/clientprofile.cpp \
     settings/scriptsprofile.cpp \
-    settings/settings.cpp \
     spherescript/scriptobjects.cpp \
     spherescript/scriptparser.cpp \
     spherescript/scriptsearch.cpp \
@@ -53,12 +50,15 @@ SOURCES += \
     keystrokesender/keystrokesender_common.cpp \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
-    keystrokesender/keystrokesender.cpp
+    keystrokesender/keystrokesender.cpp \
+    forms/dlg_huepicker.cpp \
+    settings/appsettings.cpp \
+    cpputils.cpp \
+    cpputils_sysio.cpp \
+    forms/maintab_tools.cpp
 
 HEADERS  += \
-    common.h \
     globals.h \
-    sysio.h \
     forms/mainwindow.h \
     forms/maintab_chars.h \
     forms/maintab_items.h \
@@ -74,7 +74,6 @@ HEADERS  += \
     qtutils/modelutils.h \
     settings/clientprofile.h \
     settings/scriptsprofile.h \
-    settings/settings.h \
     spherescript/scriptobjects.h \
     spherescript/scriptparser.h \
     spherescript/scriptsearch.h \
@@ -97,7 +96,12 @@ HEADERS  += \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \
-    version.h
+    version.h \
+    forms/dlg_huepicker.h \
+    settings/appsettings.h \
+    cpputils.h \
+    cpputils_sysio.h \
+    forms/maintab_tools.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -109,7 +113,9 @@ FORMS    += \
     forms/dlg_settings.ui \
     forms/subdlg_taskprogress.ui \
     forms/subdlg_searchobj.ui \
-    forms/subdlg_spawn.ui
+    forms/subdlg_spawn.ui \
+    forms/dlg_huepicker.ui \
+    forms/maintab_tools.ui
 
 
 Release:DESTDIR     = release
@@ -125,24 +131,34 @@ Debug:RCC_DIR       = debug/rcc
 Debug:UI_DIR        = debug/ui
 
 
+# Add the application icon
+win32:RC_ICONS += icons/leviathan.ico
+
+
+###### Compiler/Linker settings
+
 # windows
 win32:!unix
 {
     contains(QMAKE_CC, gcc) {
         # MinGW
+
         #   Dynamically link zlib
         contains(QT_ARCH, x86_64) {
             LIBS += -L\"$$PWD\\..\\winlibs\\64\" -lz
         } else {
             LIBS += -L\"$$PWD\\..\\winlibs\\32\" -lz
         }
+
         #QMAKE_CXXFLAGS += -Wno-unknown-pragmas  # disable unknown pragma warning
+        QMAKE_CXXFLAGS += -fopenmp      # enable OpenMP pragmas
     }
+
     contains(QMAKE_CC, cl) {
         # Visual Studio
+
         #   Dynamically link zlib and user32 (the latter for postmessage and such in KeystrokeSender...)
         #   (is user32 automatically dynamically linked by MinGW?)
-
         contains(QT_ARCH, x86_64) {
             LIBS += -luser32 -L\"$$PWD\\..\\winlibs\\64\" -lzlibwapi
         } else {
@@ -150,14 +166,16 @@ win32:!unix
         }
         DEFINES += "ZLIB_WINAPI=1"
         DEFINES += "ZLIB_DLL=1"
-
         #contains(QT_ARCH, x86_64) {
         #    LIBS += user32.lib \"$$PWD\\..\\winlibs\\64\\zlibwapi.lib\"
         #} else {
         #    LIBS += user32.lib \"$$PWD\\..\\winlibs\\32\\zlibwapi.lib\"
         #}
-        #QMAKE_CXXFLAGS += /wd4068   # disable unknown pragma warning
+
+        #QMAKE_CXXFLAGS += /wd4068  # disable unknown pragma warning
+        QMAKE_CXXFLAGS += /openmp   # enable OpenMP pragmas
     }
+
     contains(QMAKE_COPY, copy) {    # When it's compiled by AppVeyor, QMAKE_COPY is cp -f, not copy
                                     # this way, we'll copy dlls to build directory only when building locally on Windows
         contains(QT_ARCH, x86_64) {
@@ -167,9 +185,14 @@ win32:!unix
         }
     }
 }
+
 # linux
 unix {
     LIBS += -lz -L/usr/X11R6/lib -lX11      # dynamically link zlib and xlib (the latter for KeystrokeSender)
-    #QMAKE_CXXFLAGS += -Wno-unknown-pragmas  # disable unknown pragma warning
+    QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas
+
+    # disable some specific warnings
+    QMAKE_CXXFLAGS += -Wmisleading-indentation #-Wno-unknown-pragmas
 }
 
+LIBS += -fopenmp    # link against OpenMP library

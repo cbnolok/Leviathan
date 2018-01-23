@@ -6,7 +6,7 @@
 #include <string>
 
 
-namespace keystrokesender
+namespace ks
 {
 
 
@@ -18,9 +18,9 @@ class KeystrokeSender : public KeystrokeSender_Linux
 {
 public:
     #ifdef _WIN32
-    KeystrokeSender(bool setFocusToWindow = false) : KeystrokeSender_Windows(setFocusToWindow) {};
+    KeystrokeSender(bool setFocusToWindow = false) : KeystrokeSender_Windows(setFocusToWindow) {}
     #else
-    KeystrokeSender(bool setFocusToWindow = false) : KeystrokeSender_Linux(setFocusToWindow) {};
+    KeystrokeSender(bool setFocusToWindow = false) : KeystrokeSender_Linux(setFocusToWindow) {}
     #endif
 
     void setSetFocusToWindow(bool value);
@@ -29,10 +29,19 @@ public:
     std::string getErrorString() const;
     UOClientType getClientType() const;
 
+    static std::string getErrorStringStatic(KSError err);
+
     // Public methods inherited from KeystrokeSender_Windows and KeystrokeSender_Linux:
-    // sendChar();
-    // sendEnter();
-    // sendString();
+    // sendCharFast();
+    // sendEnterFast();
+    // sendStringFast();
+    // sendStringsFast();
+
+    // Public static methods inherited from KeystrokeSender_Windows and KeystrokeSender_Linux:
+    // sendCharFastAsync();
+    // sendEnterFastAsync();
+    // sendStringFastAsync();
+    // sendStringsFastAsync();
 };
 
 

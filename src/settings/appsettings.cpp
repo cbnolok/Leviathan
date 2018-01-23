@@ -1,6 +1,6 @@
-#include "settings.h"
+#include "appsettings.h"
 #include "globals.h"
-#include "common.h"
+#include "cpputils.h"
 #include <QJsonArray>
 #include <QJsonParseError>
 #include <QFile>
@@ -9,12 +9,12 @@
 #define QJSONVAL_ISVALID(qjsonvalue) (!qjsonvalue.isUndefined() && !qjsonvalue.isNull())
 
 
-Settings::Settings() :
+AppSettings::AppSettings() :
     m_loadDefaultProfilesAtStartup(true), m_customSpawnCmd(".spawn %1,%2,%3,%4,%5")
 {
 }
 
-QJsonObject Settings::generateJsonObject()
+QJsonObject AppSettings::generateJsonObject()
 {
     // Build the json object.
     QJsonObject obj;
@@ -24,7 +24,7 @@ QJsonObject Settings::generateJsonObject()
     return obj;
 }
 
-bool Settings::updateFromJson()
+bool AppSettings::updateFromJson()
 {
     QFile jsonFile;
     jsonFile.setFileName("Settings.json");

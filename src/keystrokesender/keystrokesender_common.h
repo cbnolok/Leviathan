@@ -1,7 +1,10 @@
 #ifndef KEYSTROKESENDER_COMMON_H
 #define KEYSTROKESENDER_COMMON_H
 
-namespace keystrokesender
+#include <string>
+#include <vector>
+
+namespace ks
 {
 
 

@@ -4,13 +4,15 @@
 #include "uoanimmul.h"
 #include "uoanimuop.h"
 #include <unordered_map>
+#include <functional>   // for std::function (callback)
+
 
 class QImage;
 
 class UOAnim
 {
 public:
-    UOAnim(std::string clientPath);
+    UOAnim(std::string clientPath, std::function<void(int)> reportProgress = nullptr);
     QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex);
 
 private:

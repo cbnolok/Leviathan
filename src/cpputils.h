@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef CPPUTILS_H
+#define CPPUTILS_H
 
 #include <string>
 #include <map>
@@ -15,8 +15,6 @@ void strTrim(std::string &string);      // Remove leading and trailing spaces an
 
 bool isStringNumericHex(std::string &s);
 bool isStringNumericDec(std::string &s);
-
-void standardizePath(std::string &s);   // Change back slash to forward slash and add (if not present) trailing forward slash
 
 
 template <typename key_t, typename value_t>

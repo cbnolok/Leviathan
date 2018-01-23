@@ -1,8 +1,8 @@
 #include "uoanim.h"
 
 
-UOAnim::UOAnim(std::string clientPath) :
-    m_UOAnimMul(clientPath), m_UOAnimUOP(clientPath)
+UOAnim::UOAnim(std::string clientPath, std::function<void(int)> reportProgress) :
+    m_UOAnimMul(clientPath), m_UOAnimUOP(clientPath, reportProgress)
 {
 }
 

@@ -7,6 +7,11 @@
 
 //--------Utilities for easy handling of 16 bpp and 32 bpp RGB colors
 
+class ARGB16;
+class ARGB32;
+ARGB32 argb16_to_argb32(ARGB16 argb16, bool maxOpacity = true);
+
+
 class ARGB16    // Colors used by the client are RGB16
 {
 private:
@@ -17,19 +22,19 @@ public:
         m_color = 0;
     }
 
-    uint8_t getA() {
+    uint8_t getA() const {
         return (m_color & 0x8000) >> 15;
     }
-    uint8_t getR() {
+    uint8_t getR() const {
         return (m_color & 0xF800) >> 10;
     }
-    uint8_t getG() {
+    uint8_t getG() const {
         return (m_color & 0x07E0) >> 5;
     }
-    uint8_t getB() {
+    uint8_t getB() const {
         return (m_color & 0x001F);
     }
-    uint16_t getVal() {
+    uint16_t getVal() const {
         return m_color;
     }
 
@@ -63,7 +68,7 @@ public:
         this->setVal(color16);
         return *this;
     }
-    template<typename castT> operator castT() {
+    template<typename castT> operator castT() const {
         if (sizeof(castT) < sizeof(m_color))    // casting to a data type too small?
             return 0;
         return this->getVal();
@@ -80,19 +85,19 @@ public:
         m_color_a = m_color_r = m_color_g = m_color_b = 0;
     }
 
-    uint8_t getA() {
+    uint8_t getA() const {
         return m_color_a;
     }
-    uint8_t getR() {
+    uint8_t getR() const {
         return m_color_r;
     }
-    uint8_t getG() {
+    uint8_t getG() const {
         return m_color_g;
     }
-    uint8_t getB() {
+    uint8_t getB() const {
         return m_color_b;
     }
-    uint32_t getVal() {
+    uint32_t getVal() const {
         return ( (this->getA() << 24) | (this->getR() << 16) | (this->getG() << 8) | this->getB() );
     }
 
@@ -119,6 +124,9 @@ public:
         m_color_a = m_color_r = m_color_g = m_color_b = 0;
         this->setVal(color32);
     }
+    ARGB32(ARGB16 argb16) {
+        this->setVal(argb16_to_argb32(argb16));
+    }
     ARGB32(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
         this->setA(a);
         this->setR(r);
@@ -129,15 +137,33 @@ public:
         this->setVal(color32);
         return *this;
     }
-    template<typename castT> operator castT() {
+    ARGB32& operator= (ARGB16 argb16) {
+         this->setVal(argb16_to_argb32(argb16));
+        return *this;
+    }
+    template<typename castT> operator castT() const {
         if (sizeof(castT) < sizeof(uint32_t))    // casting to a data type too small?
             return 0;
         return this->getVal();
     }
+
+    void adjustBrightness(int percent) {
+        int tempR = m_color_r + ((m_color_r * percent) / 100);
+        if (tempR > 255)    tempR = 255;
+        else if (tempR < 0) tempR = 0;
+        m_color_r = tempR;
+
+        int tempG = m_color_g + ((m_color_g * percent) / 100);
+        if (tempG > 255)    tempG = 255;
+        else if (tempG < 0) tempG = 0;
+        m_color_g = tempG;
+
+        int tempB = m_color_b + ((m_color_r * percent) / 100);
+        if (tempB > 255)    tempB = 255;
+        else if (tempB < 0) tempB = 0;
+        m_color_b = tempB;
+    }
 };
-
-ARGB32 argb16_to_argb32(ARGB16 argb16);
-
 
 
 //--------hues.mul
@@ -154,6 +180,8 @@ private:
 
 public:
     ARGB16 applyToColor(ARGB16 color16, bool applyToGrayOnly = false);    // apply hue to the RGB16 color
+    ARGB16 getColor(unsigned int index) const;
+    std::string getName() const;
 };
 
 
@@ -162,7 +190,7 @@ class UOHues
 public:
     UOHues(std::string path_hues);  // loads hues
     //~UOHues();
-    UOHueEntry getHue(int index) const;
+    UOHueEntry getHueEntry(int index) const;
 
 private:
     UOHueEntry hues[3000];

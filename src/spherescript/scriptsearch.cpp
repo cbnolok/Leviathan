@@ -1,5 +1,5 @@
 #include "scriptsearch.h"
-#include "../common.h"
+#include "../cpputils.h"
 #include <cstring>
 
 ScriptSearch::ScriptSearch

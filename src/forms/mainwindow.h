@@ -5,6 +5,7 @@
 
 class MainTab_Items;
 class MainTab_Chars;
+class MainTab_Tools;
 
 
 namespace Ui {
@@ -34,8 +35,9 @@ private slots:
 
 private:
     Ui::MainWindow      *ui;
-    MainTab_Items       *m_MainTab_Items_inst        = nullptr;
-    MainTab_Chars       *m_MainTab_Chars_inst        = nullptr;
+    MainTab_Items       *m_MainTab_Items_inst   = nullptr;
+    MainTab_Chars       *m_MainTab_Chars_inst   = nullptr;
+    MainTab_Tools       *m_MainTab_Tools_inst   = nullptr;
 
     int getDefaultClientProfile();
     int getDefaultScriptsProfile();

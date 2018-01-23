@@ -1,8 +1,8 @@
 #include "dlg_profileclient_options.h"
 #include "ui_dlg_profileclient_options.h"
-#include "../common.h"
+#include "../cpputils.h"
 #include "../globals.h"
-#include "../sysio.h"
+#include "../cpputils_sysio.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDirModel>

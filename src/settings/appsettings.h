@@ -1,14 +1,14 @@
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef APPSETTINGS_H
+#define APPSETTINGS_H
 
 #include <string>
 #include <QJsonObject>
 
 
-class Settings
+class AppSettings
 {
 public:
-    Settings();
+    AppSettings();
 
     QJsonObject generateJsonObject();
     bool updateFromJson();
@@ -17,4 +17,4 @@ public:
     std::string m_customSpawnCmd;
 };
 
-#endif // SETTINGS_H
+#endif // APPSETTINGS_H

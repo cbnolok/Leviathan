@@ -1,10 +1,11 @@
 #include "maintab_items.h"
 #include "ui_maintab_items.h"
 #include "globals.h"
-#include "common.h"
+#include "cpputils.h"
 #include "../spherescript/scriptobjects.h"
 #include "../spherescript/scriptutils.h"
 #include "../uofiles/uoart.h"
+#include "../keystrokesender/keystrokesender.h"
 #include "subdlg_searchobj.h"
 #include "subdlg_spawn.h"
 #include <QMessageBox>
@@ -256,10 +257,12 @@ void MainTab_Items::on_treeView_objList_doubleClicked(const QModelIndex &index)
 
     QModelIndex IDIndex(m_objList_model->index(index.row(), 1, index.parent()));
 
-    if (!g_keystrokeSender.sendString((".add " + IDIndex.data().toString().toStdString()).c_str()))
+    std::string strToSend = ".add " + IDIndex.data().toString().toStdString();
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(g_keystrokeSender.getErrorString().c_str());
+        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
         errorDlg.exec();
     }
 }
@@ -286,7 +289,7 @@ void MainTab_Items::onManual_treeView_objList_selectionChanged(const QModelIndex
     if (hue < 0)    // template or random expr (not supported yet) or strange string
         hue = 0;
 
-    QImage* art = g_UOArt->drawArt(0x4000 + id, hue, false);
+    QImage* art = g_UOArt->drawArt(UOArt::kItemsOffset + id, hue, false);
     if (art == nullptr)
         return;
 
@@ -298,7 +301,6 @@ void MainTab_Items::onManual_treeView_objList_selectionChanged(const QModelIndex
     ui->graphicsView->setScene(scene);
     scene->clear();
     scene->addItem(item);
-    //qDebug() << "Item added to scene";
 }
 
 
@@ -316,21 +318,24 @@ void MainTab_Items::on_pushButton_add_clicked()
     if (!selection->hasSelection())
         return;
 
-    if (!g_keystrokeSender.sendString((".add " + selection->selectedRows(1)[0].data().toString().toStdString()).c_str()))
+    std::string strToSend = ".add " + selection->selectedRows(1)[0].data().toString().toStdString();
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(g_keystrokeSender.getErrorString().c_str());
+        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
         errorDlg.exec();
     }
 }
 
 void MainTab_Items::on_pushButton_remove_clicked()
 {
-    const char command[]=".remove";
-    if (!g_keystrokeSender.sendString(command))
+    std::string strToSend = ".remove";
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
     {
         QMessageBox errorDlg(this);
-        errorDlg.setText(g_keystrokeSender.getErrorString().c_str());
+        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
         errorDlg.exec();
     }
 }
@@ -404,9 +409,9 @@ void MainTab_Items::on_pushButton_search_clicked()
 
     const std::vector<ScriptObjTree*> trees =
     {
-        objTree(SCRIPTOBJ_TYPE_ITEM),
-        objTree(SCRIPTOBJ_TYPE_TEMPLATE),
-        objTree(SCRIPTOBJ_TYPE_MULTI)
+        getScriptObjTree(SCRIPTOBJ_TYPE_ITEM),
+        getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE),
+        getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
     };
 
     m_lastSearchData = dlg.getSearchData();
@@ -436,7 +441,7 @@ void MainTab_Items::on_pushButton_search_next_clicked()
 
 void MainTab_Items::on_pushButton_spawner_clicked()
 {
-    SubDlg_Spawn* spawner = new SubDlg_Spawn();
+    SubDlg_Spawn* spawner = new SubDlg_Spawn(this);
     connect(this, SIGNAL(selectedScriptObjChanged(ScriptObj*)), spawner, SLOT(onCust_selectedObj_changed(ScriptObj*)));
     spawner->show();
 

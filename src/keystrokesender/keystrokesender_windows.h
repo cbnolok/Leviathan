@@ -7,7 +7,7 @@
 #include <windef.h>     // for the definitions of BOOL, CALLBACK, HWND, LPARAM
 
 
-namespace keystrokesender
+namespace ks
 {
 
 
@@ -22,7 +22,20 @@ public:
 
     bool sendChar(const char ch);
     bool sendEnter();
-    bool sendString(const char * const str, bool enterTerminated = true);
+    bool sendString(const std::string& str, bool enterTerminated = true);
+    bool sendStrings(const std::vector<std::string> &strings, bool enterTerminated = true);
+
+    // Static methods: do the work without creating an instance of the class and setting everything manually
+    static KSError sendCharFast(const char ch, bool setFocusToWindow = false);
+    static KSError sendEnterFast(bool setFocusToWindow = false);
+    static KSError sendStringFast(const std::string& str, bool enterTerminated = true, bool setFocusToWindow = false);
+    static KSError sendStringsFast(const std::vector<std::string>& strings, bool enterTerminated = true, bool setFocusToWindow = false);
+
+    // Static async methods: spawn a thread to do this, so we don't have to pause the current thread
+    static KSError sendCharFastAsync(const char ch, bool setFocusToWindow = false);
+    static KSError sendEnterFastAsync(bool setFocusToWindow = false);
+    static KSError sendStringFastAsync(const std::string& str, bool enterTerminated = true, bool setFocusToWindow = false);
+    static KSError sendStringsFastAsync(const std::vector<std::string>& strings, bool enterTerminated = true, bool setFocusToWindow = false);
 
 protected:
     bool m_setFocusToWindow;
