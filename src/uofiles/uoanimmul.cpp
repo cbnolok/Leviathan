@@ -361,9 +361,9 @@ QImage* UOAnimMul::drawAnimFrame(int bodyID, int action, int direction, int fram
             uint8_t palette_index = 0;
             fs_anim.read(reinterpret_cast<char*>(&palette_index), 1);
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
-            if (hueIndex != 0)
+            if (hueIndex > 0) // client starts to count from 1 (0 means do not change the color)
             {
-                UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
+                UOHueEntry hue = g_UOHues->getHueEntry(hueIndex-1);
                 color_argb16 = hue.applyToColor(color_argb16, applyToGrayOnly);
             }
             ARGB32 color_argb32 = argb16_to_argb32(color_argb16);

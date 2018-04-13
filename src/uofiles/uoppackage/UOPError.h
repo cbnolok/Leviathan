@@ -5,7 +5,7 @@
 #include <deque>
 
 
-namespace uoppackage
+namespace uopp
 {
 
 

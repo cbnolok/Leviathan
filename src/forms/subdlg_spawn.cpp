@@ -3,6 +3,7 @@
 #include "../spherescript/scriptobjects.h"
 #include "../keystrokesender/keystrokesender.h"
 #include "../globals.h"
+#include <QMessageBox>
 
 
 SubDlg_Spawn::SubDlg_Spawn(QWidget *parent) :
@@ -25,7 +26,12 @@ void SubDlg_Spawn::on_pushButton_place_clicked()
     if (!m_selectedScriptObj)
         return;
 
-    ks::KeystrokeSender::sendStringFastAsync(".add 01ea7", true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(".add 01ea7", true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
+    {
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
+        errorDlg.exec();
+    }
 }
 
 void SubDlg_Spawn::on_pushButton_init_clicked()
@@ -46,11 +52,16 @@ void SubDlg_Spawn::on_pushButton_init_clicked()
     if (ui->lineEdit_amount->text().toInt())
     {
         std::string amount_cmd  = ".act.amount "+ ui->lineEdit_amount->text().toStdString();
-        stringsToSend.push_back(amount_cmd.c_str());
+        stringsToSend.push_back(amount_cmd);
     }
     stringsToSend.emplace_back(".act.timer 1");
 
-    ks::KeystrokeSender::sendStringsFastAsync(stringsToSend, true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringsFastAsync(stringsToSend, true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
+    {
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
+        errorDlg.exec();
+    }
 }
 
 void SubDlg_Spawn::on_pushButton_customCmd_clicked()
@@ -65,7 +76,12 @@ void SubDlg_Spawn::on_pushButton_customCmd_clicked()
     QString maxTime = ui->lineEdit_maxTime->text();
 
     QString command = QString::fromStdString(g_settings.m_customSpawnCmd).arg(objDefname, amount, maxDist, minTime, maxTime);
-    ks::KeystrokeSender::sendStringFastAsync(command.toStdString(), true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(command.toStdString(), true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
+    {
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
+        errorDlg.exec();
+    }
 }
 
 void SubDlg_Spawn::on_checkBox_top_toggled(bool checked)

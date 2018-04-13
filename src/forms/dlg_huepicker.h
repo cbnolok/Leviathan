@@ -45,19 +45,21 @@ public:
 
 private slots:
     void on_horizontalSlider_brightness_valueChanged(int value);
+    void on_horizontalSlider_shade_valueChanged(int value);
     void on_pushButton_set_clicked();
     void on_pushButton_setClose_clicked();
     void on_radioButton_item_toggled(bool checked);
     void on_radioButton_npc_toggled(bool checked);
     void on_lineEdit_preview_returnPressed();
     void onManual_hueTableClicked_mapped(int);
-    void onManual_hueTableDoubleClicked_mapped(int);
+    void onManual_hueTableDoubleClicked_mapped(int);    
 
 private:
     Ui::dlg_huepicker *ui;
 
     int m_selectedHueIndex;
     int m_brightnessPercent;
+    int m_shadeIndex;
     bool m_previewIsItem;
     int m_previewDisplayId;
     std::vector<EnhancedLabel*> m_hueTableBlocks;

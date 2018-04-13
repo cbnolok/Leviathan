@@ -2,6 +2,7 @@
 #include "globals.h"
 #include <fstream>
 
+
 ARGB32 argb16_to_argb32(ARGB16 argb16, bool maxOpacity)
 {
     // In ARGB16 each color is 5 bits, so a value between 0-31
@@ -41,6 +42,24 @@ ARGB32 argb16_to_argb32(ARGB16 argb16, bool maxOpacity)
     //    a = 0;  // max transparency
 
     return ARGB32(a, r, g, b);
+}
+
+void ARGB32::adjustBrightness(int percent)
+{
+    int tempR = m_color_r + ((m_color_r * percent) / 100);
+    if (tempR > 255)    tempR = 255;
+    else if (tempR < 0) tempR = 0;
+    m_color_r = tempR;
+
+    int tempG = m_color_g + ((m_color_g * percent) / 100);
+    if (tempG > 255)    tempG = 255;
+    else if (tempG < 0) tempG = 0;
+    m_color_g = tempG;
+
+    int tempB = m_color_b + ((m_color_r * percent) / 100);
+    if (tempB > 255)    tempB = 255;
+    else if (tempB < 0) tempB = 0;
+    m_color_b = tempB;
 }
 
 UOHues::UOHues(std::string path_hues)
@@ -107,11 +126,22 @@ UOHueEntry UOHues::getHueEntry(int index) const
     // for the client: 0 is no hue
     // for hues.mul: 0 is the first entry
     // so the client starts to count from 1
-    index -= 1;
     if (index >= 0 && index < 3000)
         return hues[index];
     else
         return hues[0];
+}
+
+ARGB16 UOHueEntry::getColor(unsigned int index) const
+{
+    if (index >= kColorTableSize)
+        return ARGB16(0);
+    return ARGB16(color_table[index]);
+}
+
+std::string UOHueEntry::getName() const
+{
+    return std::string(name);
 }
 
 ARGB16 UOHueEntry::applyToColor(ARGB16 color16, bool applyToGrayOnly)
@@ -143,17 +173,5 @@ ARGB16 UOHueEntry::applyToColor(ARGB16 color16, bool applyToGrayOnly)
 
     /* -- UOFiddler/Punt's Way -- */
     return ARGB16(color_table[color16.getR()]);   // ret will always be < 32
-}
-
-ARGB16 UOHueEntry::getColor(unsigned int index) const
-{
-    if (index > 32)
-        return ARGB16(0);
-    return ARGB16(color_table[index]);
-}
-
-std::string UOHueEntry::getName() const
-{
-    return std::string(name);
 }
 

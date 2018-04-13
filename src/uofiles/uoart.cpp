@@ -96,9 +96,9 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
                 ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
                 //if ( (color &0x7FF) == 0 || (color & 0x7FF)==0x7FF )
                 //  continue;
-                if (hueIndex != 0)
+                if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
                 {
-                    UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
+                    UOHueEntry hue = g_UOHues->getHueEntry(hueIndex-1);
                     color_argb16 = hue.applyToColor(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = argb16_to_argb32(color_argb16);
@@ -119,9 +119,9 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
                 ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
                 //if ( (color &0x7FF) == 0 || (color & 0x7FF)==0x7FF )
                 //  continue;
-                if (hueIndex != 0)
+                if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
                 {
-                    UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
+                    UOHueEntry hue = g_UOHues->getHueEntry(hueIndex-1);
                     color_argb16 = hue.applyToColor(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = argb16_to_argb32(color_argb16);
@@ -196,9 +196,9 @@ QImage* UOArt::drawArt(unsigned int id, unsigned int hueIndex, bool partialHue)
                         uint16_t rawcolor_argb16 = 0;
                         fs_art.read(reinterpret_cast<char*>(&rawcolor_argb16), 2);
                         ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
-                        if (hueIndex != 0)
+                        if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
                         {
-                            UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
+                            UOHueEntry hue = g_UOHues->getHueEntry(hueIndex-1);
                             color_argb16 = hue.applyToColor(color_argb16, partialHue);
                         }
                         ARGB32 color_argb32 = argb16_to_argb32(color_argb16);

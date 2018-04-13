@@ -7,7 +7,7 @@
 #include <fstream>
 
 
-namespace uoppackage
+namespace uopp
 {
 
 class UOPFile;

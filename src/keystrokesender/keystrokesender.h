@@ -9,6 +9,8 @@
 namespace ks
 {
 
+const char * getErrorStringStatic(KSError err);
+
 
 #ifdef _WIN32
 class KeystrokeSender : public KeystrokeSender_Windows
@@ -28,8 +30,6 @@ public:
     KSError getError() const;
     std::string getErrorString() const;
     UOClientType getClientType() const;
-
-    static std::string getErrorStringStatic(KSError err);
 
     // Public methods inherited from KeystrokeSender_Windows and KeystrokeSender_Linux:
     // sendCharFast();

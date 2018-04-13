@@ -4,7 +4,7 @@
 #define ADDERROR(_x_) errorHandler.m_errorQueue.push_front(_x_)
 
 
-namespace uoppackage
+namespace uopp
 {
 
 

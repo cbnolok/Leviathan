@@ -44,8 +44,8 @@ private slots:
     void on_pushButton_search_clicked();
     void on_pushButton_search_back_clicked();
     void on_pushButton_search_next_clicked();
-
     void on_pushButton_spawner_clicked();
+    void on_checkBox_lockDown_stateChanged(int arg1);
 
 private:
     Ui::MainTab_Items *ui;
@@ -60,6 +60,8 @@ private:
 
     std::unique_ptr<ScriptSearch> m_scriptSearch;
     ScriptSearch::SearchData_t m_lastSearchData;
+
+    bool m_lockDown;
 
     void doSearch (bool backwards);
 };

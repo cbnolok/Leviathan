@@ -5,7 +5,7 @@
 #include <fstream>
 
 
-namespace uoppackage
+namespace uopp
 {
 
 

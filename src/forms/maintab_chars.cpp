@@ -220,10 +220,9 @@ void MainTab_Chars::on_treeView_objList_doubleClicked(const QModelIndex &index)
 
     std::string strToSend = ".add " + IDIndex.data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSError::KSERR_OK)
+    if (ksResult != ks::KSERR_OK)
     {
-        QMessageBox errorDlg(this);
-        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
     }
 }
@@ -280,10 +279,9 @@ void MainTab_Chars::on_pushButton_summon_clicked()
 
     std::string strToSend = ".add " + selection->selectedRows(1)[0].data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSError::KSERR_OK)
+    if (ksResult != ks::KSERR_OK)
     {
-        QMessageBox errorDlg(this);
-        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
     }
 }
@@ -292,10 +290,9 @@ void MainTab_Chars::on_pushButton_remove_clicked()
 {
     std::string strToSend = ".remove";
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSError::KSERR_OK)
+    if (ksResult != ks::KSERR_OK)
     {
-        QMessageBox errorDlg(this);
-        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
     }
 }

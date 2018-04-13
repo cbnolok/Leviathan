@@ -137,7 +137,9 @@ void ScriptParser::run()
         // Iterate one time for the items and one for the chars
 
         auto curChildObjects    = displayID_childObjects[tree_i];
-        for (size_t child_i = 0, child_s = curChildObjects->size(); child_i < child_s; ++child_i)
+        size_t child_s = curChildObjects->size();
+        //#pragma omp parallel for schedule(static) private(curChildObjects, child_s)
+        for (size_t child_i = 0; child_i < child_s; ++child_i)
         {
             // Iterate through each object of the tree.
             // Now look inside each object of each subsection of each category to find the parent object.

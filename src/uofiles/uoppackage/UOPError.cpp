@@ -2,7 +2,7 @@
 #include "zlib.h"
 
 
-namespace uoppackage
+namespace uopp
 {
 
 UOPError errorHandler;

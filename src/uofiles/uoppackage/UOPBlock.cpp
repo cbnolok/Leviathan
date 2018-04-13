@@ -2,7 +2,7 @@
 #include "UOPFile.h"
 
 
-namespace uoppackage
+namespace uopp
 {
 
 

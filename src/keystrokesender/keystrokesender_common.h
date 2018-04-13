@@ -22,8 +22,8 @@ enum KSError
     KSERR_STRINGSHORT,
 };
 
-extern const char *UOClientWindowTitles[];
-extern const char *KSErrorString[];
+extern const char * const UOClientWindowTitles[];
+extern const char * const KSErrorString[];
 
 
 }

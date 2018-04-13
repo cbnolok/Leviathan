@@ -9,7 +9,7 @@
 #define ADDERROR errorHandler.m_errorQueue.push_front
 
 
-namespace uoppackage
+namespace uopp
 {
 
 

@@ -147,41 +147,28 @@ public:
         return this->getVal();
     }
 
-    void adjustBrightness(int percent) {
-        int tempR = m_color_r + ((m_color_r * percent) / 100);
-        if (tempR > 255)    tempR = 255;
-        else if (tempR < 0) tempR = 0;
-        m_color_r = tempR;
-
-        int tempG = m_color_g + ((m_color_g * percent) / 100);
-        if (tempG > 255)    tempG = 255;
-        else if (tempG < 0) tempG = 0;
-        m_color_g = tempG;
-
-        int tempB = m_color_b + ((m_color_r * percent) / 100);
-        if (tempB > 255)    tempB = 255;
-        else if (tempB < 0) tempB = 0;
-        m_color_b = tempB;
-    }
+    void adjustBrightness(int percent);
 };
 
 
 //--------hues.mul
 
 class UOHues;
-class UOHueEntry
+struct UOHueEntry
 {
     friend class UOHues;
+    static const int kColorTableSize = 32;
 
 private:
     //uint32_t index;
     char name[20];
-    uint16_t color_table[32];
+    uint16_t color_table[kColorTableSize];
 
 public:
-    ARGB16 applyToColor(ARGB16 color16, bool applyToGrayOnly = false);    // apply hue to the RGB16 color
     ARGB16 getColor(unsigned int index) const;
     std::string getName() const;
+
+    ARGB16 applyToColor(ARGB16 color16, bool applyToGrayOnly = false);    // apply hue to the RGB16 color
 };
 
 

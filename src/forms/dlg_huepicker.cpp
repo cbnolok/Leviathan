@@ -11,17 +11,18 @@
 #include <QPixmap>
 #include <QGraphicsPixmapItem>
 #include <QSignalMapper>
-
-
-const int colorsPerHue = 32;      // how much colors does a hue entry contain
+#include <QMessageBox>
 
 
 Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::dlg_huepicker)
 {
-    m_selectedHueIndex = 0;
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);   // disable the '?' (what's this) in the title bar
+
+    m_selectedHueIndex = -1;
     m_brightnessPercent = 0;
+    m_shadeIndex = 25;
     m_previewIsItem = true;
     m_previewDisplayId = 0x1F13;    // worldgem bit large (lg)
 
@@ -29,6 +30,8 @@ Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
 
     ui->radioButton_item->setChecked(true);
     drawHueBar();
+
+    ui->horizontalSlider_shade->setValue(m_shadeIndex);
 
     // Set up the hue table - we use a QLabel for each hue in the table, and set its color by creating a QPixmap
 
@@ -52,7 +55,7 @@ Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
         {
             // build each grid element
             EnhancedLabel* labelHueGridElem = new EnhancedLabel(this);
-            labelHueGridElem->setMinimumSize(10,6);
+            labelHueGridElem->setMinimumSize(9,5);
             labelHueGridElem->setScaledContents(true);
             m_hueTableBlocks.push_back(labelHueGridElem);
 
@@ -82,12 +85,15 @@ Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
 Dlg_HuePicker::~Dlg_HuePicker()
 {
     delete ui;
+
+    delete m_hueTableMapClick;
+    delete m_hueTableMapDoubleClick;
 }
 
 void Dlg_HuePicker::onManual_hueTableClicked_mapped(int index)
 {
-    m_selectedHueIndex = index + 1;
-    QString hueText = QString("0") + QString::number(index, 16) + " (dec: " + QString::number(index, 10) + ")";
+    m_selectedHueIndex = index;
+    QString hueText = QString("0") + QString::number(index+1, 16) + " (dec: " + QString::number(index+1, 10) + ")";
     ui->label_hueIdx->setText(hueText);
     QString hueName(g_UOHues->getHueEntry(index).getName().c_str());
     ui->label_hueName->setText(hueName);
@@ -103,16 +109,20 @@ void Dlg_HuePicker::onManual_hueTableDoubleClicked_mapped(int index)
 
 void Dlg_HuePicker::drawHueBar()
 {
+    if (!g_UOHues)
+        return;
+
     static const int colorBlockWidth = 14;
     static const int colorBlockHeight = 22;
 
-    QImage qimgHueDetail(colorsPerHue * colorBlockWidth, colorBlockHeight, QImage::Format_RGB32);
+    QImage qimgHueDetail(UOHueEntry::kColorTableSize * colorBlockWidth, colorBlockHeight, QImage::Format_RGB32);
     if (!g_UOHues || !m_selectedHueIndex)
         qimgHueDetail.fill(0);
     else
     {
-        UOHueEntry hueSelected = g_UOHues->getHueEntry(m_selectedHueIndex);
-        for (int i = 0; i < colorsPerHue; ++i)   // color blocks = 32
+        int hueIdx = (m_selectedHueIndex == -1) ? 0 : m_selectedHueIndex;
+        UOHueEntry hueSelected = g_UOHues->getHueEntry(hueIdx);
+        for (int i = 0; i < UOHueEntry::kColorTableSize; ++i)   // color blocks = 32
         {
             ARGB32 color32 = ARGB32(hueSelected.getColor(i));
             color32.adjustBrightness(m_brightnessPercent);
@@ -134,13 +144,16 @@ void Dlg_HuePicker::drawHueTable()
         return;
 
     setUpdatesEnabled(false);
-    int hueIdx = 1;
-    for (QLabel* curLabel : m_hueTableBlocks)
+    int hueIdx = 0;
+    for (EnhancedLabel* curLabel : m_hueTableBlocks)
     {
         UOHueEntry curHue = g_UOHues->getHueEntry(hueIdx);
+
+        // Get the "mean" color
+        /*
         unsigned int meanR, meanG, meanB;
         meanR = meanG = meanB = 0;
-        for (int i = 0; i < colorsPerHue; ++i)   // color blocks = 32
+        for (int i = 0; i < UOHueEntry::kColorTableSize; ++i)   // color blocks = 32
         {
             ARGB32 color32 = ARGB32(curHue.getColor(i));
             color32.adjustBrightness(m_brightnessPercent);
@@ -151,9 +164,14 @@ void Dlg_HuePicker::drawHueTable()
         meanR /= 32;
         meanG /= 32;
         meanB /= 32;
-
         QImage qimg(1,1,QImage::Format_RGB32);
         qimg.fill(qRgb(meanR,meanG,meanB));
+        */
+
+        ARGB32 color32 = ARGB32(curHue.getColor(m_shadeIndex));
+        color32.adjustBrightness(m_brightnessPercent);
+        QImage qimg(1,1,QImage::Format_RGB32);
+        qimg.fill(color32.getVal());
         QPixmap qpix = QPixmap::fromImage(qimg);
         curLabel->setPixmap(qpix);
 
@@ -164,6 +182,9 @@ void Dlg_HuePicker::drawHueTable()
 
 void Dlg_HuePicker::drawPreview()
 {
+    if (!g_UOArt || !g_UOAnim || !g_UOHues)
+        return;
+
     if (m_previewDisplayId == 0)
     {
         if (ui->graphicsView->scene() != nullptr)
@@ -172,10 +193,11 @@ void Dlg_HuePicker::drawPreview()
     }
 
     QImage* frameimg = nullptr;
+    int hueIdx = (m_selectedHueIndex == -1) ? 0 : m_selectedHueIndex;
     if (m_previewIsItem)
-        frameimg = g_UOArt->drawArt(UOArt::kItemsOffset + m_previewDisplayId, m_selectedHueIndex, false);
+        frameimg = g_UOArt->drawArt(UOArt::kItemsOffset + m_previewDisplayId, hueIdx+1, false);
     else
-        frameimg = g_UOAnim->drawAnimFrame(m_previewDisplayId, 0, 1, 0, m_selectedHueIndex);
+        frameimg = g_UOAnim->drawAnimFrame(m_previewDisplayId, 0, 1, 0, hueIdx+1);
     if (frameimg == nullptr)
         return;
 
@@ -192,22 +214,44 @@ void Dlg_HuePicker::drawPreview()
 
 void Dlg_HuePicker::on_horizontalSlider_brightness_valueChanged(int value)
 {
-    if ((value != m_brightnessPercent))
+    if (value != m_brightnessPercent)
     {
         m_brightnessPercent = value * 5;
         drawHueTable();
     }
 }
 
+void Dlg_HuePicker::on_horizontalSlider_shade_valueChanged(int value)
+{
+    if (value != m_shadeIndex)
+    {
+        m_shadeIndex = value;
+        drawHueTable();
+    }
+}
+
 void Dlg_HuePicker::on_pushButton_set_clicked()
 {
-    ks::KeystrokeSender::sendStringFastAsync(std::string(".xcolor ") + std::to_string(m_selectedHueIndex), true, true);
+    std::string strToSend = ".xcolor " + std::to_string(m_selectedHueIndex + 1);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
+    {
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
+        errorDlg.exec();
+    }
 }
 
 void Dlg_HuePicker::on_pushButton_setClose_clicked()
 {
-    ks::KeystrokeSender::sendStringFastAsync(std::string(".xcolor ") + std::to_string(m_selectedHueIndex), true, true);
-    this->close();
+    std::string strToSend = ".xcolor " + std::to_string(m_selectedHueIndex);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    if (ksResult != ks::KSERR_OK)
+    {
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
+        errorDlg.exec();
+    }
+    else
+        this->close();
 }
 
 void Dlg_HuePicker::on_radioButton_item_toggled(bool checked)
@@ -280,5 +324,4 @@ void EnhancedLabel::paintEvent(QPaintEvent *e)
     QWidget::paintEvent(e);
 }
 */
-
 

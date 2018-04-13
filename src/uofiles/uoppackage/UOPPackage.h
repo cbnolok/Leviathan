@@ -14,7 +14,7 @@
 #include <vector>
 
 
-namespace uoppackage
+namespace uopp
 {
 
 class UOPFile;

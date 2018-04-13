@@ -24,6 +24,7 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
     installEventFilter(this);   // catch the keystrokes
 
     m_scriptSearch = nullptr;
+    m_lockDown = false;
 
     // Create the model for the organizer tree view
     m_organizer_model = new QStandardItemModel(0,0);
@@ -257,12 +258,12 @@ void MainTab_Items::on_treeView_objList_doubleClicked(const QModelIndex &index)
 
     QModelIndex IDIndex(m_objList_model->index(index.row(), 1, index.parent()));
 
-    std::string strToSend = ".add " + IDIndex.data().toString().toStdString();
+    std::string addCmd(m_lockDown ? ".static " : ".add ");
+    std::string strToSend = addCmd + IDIndex.data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSERR_OK)
     {
-        QMessageBox errorDlg(this);
-        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
     }
 }
@@ -318,12 +319,12 @@ void MainTab_Items::on_pushButton_add_clicked()
     if (!selection->hasSelection())
         return;
 
-    std::string strToSend = ".add " + selection->selectedRows(1)[0].data().toString().toStdString();
+    std::string addCmd(m_lockDown ? ".static " : ".add ");
+    std::string strToSend = addCmd + selection->selectedRows(1)[0].data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSERR_OK)
     {
-        QMessageBox errorDlg(this);
-        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
     }
 }
@@ -334,8 +335,7 @@ void MainTab_Items::on_pushButton_remove_clicked()
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSERR_OK)
     {
-        QMessageBox errorDlg(this);
-        errorDlg.setText(ks::KeystrokeSender::getErrorStringStatic(ksResult).c_str());
+        QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
     }
 }
@@ -452,4 +452,9 @@ void MainTab_Items::on_pushButton_spawner_clicked()
     QStandardItem* qitem = m_objList_model->itemFromIndex( selection->selectedRows(0)[0] );
     ScriptObj *script = m_objMapQItemToScript[qitem];
     emit selectedScriptObjChanged(script);
+}
+
+void MainTab_Items::on_checkBox_lockDown_stateChanged(int arg1)
+{
+    m_lockDown = (arg1 != Qt::Unchecked);
 }

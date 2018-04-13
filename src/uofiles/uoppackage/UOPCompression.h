@@ -1,7 +1,7 @@
 #ifndef UOPCOMPRESSION_H
 #define UOPCOMPRESSION_H
 
-namespace uoppackage
+namespace uopp
 {
 
 

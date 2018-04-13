@@ -12,7 +12,7 @@
 
 
 UOAnimUOP::UOAnimUOP(std::string clientPath, std::function<void(int)> reportProgress) :
-    m_clientPath(clientPath), m_isLoading(false)
+    m_clientPath(clientPath), m_isInitializing(false)
 {
     buildAnimTable(reportProgress);
 }
@@ -23,7 +23,7 @@ UOAnimUOP::UOAnimUOP(std::string clientPath, std::function<void(int)> reportProg
 
 void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
 {
-    m_isLoading = true;
+    m_isInitializing = true;
     memset((void*)m_animationsMatrix, 0, sizeof(m_animationsMatrix[0][0]) * kAnimIdMax * kGroupIdMax);
 
     // We need to know which animations are in the uop files
@@ -44,12 +44,12 @@ void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
         }
 
         // Read the data in order to access later to each file by its hash
-        uoppackage::UOPPackage& package = m_animUOPs[uopFile_i - 1];
+        uopp::UOPPackage& package = m_animUOPs[uopFile_i - 1];
         package.load(path);
-        if (uoppackage::errorHandler.errorOccurred())   // check if there was an error when extracting the uop file
+        if (uopp::errorHandler.errorOccurred())   // check if there was an error when extracting the uop file
         {
             appendToLog("UOPPackage error!");
-            auto errors = uoppackage::errorHandler.getErrorQueue();
+            auto errors = uopp::errorHandler.getErrorQueue();
             for (std::string str : errors)
                 appendToLog(str);
             return;
@@ -59,11 +59,11 @@ void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
 
         for (size_t block_i = 0, block_max = blocks.size(); block_i < block_max; ++block_i)
         {
-            uoppackage::UOPBlock* curBlock = blocks[block_i];
+            uopp::UOPBlock* curBlock = blocks[block_i];
             auto files = curBlock->getFiles();
             for (size_t file_i = 0, file_max = files.size(); file_i < file_max; ++file_i)
             {
-                uoppackage::UOPFile* curFile = files[file_i];
+                uopp::UOPFile* curFile = files[file_i];
 
                 UOPAnimationData data;
                 data.animFileIdx = uopFile_i;
@@ -91,7 +91,7 @@ void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
     progressVal = 0;
 
     // It would be more logical to have animId as outer loop and groupId as inner loop, but the kGroupIdMax is < than kAnimIdMax,
-    //  so this way we create the threads much less often.
+    //  so this way we assign work to the OpenMP threads (in its thread pool) less often (dunno if it actually causes overhead, but who knows...)
     for (int groupId = 0; groupId < kGroupIdMax; ++groupId)
     {
         #pragma omp parallel for schedule(static)   // split the workload between some threads with OpenMP!
@@ -99,7 +99,7 @@ void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
         {
             char hashString[100];
             sprintf(hashString, "build/animationlegacyframe/%06i/%02i.bin", animId, groupId);
-            unsigned long long hash = uoppackage::UOPPackage::getHash(hashString);
+            unsigned long long hash = uopp::UOPPackage::getHash(hashString);
             int found = -1;
             for (int i = 0, max = (int)m_animationsData.size(); i < max; ++i)
             {
@@ -117,15 +117,18 @@ void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
         if ( reportProgress && (progressValNow > progressVal) )
         {
             progressVal = progressValNow;
-            reportProgress(progressVal);    // it's a bit of a mess to pass the progress to the main Qt thread...
+            reportProgress(progressVal);
         }
 
     }
-    m_isLoading = false;
+    m_isInitializing = false;
 }
 
 bool UOAnimUOP::animExists(int animID)
 {
+    if (isInitializing())
+        return false;
+
     for (int i = 0; i < kGroupIdMax; ++i)
     {
         if (m_animationsMatrix[animID][i] != nullptr)   // do we have almost an action (group) for this animId?
@@ -136,10 +139,13 @@ bool UOAnimUOP::animExists(int animID)
 
 UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int direction, int frame, char* &decData, size_t &decDataSize)
 {
+    if (isInitializing())
+        return UOPFrameData{};
+
     UOPAnimationData* animData = m_animationsMatrix[animID][groupID];
 
-    uoppackage::UOPPackage& animPkg = m_animUOPs[animData->animFileIdx - 1];
-    uoppackage::UOPFile* animFile = animPkg.getFileByIndex((int)animData->blockIdx, (int)animData->fileIdx);
+    uopp::UOPPackage& animPkg = m_animUOPs[animData->animFileIdx - 1];
+    uopp::UOPFile* animFile = animPkg.getFileByIndex((int)animData->blockIdx, (int)animData->fileIdx);
     std::string path = m_clientPath + "AnimationFrame" + std::to_string(animData->animFileIdx) + ".uop";
     std::ifstream fin;
 
@@ -148,10 +154,10 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
     animFile->unpack(fin, decData, decDataSize);
     fin.close();
 
-    if (uoppackage::errorHandler.errorOccurred())   // check if there was an error when extracting the uop file
+    if (uopp::errorHandler.errorOccurred())   // check if there was an error when extracting the uop file
     {
         appendToLog("UOPPackage error!");
-        auto errors = uoppackage::errorHandler.getErrorQueue();
+        auto errors = uopp::errorHandler.getErrorQueue();
         for (std::string str : errors)
             appendToLog(str);
         return UOPFrameData{};
@@ -246,6 +252,9 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
 
 QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex)
 {
+    if (isInitializing())
+        return nullptr;
+
     // select the group (action) we have chosen or, if invalid, the first valid one
     int groupID = -1;
     if (m_animationsMatrix[bodyID][action] != nullptr)
@@ -331,9 +340,9 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
             decDataOff += 1;
 
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
-            if (hueIndex != 0)
+            if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
             {
-                UOHueEntry hue = g_UOHues->getHueEntry(hueIndex);
+                UOHueEntry hue = g_UOHues->getHueEntry(hueIndex-1);
                 color_argb16 = hue.applyToColor(color_argb16, applyToGrayOnly);
             }
             ARGB32 color_argb32 = argb16_to_argb32(color_argb16);
