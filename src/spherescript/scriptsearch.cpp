@@ -1,6 +1,7 @@
 #include "scriptsearch.h"
-#include "../cpputils.h"
 #include <cstring>
+#include "../cpputils/strings.h"
+
 
 ScriptSearch::ScriptSearch
     (const std::vector<ScriptObjTree *> &trees, SearchData_t data) :

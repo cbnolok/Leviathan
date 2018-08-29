@@ -1,8 +1,8 @@
 #ifndef SUBDLG_SEARCHOBJ_H
 #define SUBDLG_SEARCHOBJ_H
 
-#include "../spherescript/scriptsearch.h"
 #include <QDialog>
+#include "../spherescript/scriptsearch.h"
 
 
 namespace Ui {

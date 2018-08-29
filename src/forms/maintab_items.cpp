@@ -1,18 +1,20 @@
 #include "maintab_items.h"
 #include "ui_maintab_items.h"
-#include "globals.h"
-#include "cpputils.h"
-#include "../spherescript/scriptobjects.h"
-#include "../spherescript/scriptutils.h"
-#include "../uofiles/uoart.h"
-#include "../keystrokesender/keystrokesender.h"
-#include "subdlg_searchobj.h"
-#include "subdlg_spawn.h"
+
 #include <QMessageBox>
 #include <QStandardItem>
 #include <QGraphicsPixmapItem>
 #include <QKeyEvent>
-//#include <thread>
+
+#include "globals.h"
+#include "subdlg_searchobj.h"
+#include "subdlg_spawn.h"
+#include "../spherescript/scriptobjects.h"
+#include "../spherescript/scriptutils.h"
+#include "../uoclientfiles/uoart.h"
+#include "../keystrokesender/keystrokesender.h"
+#include "cpputils/maps.h"
+#include "cpputils/strings.h"
 
 
 MainTab_Items::MainTab_Items(QWidget *parent) :
@@ -68,7 +70,9 @@ bool MainTab_Items::eventFilter(QObject* watched, QEvent* event)
     if (event->type() != QEvent::KeyPress)
         return QObject::eventFilter(watched, event);
 
-    QKeyEvent* keyEv = static_cast<QKeyEvent*>(event);
+    QKeyEvent* keyEv = dynamic_cast<QKeyEvent*>(event);
+    if (!keyEv)
+        return false;
     if ( (keyEv->key()==Qt::Key_F2) || (keyEv->key()==Qt::Key_F3) )
     {   // pressed F1 or F2
         if (g_loadedScriptsProfile == -1)   // no profile loaded
@@ -83,13 +87,14 @@ bool MainTab_Items::eventFilter(QObject* watched, QEvent* event)
 
         return false;
     }
-    else if ( (keyEv->key()==Qt::Key_F) && (keyEv->modifiers() & Qt::ControlModifier) )
-    {   // presset CTRL + F
+
+    if ( (keyEv->key()==Qt::Key_F) && (keyEv->modifiers() & Qt::ControlModifier) )
+    {   // pressed CTRL + F
         on_pushButton_search_clicked();
         return false;
     }
-    else
-        return QObject::eventFilter(watched, event);
+
+    return QObject::eventFilter(watched, event);
 }
 
 void MainTab_Items::updateViews()
@@ -290,7 +295,8 @@ void MainTab_Items::onManual_treeView_objList_selectionChanged(const QModelIndex
     if (hue < 0)    // template or random expr (not supported yet) or strange string
         hue = 0;
 
-    QImage* art = g_UOArt->drawArt(UOArt::kItemsOffset + id, hue, false);
+    g_UOArt->setHuesCachePointer(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
+    QImage* art = g_UOArt->drawArt(uocf::UOArt::kItemsOffset + id, hue, false);
     if (art == nullptr)
         return;
 

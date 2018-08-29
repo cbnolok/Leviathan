@@ -247,7 +247,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="layoutWidget">
+       <widget class="QWidget" name="layoutWidget1">
         <layout class="QGridLayout" name="gridLayout_image">
          <item row="3" column="1">
           <spacer name="verticalSpacer_2">

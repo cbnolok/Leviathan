@@ -1,9 +1,11 @@
 #include "scriptutils.h"
-#include "cpputils.h"
+
 #include <cstring>      // for strcmp
 #include <sstream>      // for std::stringstream
 #include <iomanip>      // for std::hex
 #include <stdexcept>    // for std::invalid_argument
+
+#include "cpputils/strings.h"
 
 
 int ScriptUtils::strToSphereInt(std::string str)   // it's important to work on a copy, since we insert a character in this function

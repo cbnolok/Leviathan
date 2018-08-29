@@ -1,8 +1,6 @@
 #include "dlg_profilescripts_options.h"
 #include "ui_dlg_profilescripts_options.h"
-#include "../cpputils.h"
-#include "../globals.h"
-#include "../cpputils_sysio.h"
+
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDirModel>
@@ -11,8 +9,12 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
+
+#include "../globals.h"
 #include "../qtutils/checkableproxymodel.h"
 #include "../qtutils/modelutils.h"
+#include "../cpputils/strings.h"
+#include "../cpputils/sysio.h"
 
 
 Dlg_ProfileScripts_Options::Dlg_ProfileScripts_Options(QWidget *parent) :

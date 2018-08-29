@@ -1,9 +1,11 @@
 #include "subdlg_spawn.h"
 #include "ui_subdlg_spawn.h"
+
+#include <QMessageBox>
+
+#include "../globals.h"
 #include "../spherescript/scriptobjects.h"
 #include "../keystrokesender/keystrokesender.h"
-#include "../globals.h"
-#include <QMessageBox>
 
 
 SubDlg_Spawn::SubDlg_Spawn(QWidget *parent) :

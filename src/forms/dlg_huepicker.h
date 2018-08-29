@@ -1,9 +1,9 @@
 #ifndef DLG_HUEPICKER_H
 #define DLG_HUEPICKER_H
 
+#include <vector>
 #include <QDialog>
 #include <QLabel>
-#include <vector>
 
 
 // We need to add to QLabel some functionalities

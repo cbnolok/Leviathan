@@ -1,10 +1,10 @@
 #ifndef DLG_PROFILECLIENT_OPTIONS_H
 #define DLG_PROFILECLIENT_OPTIONS_H
 
-#include "../settings/clientprofile.h"
+#include <vector>
 #include <QDialog>
 #include <QModelIndex>
-#include <vector>
+#include "../settings/clientprofile.h"
 
 class QStandardItemModel;
 

@@ -1,9 +1,11 @@
 #include "appsettings.h"
-#include "globals.h"
-#include "cpputils.h"
+
 #include <QJsonArray>
 #include <QJsonParseError>
 #include <QFile>
+
+#include "globals.h"
+#include "cpputils/strings.h"
 
 // workaround for a bug in Qt: if a key is not existant, sometimes the returned value is null, instead of undefined
 #define QJSONVAL_ISVALID(qjsonvalue) (!qjsonvalue.isUndefined() && !qjsonvalue.isNull())

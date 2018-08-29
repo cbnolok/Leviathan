@@ -1,18 +1,19 @@
 #include "maintab_chars.h"
 #include "ui_maintab_chars.h"
-#include "globals.h"
-#include "cpputils.h"
-#include "../spherescript/scriptobjects.h"
-#include "../spherescript/scriptutils.h"
-#include "../uofiles/uoanim.h"
-#include "../keystrokesender/keystrokesender.h"
-#include "subdlg_searchobj.h"
-#include "subdlg_spawn.h"
+
 #include <QMessageBox>
 #include <QStandardItem>
 #include <QGraphicsPixmapItem>
 #include <QKeyEvent>
-//#include <thread>
+
+#include "globals.h"
+#include "subdlg_searchobj.h"
+#include "subdlg_spawn.h"
+#include "../spherescript/scriptobjects.h"
+#include "../spherescript/scriptutils.h"
+#include "../uoclientfiles/uoanim.h"
+#include "../keystrokesender/keystrokesender.h"
+#include "cpputils/maps.h"
 
 
 MainTab_Chars::MainTab_Chars(QWidget *parent) :
@@ -68,7 +69,9 @@ bool MainTab_Chars::eventFilter(QObject* watched, QEvent* event)
     if (event->type() != QEvent::KeyPress)
         return QObject::eventFilter(watched, event);
 
-    QKeyEvent* keyEv = static_cast<QKeyEvent*>(event);
+    QKeyEvent* keyEv = dynamic_cast<QKeyEvent*>(event);
+    if (!keyEv)
+        return false;
     if ( (keyEv->key()==Qt::Key_F2) || (keyEv->key()==Qt::Key_F3) )
     {   // pressed F1 or F2
         if (g_loadedScriptsProfile == -1)   // no profile loaded
@@ -249,6 +252,7 @@ void MainTab_Chars::onManual_treeView_objList_selectionChanged(const QModelIndex
     if (hue < 0)    // template or random expr (not supported yet) or strange string
         hue = 0;
 
+    g_UOAnim->setHuesCachePointer(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
     QImage* frameimg = g_UOAnim->drawAnimFrame(id, 0, 1, 0, hue);
     if (frameimg == nullptr)
         return;

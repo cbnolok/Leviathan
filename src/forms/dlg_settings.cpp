@@ -1,10 +1,12 @@
 #include "dlg_settings.h"
 #include "ui_dlg_settings.h"
-#include "../globals.h"
-#include "../settings/appsettings.h"
+
 #include <QMessageBox>
 #include <QFile>
 #include <QJsonDocument>
+
+#include "../globals.h"
+#include "../settings/appsettings.h"
 
 
 Dlg_Settings::Dlg_Settings(QWidget *parent) :

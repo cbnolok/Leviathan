@@ -1,8 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
+#include <QTimer>
+#include <QSignalMapper>
+
 #include "globals.h"
 #include "version.h"
-#include "../spherescript/scriptparser.h"
+
 #include "maintab_items.h"
 #include "maintab_chars.h"
 #include "maintab_tools.h"
@@ -11,8 +15,8 @@
 #include "dlg_settings.h"
 #include "dlg_profileclient_options.h"
 #include "dlg_profilescripts_options.h"
-#include <QTimer>
-#include <QSignalMapper>
+
+#include "../spherescript/scriptparser.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :

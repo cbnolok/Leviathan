@@ -1,7 +1,7 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define LEVIATHAN_VERSION 0.2.1
+#define LEVIATHAN_VERSION 0.3
 #define BUILD_NOT_AUTOMATIC
 
 #endif // VERSION_H

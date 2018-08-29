@@ -1,8 +1,8 @@
 #include "globals.h"
 #include "spherescript/scriptobjects.h"
-#include "uofiles/uohues.h"
-#include "uofiles/uoart.h"
-#include "uofiles/uoanim.h"
+#include "uoclientfiles/uohues.h"
+#include "uoclientfiles/uoart.h"
+#include "uoclientfiles/uoanim.h"
 
 
 AppSettings g_settings;
@@ -64,9 +64,9 @@ bool appendToLog(const std::string &str)
 
 /* Client files stuff */
 
-UOHues *g_UOHues = nullptr;
-UOArt  *g_UOArt  = nullptr;
-UOAnim *g_UOAnim = nullptr;
+uocf::UOHues *g_UOHues = nullptr;
+uocf::UOArt  *g_UOArt  = nullptr;
+uocf::UOAnim *g_UOAnim = nullptr;
 
 void loadClientFiles(std::function<void(int)> reportProgress)
 {
@@ -81,9 +81,9 @@ void loadClientFiles(std::function<void(int)> reportProgress)
 
     appendToLog("Loading Client Profile \"" + g_clientProfiles[g_loadedClientProfile].m_name + "\"...");
 
-    g_UOHues = new UOHues(clientFolder + "hues.mul");
-    g_UOArt  = new UOArt (clientFolder);
-    g_UOAnim = new UOAnim(clientFolder, reportProgress);
+    g_UOHues = new uocf::UOHues(clientFolder + "hues.mul");
+    g_UOArt  = new uocf::UOArt (clientFolder);
+    g_UOAnim = new uocf::UOAnim(clientFolder, reportProgress);
 
     appendToLog("Client Profile \"" + g_clientProfiles[g_loadedClientProfile].m_name + "\" loaded.");
 }

@@ -1,8 +1,6 @@
 #include "dlg_profileclient_options.h"
 #include "ui_dlg_profileclient_options.h"
-#include "../cpputils.h"
-#include "../globals.h"
-#include "../cpputils_sysio.h"
+
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDirModel>
@@ -11,6 +9,10 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
+
+#include "../globals.h"
+#include "../cpputils/strings.h"
+#include "../cpputils/sysio.h"
 
 
 Dlg_ProfileClient_Options::Dlg_ProfileClient_Options(QWidget *parent) :

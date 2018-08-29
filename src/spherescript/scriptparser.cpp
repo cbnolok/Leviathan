@@ -1,11 +1,16 @@
 #include "scriptparser.h"
-#include "../globals.h"
-#include "../cpputils.h"
-#include "../cpputils_sysio.h"
-#include "scriptobjects.h"
-#include "scriptutils.h"
+
 #include <QCoreApplication> // for QCoreApplication::processEvents();
 
+#include "../globals.h"
+#include "../cpputils/strings.h"
+#include "../cpputils/sysio.h"
+#include "scriptobjects.h"
+#include "scriptutils.h"
+
+
+//#define COUNTOF(array) sizeof(array)/sizeof(array[0])
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
 ScriptParser::ScriptParser(int profileIndex) :
     m_profileIndex(profileIndex), m_scriptLine(0)

@@ -1,17 +1,19 @@
 #include "dlg_huepicker.h"
 #include "ui_dlg_huepicker.h"
-#include "../globals.h"
-#include "../uofiles/uohues.h"
-#include "../uofiles/uoart.h"
-#include "../uofiles/uoanim.h"
-#include "../spherescript/scriptsearch.h"
-#include "../spherescript/scriptutils.h"
-#include "../keystrokesender/keystrokesender.h"
+
 #include <QImage>
 #include <QPixmap>
 #include <QGraphicsPixmapItem>
 #include <QSignalMapper>
 #include <QMessageBox>
+
+#include "../globals.h"
+#include "../uoclientfiles/uohues.h"
+#include "../uoclientfiles/uoart.h"
+#include "../uoclientfiles/uoanim.h"
+#include "../spherescript/scriptsearch.h"
+#include "../spherescript/scriptutils.h"
+#include "../keystrokesender/keystrokesender.h"
 
 
 Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
@@ -115,16 +117,16 @@ void Dlg_HuePicker::drawHueBar()
     static const int colorBlockWidth = 14;
     static const int colorBlockHeight = 22;
 
-    QImage qimgHueDetail(UOHueEntry::kColorTableSize * colorBlockWidth, colorBlockHeight, QImage::Format_RGB32);
+    QImage qimgHueDetail(uocf::UOHueEntry::kColorTableSize * colorBlockWidth, colorBlockHeight, QImage::Format_RGB32);
     if (!g_UOHues || !m_selectedHueIndex)
         qimgHueDetail.fill(0);
     else
     {
         int hueIdx = (m_selectedHueIndex == -1) ? 0 : m_selectedHueIndex;
-        UOHueEntry hueSelected = g_UOHues->getHueEntry(hueIdx);
-        for (int i = 0; i < UOHueEntry::kColorTableSize; ++i)   // color blocks = 32
+        uocf::UOHueEntry hueSelected = g_UOHues->getHueEntry(hueIdx);
+        for (int i = 0; i < uocf::UOHueEntry::kColorTableSize; ++i)   // color blocks = 32
         {
-            ARGB32 color32 = ARGB32(hueSelected.getColor(i));
+            uocf::ARGB32 color32 = uocf::ARGB32(hueSelected.getColor(i));
             color32.adjustBrightness(m_brightnessPercent);
             uint rawcolor = color32.getVal();
             for (int x = (colorBlockWidth * i); x < (colorBlockWidth * i) + colorBlockWidth; ++x)
@@ -147,7 +149,7 @@ void Dlg_HuePicker::drawHueTable()
     int hueIdx = 0;
     for (EnhancedLabel* curLabel : m_hueTableBlocks)
     {
-        UOHueEntry curHue = g_UOHues->getHueEntry(hueIdx);
+        uocf::UOHueEntry curHue = g_UOHues->getHueEntry(hueIdx);
 
         // Get the "mean" color
         /*
@@ -155,7 +157,7 @@ void Dlg_HuePicker::drawHueTable()
         meanR = meanG = meanB = 0;
         for (int i = 0; i < UOHueEntry::kColorTableSize; ++i)   // color blocks = 32
         {
-            ARGB32 color32 = ARGB32(curHue.getColor(i));
+            uocf::ARGB32 color32 = uocf::ARGB32(curHue.getColor(i));
             color32.adjustBrightness(m_brightnessPercent);
             meanR += color32.getR();
             meanG += color32.getG();
@@ -168,7 +170,7 @@ void Dlg_HuePicker::drawHueTable()
         qimg.fill(qRgb(meanR,meanG,meanB));
         */
 
-        ARGB32 color32 = ARGB32(curHue.getColor(m_shadeIndex));
+        uocf::ARGB32 color32 = uocf::ARGB32(curHue.getColor(m_shadeIndex));
         color32.adjustBrightness(m_brightnessPercent);
         QImage qimg(1,1,QImage::Format_RGB32);
         qimg.fill(color32.getVal());
@@ -195,9 +197,15 @@ void Dlg_HuePicker::drawPreview()
     QImage* frameimg = nullptr;
     int hueIdx = (m_selectedHueIndex == -1) ? 0 : m_selectedHueIndex;
     if (m_previewIsItem)
-        frameimg = g_UOArt->drawArt(UOArt::kItemsOffset + m_previewDisplayId, hueIdx+1, false);
+    {
+        g_UOArt->setHuesCachePointer(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
+        frameimg = g_UOArt->drawArt(uocf::UOArt::kItemsOffset + m_previewDisplayId, hueIdx+1, false);
+    }
     else
+    {
+        g_UOAnim->setHuesCachePointer(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
         frameimg = g_UOAnim->drawAnimFrame(m_previewDisplayId, 0, 1, 0, hueIdx+1);
+    }
     if (frameimg == nullptr)
         return;
 

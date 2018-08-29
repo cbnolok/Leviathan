@@ -43,14 +43,15 @@ bool appendToLog(const std::string &str);
 
 // Client files stuff
 
-class UOHues;
-extern UOHues *g_UOHues;
-
-class UOArt;
-extern UOArt *g_UOArt;
-
-class UOAnim;
-extern UOAnim *g_UOAnim;
+namespace uocf
+{
+    class UOHues;
+    class UOArt;
+    class UOAnim;
+}
+extern uocf::UOHues *g_UOHues;
+extern uocf::UOArt *g_UOArt;
+extern uocf::UOAnim *g_UOAnim;
 
 void loadClientFiles(std::function<void(int)> reportProgress);
 

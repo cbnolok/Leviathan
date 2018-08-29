@@ -21,48 +21,65 @@ SOURCES += \
     forms/maintab_chars.cpp \
     forms/maintab_items.cpp \
     forms/maintab_log.cpp \
+    forms/dlg_huepicker.cpp \
     forms/dlg_profileclient_options.cpp \
     forms/dlg_profilescripts_options.cpp \
     forms/dlg_settings.cpp \
     forms/subdlg_searchobj.cpp \
     forms/subdlg_spawn.cpp \
     forms/subdlg_taskprogress.cpp \
+    forms/maintab_tools.cpp \
     qtutils/checkableproxymodel.cpp \
     qtutils/delayedexecutiontimer.cpp \
     qtutils/modelutils.cpp \
+    settings/appsettings.cpp \
     settings/clientprofile.cpp \
     settings/scriptsprofile.cpp \
     spherescript/scriptobjects.cpp \
     spherescript/scriptparser.cpp \
     spherescript/scriptsearch.cpp \
     spherescript/scriptutils.cpp \
-    uofiles/uoppackage/UOPError.cpp \
-    uofiles/uoppackage/UOPBlock.cpp \
-    uofiles/uoppackage/UOPFile.cpp \
-    uofiles/uoppackage/UOPHeader.cpp \
-    uofiles/uoppackage/UOPPackage.cpp \
-    uofiles/uoanim.cpp \
-    uofiles/uoanimmul.cpp \
-    uofiles/uoart.cpp \
-    uofiles/uohues.cpp \
-    uofiles/uoidx.cpp \
-    uofiles/uoanimuop.cpp \
+    uoclientfiles/libsquish/alpha.cpp \
+    uoclientfiles/libsquish/clusterfit.cpp \
+    uoclientfiles/libsquish/colourblock.cpp \
+    uoclientfiles/libsquish/colourfit.cpp \
+    uoclientfiles/libsquish/colourset.cpp \
+    uoclientfiles/libsquish/maths.cpp \
+    uoclientfiles/libsquish/rangefit.cpp \
+    uoclientfiles/libsquish/singlecolourfit.cpp \
+    uoclientfiles/libsquish/singlecolourlookup.inl \
+    uoclientfiles/libsquish/squish.cpp \
+    uoclientfiles/ddsinfo.cpp \
+    uoclientfiles/helpers.cpp \
+    uoclientfiles/uonimmul.cpp \
+    uoclientfiles/uoanim.cpp \
+    uoclientfiles/uoart.cpp \
+    uoclientfiles/uohues.cpp \
+    uoclientfiles/uoidx.cpp \
+    uoclientfiles/uoanimuop.cpp \
     keystrokesender/keystrokesender_common.cpp \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
     keystrokesender/keystrokesender.cpp \
-    forms/dlg_huepicker.cpp \
-    settings/appsettings.cpp \
-    cpputils.cpp \
-    cpputils_sysio.cpp \
-    forms/maintab_tools.cpp
+    uoppackage/uopblock.cpp \
+    uoppackage/uopcompression.cpp \
+    uoppackage/uoperror.cpp \
+    uoppackage/uopfile.cpp \
+    uoppackage/uophash.cpp \
+    uoppackage/uopheader.cpp \
+    uoppackage/uoppackage.cpp \
+    cpputils/strings.cpp \
+    cpputils/sysio.cpp
 
 HEADERS  += \
     globals.h \
+    version.h \
     forms/mainwindow.h \
     forms/maintab_chars.h \
     forms/maintab_items.h \
     forms/maintab_log.h \
+    forms/maintab_tools.h \
+    forms/dlg_huepicker.h \
     forms/dlg_profileclient_options.h \
     forms/dlg_profilescripts_options.h \
     forms/dlg_settings.h \
@@ -72,36 +89,50 @@ HEADERS  += \
     qtutils/checkableproxymodel.h \
     qtutils/delayedexecutiontimer.h \
     qtutils/modelutils.h \
+    settings/appsettings.h \
     settings/clientprofile.h \
     settings/scriptsprofile.h \
     spherescript/scriptobjects.h \
     spherescript/scriptparser.h \
     spherescript/scriptsearch.h \
     spherescript/scriptutils.h \
-    uofiles/uoppackage/UOPBlock.h \
-    uofiles/uoppackage/UOPCompression.h \
-    uofiles/uoppackage/UOPError.h \
-    uofiles/uoppackage/UOPFile.h \
-    uofiles/uoppackage/UOPHeader.h \
-    uofiles/uoppackage/UOPPackage.h \
-    uofiles/uoppackage/zconf.h \
-    uofiles/uoppackage/zlib.h \
-    uofiles/uoanim.h \
-    uofiles/uoanimmul.h \
-    uofiles/uoart.h \
-    uofiles/uohues.h \
-    uofiles/uoidx.h \
-    uofiles/uoanimuop.h \
+    uoppackage/zconf.h \
+    uoppackage/zlib.h \
+    uoclientfiles/libsquish/alpha.h \
+    uoclientfiles/libsquish/clusterfit.h \
+    uoclientfiles/libsquish/colourblock.h \
+    uoclientfiles/libsquish/colourfit.h \
+    uoclientfiles/libsquish/colourset.h \
+    uoclientfiles/libsquish/maths.h \
+    uoclientfiles/libsquish/rangefit.h \
+    uoclientfiles/libsquish/simd.h \
+    uoclientfiles/libsquish/simd_float.h \
+    uoclientfiles/libsquish/simd_sse.h \
+    uoclientfiles/libsquish/simd_ve.h \
+    uoclientfiles/libsquish/singlecolourfit.h \
+    uoclientfiles/libsquish/squish.h \
+    uoclientfiles/ddsinfo.h \
+    uoclientfiles/helpers.h \
+    uoclientfiles/uoanim.h \
+    uoclientfiles/uoanimmul.h \
+    uoclientfiles/uoanimuop.h \
+    uoclientfiles/uoart.h \
+    uoclientfiles/uohues.h \
+    uoclientfiles/uoidx.h \
     keystrokesender/keystrokesender_common.h \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \
-    version.h \
-    forms/dlg_huepicker.h \
-    settings/appsettings.h \
-    cpputils.h \
-    cpputils_sysio.h \
-    forms/maintab_tools.h
+    cpputils/strings.h \
+    cpputils/sysio.h \
+    uoppackage/uopblock.h \
+    uoppackage/uopcompression.h \
+    uoppackage/uoperror.h \
+    uoppackage/uopfile.h \
+    uoppackage/uophash.h \
+    uoppackage/uopheader.h \
+    uoppackage/uoppackage.h \
+    cpputils/maps.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -196,3 +227,6 @@ unix {
 }
 
 LIBS += -fopenmp    # link against OpenMP library
+
+SUBDIRS += \
+    uoclientfiles/libsquish/libSquish.pro
