@@ -84,9 +84,8 @@ void ScriptParser::run()
             continue;   // error?
 
         bool isDUPEITEMnumerical = isStringNumericHex(dupeObj->m_dupeItem);
-        for (auto it = m_scriptsDupeParents.begin(), end = m_scriptsDupeParents.end(); it != end; ++it)
+        for (ScriptObj* parentObj : m_scriptsDupeParents)
         {
-            ScriptObj * parentObj = *it;
             //if (!parentObj->m_dupeItem.empty())   // if it's a dupe item
             //    continue; // dupe item having as parent another dupe item? error in scripts?
             if (!parentObj->m_baseDef)    // it may be a child item which has ben set ID = base item
@@ -141,7 +140,7 @@ void ScriptParser::run()
     {
         // Iterate one time for the items and one for the chars
 
-        auto curChildObjects    = displayID_childObjects[tree_i];
+        auto curChildObjects = displayID_childObjects[tree_i];
         size_t child_s = curChildObjects->size();
         //#pragma omp parallel for schedule(static) private(curChildObjects, child_s)
         for (size_t child_i = 0; child_i < child_s; ++child_i)
@@ -153,9 +152,8 @@ void ScriptParser::run()
             ScriptObj* childObj = (*curChildObjects)[child_i];
             bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
 
-            for (auto it = displayID_trees[tree_i]->begin(), end = displayID_trees[tree_i]->back_it(); it != end; ++it)
+            for (ScriptObj* parentObj : *displayID_trees[tree_i])
             {
-                ScriptObj * parentObj = *it;
                 if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
                     continue;
 

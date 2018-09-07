@@ -10,7 +10,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = Leviathan
 TEMPLATE = app
 
-CONFIG += c++11
+CONFIG += c++14
 
 RESOURCES = leviathan_resources.qrc
 
@@ -66,7 +66,6 @@ SOURCES += \
     uoppackage/uoperror.cpp \
     uoppackage/uopfile.cpp \
     uoppackage/uophash.cpp \
-    uoppackage/uopheader.cpp \
     uoppackage/uoppackage.cpp \
     cpputils/strings.cpp \
     cpputils/sysio.cpp
@@ -130,7 +129,6 @@ HEADERS  += \
     uoppackage/uoperror.h \
     uoppackage/uopfile.h \
     uoppackage/uophash.h \
-    uoppackage/uopheader.h \
     uoppackage/uoppackage.h \
     cpputils/maps.h
 

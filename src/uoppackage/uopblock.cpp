@@ -1,10 +1,6 @@
 #include "uopblock.h"
-
 #include <sstream>
-
-#include "uoperror.h"
 #include "uophash.h"
-#include "uopfile.h"
 
 #define ADDERROR(str) UOPError::append((str), errorQueue)
 
@@ -13,23 +9,23 @@ namespace uopp
 {
 
 
-int UOPBlock::getIndex() const {
+unsigned int UOPBlock::getIndex() const {
     return m_index;
 }
-int UOPBlock::getFileCount() const {
+unsigned int UOPBlock::getFilesCount() const {
     return m_fileCount;
 }
 UOPFile* UOPBlock::getFile(int index) const {
     return m_files[index];
 }
-long long UOPBlock::getNextBlockAddress() const {
+unsigned long long UOPBlock::getNextBlockAddress() const {
     return m_nextBlockAddress;
 }
 bool UOPBlock::isEmpty() const {
     return (m_fileCount == 0);
 }
 
-UOPBlock::UOPBlock(UOPPackage* parent, int index) :
+UOPBlock::UOPBlock(UOPPackage* parent, unsigned int index) :
     m_parent(parent), m_index(index),
     m_fileCount(0), m_nextBlockAddress(0), m_curFileIdx(0)
 {
@@ -37,8 +33,8 @@ UOPBlock::UOPBlock(UOPPackage* parent, int index) :
 
 UOPBlock::~UOPBlock()
 {
-    for (auto it = m_files.begin(), end = m_files.end(); it != end; ++it)
-        delete *it;
+    for (UOPFile* file : m_files)
+        delete file;
 }
 
 void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
@@ -49,7 +45,7 @@ void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
 
     // Read files info, i'm not decompressing them
     m_files.reserve(m_fileCount);
-    for (int index = 0; index < m_fileCount; ++index)
+    for (unsigned int index = 0; index < m_fileCount; ++index)
     {
         UOPFile* f = new UOPFile(this, index);
         f->read( fin, errorQueue );
@@ -58,14 +54,14 @@ void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
 
 }
 
-int UOPBlock::searchByHash(unsigned long long hash) const
+unsigned int UOPBlock::searchByHash(unsigned long long hash) const
 {
-    for ( int i = 0; i < m_fileCount; ++i )
+    for ( unsigned int i = 0; i < m_fileCount; ++i )
     {
         if ( m_files[i]->searchByHash(hash) )
             return i;
     }
-    return -1;
+    return (unsigned int)-1;
 }
 
 bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, UOPError *errorQueue)
@@ -118,5 +114,46 @@ bool UOPBlock::addFile(std::ifstream& fin, const std::string& packedFileName, Co
     return addFile(fin, fileHash, compression, errorQueue);
 }
 
+
+// Iterators
+UOPBlock::iterator UOPBlock::end()      // past-the-end iterator (obtained when incrementing an iterator to the last item)
+{
+    return {this, iterator::kInvalidIdx};
+}
+
+UOPBlock::iterator UOPBlock::begin()    // iterator to first item
+{
+    if (getFilesCount() > 0)
+        return {this, 0};
+    return end();
+}
+
+UOPBlock::iterator UOPBlock::back_it()  // iterator to last item
+{
+    unsigned int fileCount = getFilesCount();
+    if (fileCount > 0)
+        return {this, fileCount - 1};
+    return end();
+}
+
+UOPBlock::const_iterator UOPBlock::cend() const      // past-the-end iterator (obtained when incrementing an iterator to the last item)
+{
+    return {this, const_iterator::kInvalidIdx};
+}
+
+UOPBlock::const_iterator UOPBlock::cbegin() const    // iterator to first item
+{
+    if (getFilesCount() > 0)
+        return {this, 0};
+    return cend();
+}
+
+UOPBlock::const_iterator UOPBlock::cback_it() const  // iterator to last item
+{
+    unsigned int fileCount = getFilesCount();
+    if (fileCount > 0)
+        return {this, fileCount - 1};
+    return cend();
+}
 
 }

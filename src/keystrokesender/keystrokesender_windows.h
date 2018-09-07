@@ -39,8 +39,8 @@ public:
 
 protected:
     bool m_setFocusToWindow;
-    KSError m_error = KSERR_OK;
-    UOClientType m_clientType = CLIENT_UNK;
+    KSError m_error = KSError::Ok;
+    UOClientType m_clientType = UOClientType::Unknown;
 
 private:
     HWND m_UOHandle = 0;

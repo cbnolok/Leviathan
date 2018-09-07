@@ -29,7 +29,7 @@ void SubDlg_Spawn::on_pushButton_place_clicked()
         return;
 
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(".add 01ea7", true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -59,7 +59,7 @@ void SubDlg_Spawn::on_pushButton_init_clicked()
     stringsToSend.emplace_back(".act.timer 1");
 
     auto ksResult = ks::KeystrokeSender::sendStringsFastAsync(stringsToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -79,7 +79,7 @@ void SubDlg_Spawn::on_pushButton_customCmd_clicked()
 
     QString command = QString::fromStdString(g_settings.m_customSpawnCmd).arg(objDefname, amount, maxDist, minTime, maxTime);
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(command.toStdString(), true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();

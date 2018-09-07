@@ -4,7 +4,6 @@
 #include <sstream>
 #include "zlib.h"
 
-#include "uoperror.h"
 #include "uophash.h"
 
 #define ADDERROR(str) UOPError::append((str), errorQueue)
@@ -14,13 +13,13 @@ namespace uopp
 {
 
 
-int UOPFile::getIndex() const {
+unsigned int UOPFile::getIndex() const {
     return m_index;
 }
-long long UOPFile::getDataBlockAddress() const {
+unsigned long long UOPFile::getDataBlockAddress() const {
     return m_dataBlockAddress;
 }
-int UOPFile::getDataBlockLength() const {
+unsigned int UOPFile::getDataBlockLength() const {
     return m_dataBlockLength;
 }
 unsigned int UOPFile::getCompressedSize() const {
@@ -40,6 +39,9 @@ CompressionFlag UOPFile::getCompression() const {
 }
 const std::string& UOPFile::getFileName() const {
     return m_fileName;
+}
+bool UOPFile::hasData() const {
+    return !m_data.empty();
 }
 const std::vector<char>* UOPFile::getDataVec() const {
     return &m_data;
@@ -74,7 +76,7 @@ bool UOPFile::read(std::ifstream& fin, UOPError *errorQueue)
     fin.read(reinterpret_cast<char*>(&m_compressedSize), 4);
     fin.read(reinterpret_cast<char*>(&m_decompressedSize), 4);
     fin.read(reinterpret_cast<char*>(&m_fileHash), 8);
-    fin.read(reinterpret_cast<char*>(&m_dataBlockHash), 4);
+    fin.read(reinterpret_cast<char*>(&m_dataBlockHash), 4);     // adler32 hash of the compressed data?
 
     short comprFlag = 0;
     fin.read(reinterpret_cast<char*>(&comprFlag), 2);
@@ -98,6 +100,12 @@ bool UOPFile::readData(std::ifstream& fin, UOPError*)
     fin.seekg(m_dataBlockAddress + m_dataBlockLength, std::ios_base::beg);
     fin.read(m_data.data(), m_compressedSize * sizeof(char));
     return !fin.bad();
+}
+
+void UOPFile::freeData()
+{
+    m_data.clear();
+    m_data.shrink_to_fit();
 }
 
 bool UOPFile::unpack(std::vector<char>* decompressedData, UOPError *errorQueue)
@@ -201,7 +209,7 @@ bool UOPFile::createFile(std::ifstream& fin, unsigned long long fileHash, Compre
     //m_compressedSize          // To be filled later, in this function
     //m_decompressedSize        // To be filled later, in this function
     m_fileHash = fileHash;      // Hashed file name
-    //m_dataBlockHash           // Adler32 "checksum" for the data, not really needed
+    //m_dataBlockHash           // Adler32 "checksum" for the (compressed?) data, not really needed
     m_compression = compression;  // Is the data compressed using ZLib?
 
     // Get the input file size

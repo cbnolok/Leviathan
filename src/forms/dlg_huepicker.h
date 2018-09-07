@@ -12,8 +12,10 @@ class EnhancedLabel : public QLabel
     Q_OBJECT
 
 public:
-    explicit EnhancedLabel(QWidget* parent = Q_NULLPTR, Qt::WindowFlags f = Qt::WindowFlags());
-    ~EnhancedLabel();
+    explicit EnhancedLabel(QWidget* /*parent*/ = Q_NULLPTR, Qt::WindowFlags /*f*/ = Qt::WindowFlags())
+    {
+    }
+    ~EnhancedLabel() = default;
     //int m_index;
 
 signals:

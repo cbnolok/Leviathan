@@ -144,19 +144,19 @@ bool KeystrokeSender_Linux::findUOWindow()
         std::string strWindowName(windowName);
         free(windowName);
 
-        if ( strWindowName.find(UOClientWindowTitles[CLIENT_CLASSIC]) != std::string::npos )
+        if ( strWindowName.find(UOClientWindowTitles[(int)UOClientType::Classic]) != std::string::npos )
             m_UOWindow = list[i];
-        else if ( strWindowName.find(UOClientWindowTitles[CLIENT_ENHANCED]) != std::string::npos )
+        else if ( strWindowName.find(UOClientWindowTitles[(int)UOClientType::Enhanced]) != std::string::npos )
             m_UOWindow = list[i];
 
         if ( m_UOWindow != None )
         {
-            m_error = KSERR_OK;
+            m_error = KSError::Ok;
             return true;
         }
     }
 
-    m_error = KSERR_NOWINDOW;
+    m_error = KSError::NoWindow;
     return false;
 }
 
@@ -262,7 +262,7 @@ bool KeystrokeSender_Linux::sendString(const std::string& str, bool enterTermina
 {
     if ( str.length() < 1 )
     {
-        m_error = KSERR_STRINGSHORT;
+        m_error = KSError::StringShort;
         return false;
     }
 
@@ -291,7 +291,7 @@ bool KeystrokeSender_Linux::sendStrings(const std::vector<std::string>& strings,
     {
         if ( str.length() < 1 )
         {
-            m_error = KSERR_STRINGSHORT;
+            m_error = KSError::StringShort;
             ret = false;
             break;
         }
@@ -357,7 +357,7 @@ KSError KeystrokeSender_Linux::sendCharFastAsync(const char ch, bool setFocusToW
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 KSError KeystrokeSender_Linux::sendEnterFastAsync(bool setFocusToWindow)
@@ -377,7 +377,7 @@ KSError KeystrokeSender_Linux::sendEnterFastAsync(bool setFocusToWindow)
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 KSError KeystrokeSender_Linux::sendStringFastAsync(const std::string& str, bool enterTerminated, bool setFocusToWindow)
@@ -389,7 +389,7 @@ KSError KeystrokeSender_Linux::sendStringFastAsync(const std::string& str, bool 
         return ks_check.m_error;
 
     if ( str.length() < 1 )
-        return KSERR_STRINGSHORT;
+        return KSError::StringShort;
 
     // send the keys asynchronously, so that i don't pause the calling thread
     std::thread sender(
@@ -400,7 +400,7 @@ KSError KeystrokeSender_Linux::sendStringFastAsync(const std::string& str, bool 
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 KSError KeystrokeSender_Linux::sendStringsFastAsync(const std::vector<std::string> &strings, bool enterTerminated, bool setFocusToWindow)
@@ -420,7 +420,7 @@ KSError KeystrokeSender_Linux::sendStringsFastAsync(const std::vector<std::strin
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 
@@ -452,9 +452,9 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
         std::string strWindowName(windowName);
         free(windowName);
         //std::cout << i << ": " << strWindowName << std::endl;
-        if ( strWindowName.find(UOClientWindowTitles[CLIENT_CLASSIC]) != std::string::npos )
+        if ( strWindowName.find(UOClientWindowTitles[(int)UOClientType::Classic]) != std::string::npos )
             UOWindow = &list[i];
-        else if ( strWindowName.find(UOClientWindowTitles[CLIENT_ENHANCED]) != std::string::npos )
+        else if ( strWindowName.find(UOClientWindowTitles[(int)UOClientType::Enhanced]) != std::string::npos )
             UOWindow = &list[i];
         if ( UOWindow != NULL)
             break;

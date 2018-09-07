@@ -38,17 +38,17 @@ int UOPPackage::getVersion() const {
 unsigned int UOPPackage::getMisc() const {
     return m_misc;
 }
-long long UOPPackage::getStartAddress() const {
+unsigned long long UOPPackage::getStartAddress() const {
     return m_startAddress;
 }
-int UOPPackage::getBlockSize() const {
+unsigned int UOPPackage::getBlockSize() const {
     return m_blockSize;
 }
-int UOPPackage::getFileCount() const {
+unsigned int UOPPackage::getFileCount() const {
     return m_fileCount;
 }
-int UOPPackage::getBlocksCount() const {
-    return (int)m_blocks.size();
+unsigned int UOPPackage::getBlocksCount() const {
+    return (unsigned int)m_blocks.size();
 }
 std::vector<UOPBlock*> UOPPackage::getBlocks() {
     return m_blocks;
@@ -106,7 +106,7 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
         b->read(fin, errorQueue);
         m_blocks.push_back(b);
 
-        long long nextbl = b->getNextBlockAddress();
+        unsigned long long nextbl = b->getNextBlockAddress();
 
         if (nextbl == 0)
             iseof = true;
@@ -128,20 +128,20 @@ std::ifstream UOPPackage::getOpenedStream()
     return fin;
 }
 
-UOPFile* UOPPackage::getFileByIndex(int block, int idx) const
+UOPFile* UOPPackage::getFileByIndex(unsigned int block, unsigned int idx) const
 {
-    if (((int)m_blocks.size() < block) || (m_blocks[block]->getFileCount() < idx) )
+    if (((unsigned int)m_blocks.size() < block) || (m_blocks[block]->getFilesCount() < idx) )
         return nullptr;
     return m_blocks[block]->m_files[idx];
 }
 
-bool UOPPackage::searchByHash(unsigned long long hash, int& block, int& index) const
+bool UOPPackage::searchByHash(unsigned long long hash, unsigned int& block, unsigned int& index) const
 {
-    int idx;
-    for (int bl = 0, sz = (int)m_blocks.size(); bl < sz; ++bl)
+    unsigned int idx;
+    for (unsigned int bl = 0, sz = (unsigned int)m_blocks.size(); bl < sz; ++bl)
     {
         idx = m_blocks[bl]->searchByHash(hash);
-        if( idx != -1 )
+        if( idx != (unsigned int)-1 )
         {
             block = bl;
             index = idx;
@@ -154,8 +154,8 @@ bool UOPPackage::searchByHash(unsigned long long hash, int& block, int& index) c
 UOPFile* UOPPackage::getFileByName(const std::string &filename)
 {
     unsigned long long hash = hashFileName(filename);
-    int block = -1, index = -1;
-    if ( searchByHash(hash,block,index) )
+    unsigned int block = (unsigned int)-1, index = (unsigned int)-1;
+    if ( searchByHash(hash, block, index) )
         return getFileByIndex(block, index);
     return nullptr;
 }
@@ -186,7 +186,7 @@ bool UOPPackage::addFile(const std::string& filePath, unsigned long long fileHas
     }
 
     UOPBlock* curBlock;
-    if ( !m_blocks.empty() && (m_blocks[m_curBlockIdx]->getFileCount() < m_blockSize))
+    if ( !m_blocks.empty() && (m_blocks[m_curBlockIdx]->getFilesCount() < m_blockSize))
         curBlock = m_blocks[m_curBlockIdx];
     else
     {         
@@ -235,7 +235,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     m_fileCount = 0;
     for (const auto& curFile : m_blocks)
     {
-        m_fileCount += curFile->getFileCount();
+        m_fileCount += curFile->getFilesCount();
     }
 
     /* Start of the Header Data */
@@ -246,16 +246,21 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     fout.write(MYP0, 4);
     fout.write(reinterpret_cast<char*>(&m_version), 4);
     fout.write(reinterpret_cast<char*>(&m_misc), 4);
-    m_startAddress = (long long)fout.tellp() + 8 + 4 + 4;
+    m_startAddress = (unsigned long long)fout.tellp() + 8 + 4 + 4;
     fout.write(reinterpret_cast<char*>(&m_startAddress), 8);
     fout.write(reinterpret_cast<char*>(&m_blockSize), 4);
     fout.write(reinterpret_cast<char*>(&m_fileCount), 4);
+
+    // Add the zero-padding? (even without it the package is still considered valid)
+    //static const long long firstTableAddress = 0x200;
+    // Eventually, write this address this address to m_startAddress and to the file
 
     // We'll need these addresses later
     std::vector<std::streampos> blockInfoStartAddresses;
     blockInfoStartAddresses.reserve(m_blocks.size());
     std::vector<std::streampos> fileInfoStartAddresses;
     fileInfoStartAddresses.reserve(m_blocks.size()*m_blockSize);
+
     // Loop through the blocks
     for (const auto& curBlock : m_blocks)
     {
@@ -265,7 +270,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
         fout.write(reinterpret_cast<char*>(&curBlock->m_fileCount), 4);
         fout.write(reinterpret_cast<char*>(&curBlock->m_nextBlockAddress), 8);  // i don't have this yet, just write 0.
                                                                                 // also 0 is the legit value if it's the last block
-        int iFile = 0;
+        unsigned int iFile = 0;
         // Loop through all the files of this block
         for (const auto& curFile : curBlock->m_files)
         {
@@ -316,7 +321,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
         for (const auto& curFile : curBlock->m_files)
         {
             // Write UOP file raw data
-            long long beforeDataPos = (long long)fout.tellp();
+            unsigned long long beforeDataPos = (unsigned long long)fout.tellp();
             fout.write( curFile->m_data.data(), curFile->m_data.size());
             std::streampos afterDataPos = fout.tellp();
 
@@ -339,5 +344,60 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     return ret;
 }
 
+
+// Iterators
+UOPPackage::iterator UOPPackage::end()       // past-the-end iterator (obtained when incrementing an iterator to the last item)
+{
+    return {this, iterator::kInvalidIdx, iterator::kInvalidIdx};
+}
+
+UOPPackage::iterator UOPPackage::begin()     // iterator to first item
+{
+    if (getBlocksCount() > 0)
+    {
+        if (getBlock(0)->getFilesCount() > 0)
+            return {this, 0, 0};
+    }
+    return end();
+}
+
+UOPPackage::iterator UOPPackage::back_it()     // iterator to last item
+{
+    unsigned int blockCount = getBlocksCount();
+    if (blockCount > 0)
+    {
+        unsigned int fileCount = getBlock(blockCount - 1)->getFilesCount();
+        if (fileCount > 0)
+            return {this, blockCount - 1, fileCount - 1};
+    }
+    return end();
+}
+
+UOPPackage::const_iterator UOPPackage::cend() const     // past-the-end iterator (obtained when incrementing an iterator to the last item)
+{
+    return {this, const_iterator::kInvalidIdx, const_iterator::kInvalidIdx};
+}
+
+UOPPackage::const_iterator UOPPackage::cbegin() const   // iterator to first item
+{
+    if (getBlocksCount() > 0)
+    {
+        if (getBlock(0)->getFilesCount() > 0)
+            return {this, 0, 0};
+    }
+    return cend();
+}
+
+UOPPackage::const_iterator UOPPackage::cback_it() const // iterator to last item
+{
+    unsigned int blockCount = getBlocksCount();
+    if (blockCount > 0)
+    {
+        unsigned int fileCount = getBlock(blockCount - 1)->getFilesCount();
+        if (fileCount > 0)
+            return {this, blockCount - 1, fileCount - 1};
+    }
+    return cend();
+}
 
 }

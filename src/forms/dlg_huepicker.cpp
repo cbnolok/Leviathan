@@ -242,7 +242,7 @@ void Dlg_HuePicker::on_pushButton_set_clicked()
 {
     std::string strToSend = ".xcolor " + std::to_string(m_selectedHueIndex + 1);
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -253,7 +253,7 @@ void Dlg_HuePicker::on_pushButton_setClose_clicked()
 {
     std::string strToSend = ".xcolor " + std::to_string(m_selectedHueIndex);
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -279,14 +279,13 @@ void Dlg_HuePicker::on_lineEdit_preview_returnPressed()
     if (ui->lineEdit_preview->text().isEmpty())
         return;
 
-    ScriptSearch::SearchData_t sd;
+    ScriptSearch::SearchData sd;
     sd.caseSensitive = false;
     sd.key = ui->lineEdit_preview->text().toStdString();
     if (ScriptUtils::strToSphereInt(sd.key) == -1)
-        sd.searchBy = ScriptSearch::SearchBy_t::Defname;
+        sd.searchBy = ScriptSearch::SearchBy::Defname;
     else
-        sd.searchBy = ScriptSearch::SearchBy_t::ID;
-    sd.initialized = true;
+        sd.searchBy = ScriptSearch::SearchBy::ID;
 
     std::vector<ScriptObjTree*> treesToSearchInto;
     treesToSearchInto.push_back( m_previewIsItem ? getScriptObjTree(SCRIPTOBJ_TYPE_ITEM) : getScriptObjTree(SCRIPTOBJ_TYPE_CHAR) );
@@ -304,15 +303,6 @@ void Dlg_HuePicker::on_lineEdit_preview_returnPressed()
 
 
 /* Enhanced Label implementation */
-
-EnhancedLabel::EnhancedLabel(QWidget* parent, Qt::WindowFlags /*f*/)
-    : QLabel(parent)
-{
-}
-
-EnhancedLabel::~EnhancedLabel()
-{
-}
 
 void EnhancedLabel::mousePressEvent(QMouseEvent* /*event*/)
 {

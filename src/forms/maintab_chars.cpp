@@ -53,6 +53,8 @@ MainTab_Chars::MainTab_Chars(QWidget *parent) :
     // Set stretch factors to the splitter between the QGraphicsView and the lists layout
     ui->splitter_img_lists->setStretchFactor(0,3);  // column 0: lists layout
     ui->splitter_img_lists->setStretchFactor(1,1);  // column 1: QGraphicsView
+
+    m_subdlg_searchObj = std::make_unique<SubDlg_SearchObj>(window());
 }
 
 
@@ -86,13 +88,12 @@ bool MainTab_Chars::eventFilter(QObject* watched, QEvent* event)
 
         return false;
     }
-    else if ( (keyEv->key()==Qt::Key_F) && (keyEv->modifiers() & Qt::ControlModifier) )
+    if ( (keyEv->key()==Qt::Key_F) && (keyEv->modifiers() & Qt::ControlModifier) )
     {   // presset CTRL + F
         on_pushButton_search_clicked();
         return false;
     }
-    else
-        return QObject::eventFilter(watched, event);
+    return QObject::eventFilter(watched, event);
 }
 
 void MainTab_Chars::updateViews()
@@ -114,18 +115,16 @@ void MainTab_Chars::updateViews()
     const ScriptObjTree *trees[2] = { g_scriptObjTree_Chars, g_scriptObjTree_Spawns };
     for (int tree_i = 0; tree_i < 2; ++tree_i)
     {
-        for (size_t category_i = 0; category_i < trees[tree_i]->m_categories.size(); ++category_i)
+        for (ScriptCategory* categoryInst : trees[tree_i]->m_categories)
         {
-            ScriptCategory *categoryInst = trees[tree_i]->m_categories[category_i];
             QStandardItem *categoryItem = new QStandardItem(categoryInst->m_categoryName.c_str());
             m_categoryMap[categoryItem] = categoryInst;
             categoryItem->setSelectable(false);
             if (tree_i == 1)
                 categoryItem->setForeground(QBrush(QColor("red")));
             root->appendRow(categoryItem);
-            for (size_t subsection_i = 0; subsection_i < categoryInst->m_subsections.size(); ++subsection_i)
+            for (ScriptSubsection* subsectionInst : categoryInst->m_subsections)
             {
-                ScriptSubsection *subsectionInst = categoryInst->m_subsections[subsection_i];
                 QStandardItem *subsectionItem = new QStandardItem(subsectionInst->m_subsectionName.c_str());
                 categoryItem->appendRow(subsectionItem);
                 m_subsectionMap[subsectionItem] = subsectionInst;    // So that i know at which ScriptSubsection each QStandardItem corresponds.
@@ -143,11 +142,11 @@ void MainTab_Chars::onManual_treeView_organizer_selectionChanged(const QModelInd
     if (m_organizer_model->rowCount() == 0)     // Empty list, can't proceed.
         return;
 
-    QStandardItem *subsection_item = m_organizer_model->itemFromIndex(selected);
-    if (!m_subsectionMap.count(subsection_item)) // If the selected item isn't in the map, it is a Category, not a Subsection.
+    QStandardItem *subsectionItem = m_organizer_model->itemFromIndex(selected);
+    if (!m_subsectionMap.count(subsectionItem)) // If the selected item isn't in the map, it is a Category, not a Subsection.
         return;
-    ScriptSubsection *subsection_inst = m_subsectionMap[subsection_item];
-    //if (subsectionObj == nullptr)   // Checking again (maybe useless, but...), because if the pointer isn't valid the program will crash.
+    ScriptSubsection *subsectionInst = m_subsectionMap[subsectionItem];
+    //if (subsectionItem == nullptr)   // Checking again (maybe useless, but...), because if the pointer isn't valid the program will crash.
     //    return;
 
     m_objList_model->removeRows(0,m_objList_model->rowCount());
@@ -157,11 +156,9 @@ void MainTab_Chars::onManual_treeView_organizer_selectionChanged(const QModelInd
     ui->treeView_objList->setUpdatesEnabled(false);
 
     /* Populate the object list */
-    for (size_t subsection_i = 0; subsection_i < subsection_inst->m_objects.size(); ++subsection_i)
+    for (ScriptObj* obj : subsectionInst->m_objects)
     {
         // Build the two QStandardItem for each ScriptObj in this Subsection
-
-        ScriptObj *obj = subsection_inst->m_objects[subsection_i];
         QList<QStandardItem*> row;
 
         /* Build the description part */
@@ -194,7 +191,7 @@ void MainTab_Chars::onManual_treeView_organizer_selectionChanged(const QModelInd
         row.append(description_item);
 
         /* Build the defname part */
-        std::string def = obj->m_defname.empty() ? obj->m_ID : obj->m_defname;
+        const std::string& def = obj->m_defname.empty() ? obj->m_ID : obj->m_defname;
         QStandardItem *defname_item = new QStandardItem(def.c_str());
         row.append(defname_item);
 
@@ -223,7 +220,7 @@ void MainTab_Chars::on_treeView_objList_doubleClicked(const QModelIndex &index)
 
     std::string strToSend = ".add " + IDIndex.data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -283,7 +280,7 @@ void MainTab_Chars::on_pushButton_summon_clicked()
 
     std::string strToSend = ".add " + selection->selectedRows(1)[0].data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -294,7 +291,7 @@ void MainTab_Chars::on_pushButton_remove_clicked()
 {
     std::string strToSend = ".remove";
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -362,10 +359,7 @@ void MainTab_Chars::on_pushButton_search_clicked()
     if (g_loadedScriptsProfile == -1)
         return;
 
-    SubDlg_SearchObj dlg(window());
-    if (m_lastSearchData.initialized)
-        dlg.setSearchData(m_lastSearchData);
-    if (!dlg.exec())
+    if (!m_subdlg_searchObj->exec())
         return;
 
     const std::vector<ScriptObjTree*> trees =
@@ -374,8 +368,7 @@ void MainTab_Chars::on_pushButton_search_clicked()
         getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN)
     };
 
-    m_lastSearchData = dlg.getSearchData();
-    m_scriptSearch.reset(new ScriptSearch(trees, m_lastSearchData));
+    m_scriptSearch = std::make_unique<ScriptSearch>(trees, m_subdlg_searchObj->getSearchData());
     doSearch(false);
 }
 

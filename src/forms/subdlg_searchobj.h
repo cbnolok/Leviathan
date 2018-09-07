@@ -17,8 +17,8 @@ public:
     explicit SubDlg_SearchObj(QWidget *parent = 0);
     ~SubDlg_SearchObj();
 
-    ScriptSearch::SearchData_t getSearchData();
-    void setSearchData(ScriptSearch::SearchData_t data);
+    ScriptSearch::SearchData getSearchData();
+    void setSearchData(ScriptSearch::SearchData data);
 
 
 private slots:

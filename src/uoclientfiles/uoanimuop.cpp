@@ -6,31 +6,28 @@
 #include "../globals.h"
 #include "../cpputils/strings.h"
 #include "../cpputils/sysio.h"
-#include "uoppackage/uoperror.h"
 #include "uoppackage/uophash.h"
 #include "uoppackage/uoppackage.h"
-#include "uoppackage/uopblock.h"
-#include "uoppackage/uopfile.h"
 #include "uohues.h"
 
 
 namespace uocf
 {
 
-UOAnimUOP::UOAnimUOP(std::string clientPath, std::function<void(int)> reportProgress) :
-    m_UOHues(nullptr), m_clientPath(clientPath), m_isInitializing(false)
+UOAnimUOP::UOAnimUOP(std::string clientPath, const std::function<void(int)>& reportProgress) :
+    m_UOHues(nullptr), m_clientPath(std::move(clientPath)), m_animationsMatrix{{}}, m_isInitializing(false)
 {
     buildAnimTable(reportProgress);
 }
 
-//UOAnimUOP::~UOAnimUOP()
-//{
-//}
+// The destructor of the class needs to not be inlined. It calls the destructor of unique_ptr, which needs the type to be complete,
+//  so it needs the header which is included here in the cpp, while in the h the class was only forward declared.
+UOAnimUOP::~UOAnimUOP() = default;
 
-void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
+void UOAnimUOP::buildAnimTable(const std::function<void(int)>& reportProgress)
 {
     m_isInitializing = true;
-    memset((void*)m_animationsMatrix, 0, sizeof(m_animationsMatrix[0][0]) * kAnimIdMax * kGroupIdMax);
+    //memset((void*)m_animationsMatrix, 0, sizeof(m_animationsMatrix[0][0]) * kAnimIdMax * kGroupIdMax);
 
     // We need to know which animations are in the uop files
 
@@ -50,9 +47,10 @@ void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
         }
 
         // Read the data in order to access later to each file by its hash
-        uopp::UOPPackage& package = m_animUOPs[uopFile_i - 1];
+        m_animUOPs[uopFile_i - 1] = std::make_unique<uopp::UOPPackage>();
+        uopp::UOPPackage* package = m_animUOPs[uopFile_i - 1].get();
         uopp::UOPError uopErrorQueue;
-        package.load(path, &uopErrorQueue);
+        package->load(path, &uopErrorQueue);
         if (uopErrorQueue.errorOccurred())   // check if there was an error when extracting the uop file
         {
             appendToLog("UOPPackage error!");
@@ -60,13 +58,12 @@ void UOAnimUOP::buildAnimTable(std::function<void(int)> reportProgress)
             return;
         }
 
-        for (size_t block_i = 0, block_max = package.getBlocksCount(); block_i < block_max; ++block_i)
+        for (size_t block_i = 0, block_max = package->getBlocksCount(); block_i < block_max; ++block_i)
         {
-            const uopp::UOPBlock* curBlock = package.getBlock(block_i);
-            for (size_t file_i = 0, file_max = curBlock->getFileCount(); file_i < file_max; ++file_i)
+            const uopp::UOPBlock* curBlock = package->getBlock(block_i);
+            for (size_t file_i = 0, file_max = curBlock->getFilesCount(); file_i < file_max; ++file_i)
             {
                 const uopp::UOPFile* curFile = curBlock->getFile(file_i);
-
                 UOPAnimationData data = {};
                 data.animFileIdx = uopFile_i;
                 data.blockIdx = block_i;
@@ -139,24 +136,26 @@ bool UOAnimUOP::animExists(int animID)
     return false;
 }
 
-UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int direction, int frame, char* &decData, size_t &decDataSize)
+UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int direction, int frame, std::vector<char>* decompressedData)
 {
     if (isInitializing())
         return UOPFrameData{};
 
     UOPAnimationData* animData = m_animationsMatrix[animID][groupID];
 
-    uopp::UOPPackage& animPkg = m_animUOPs[animData->animFileIdx - 1];
-    uopp::UOPFile* animFile = animPkg.getFileByIndex((int)animData->blockIdx, (int)animData->fileIdx);
-
     // extract selected frame data from the UOP in memory
+    std::unique_ptr<uopp::UOPPackage>& animPkg = m_animUOPs[animData->animFileIdx - 1];
+    uopp::UOPFile* animFile = animPkg->getFileByIndex((int)animData->blockIdx, (int)animData->fileIdx);
+
+    unsigned int decDataSize = animFile->getDecompressedSize();
+    decompressedData->resize(decDataSize);
+
     uopp::UOPError uopErrorQueue;
-    std::ifstream fin = animPkg.getOpenedStream();
+    std::ifstream fin = animPkg->getOpenedStream();
     animFile->readData(fin, &uopErrorQueue);
     fin.close();
-    std::vector<char> decompressedData;
-    animFile->unpack(&decompressedData, &uopErrorQueue);
-    decDataSize = animFile->getDecompressedSize();
+    animFile->unpack(decompressedData, &uopErrorQueue);
+    animFile->freeData();
 
     if (uopErrorQueue.errorOccurred())   // check if there was an error when extracting the uop file
     {
@@ -165,6 +164,7 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
         return UOPFrameData{};
     }
 
+    const char* decData = decompressedData->data();
     size_t decDataOff = 0;
 
     // read frame header
@@ -187,11 +187,11 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
     //header length
     decDataOff += 4;
     //framecount (total frame number, for every direction)
-    uint32_t frameCount;
+    uint32_t frameCount = 0;
     memcpy(&frameCount, decData + decDataOff, 4);
     decDataOff += 4;
     //address of the first frame
-    uint32_t frameAddress;
+    uint32_t frameAddress = 0;
     memcpy(&frameAddress, decData + decDataOff, 4);
 
     decDataOff = frameAddress;
@@ -273,16 +273,14 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
     }
 
     // get from the UOP file the raw frame data (which has the same encoding as the MUL frame data)
-    char* decData = nullptr;    // buffer filled by loadFrameData, it will contain the decompressed animation data
-    size_t decDataSize = 0;     // size of the decompressed data (in bytes)
-    UOPFrameData frameData = loadFrameData(bodyID, groupID, direction, frame, decData, decDataSize);
+    std::vector<char> decompressedData;    // buffer filled by loadFrameData, it will contain the decompressed animation data
+    UOPFrameData frameData = loadFrameData(bodyID, groupID, direction, frame, &decompressedData);
     if (frameData.pixelDataOffset == 0) // uninitialized --> error
-    {
-        delete[] decData;
         return nullptr;
-    }
 
+    const char* decData = decompressedData.data();
     size_t decDataOff = frameData.dataStart + frameData.pixelDataOffset;
+    size_t decDataSize = decompressedData.size();     // size of the decompressed data (in bytes)
 
     int16_t palette[256];
     memcpy(&palette, decData + decDataOff, 512);
@@ -353,7 +351,6 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
         }
     }
 
-    delete[] decData;
     return img;
 }
 

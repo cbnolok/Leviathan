@@ -21,11 +21,7 @@ UOArt::UOArt(std::string clientPath, UOHues *hues) :
 {
 }
 
-/*
-UOArt::~UOArt()
-{
-}
-*/
+UOArt::~UOArt() = default;
 
 void UOArt::setHuesCachePointer(UOHues* hues)
 {
@@ -53,7 +49,7 @@ void UOArt::loadUOP(ClientFileType fileType, const QDateTime &lastModified, cons
 {
     m_lastFileType = fileType;
     m_uopLastModified = lastModified;
-    m_uopPackage.reset(new uopp::UOPPackage());
+    m_uopPackage = std::make_unique<uopp::UOPPackage>();
     m_uopPackage->load(uopPath, uopError);
 }
 

@@ -25,11 +25,12 @@ bool UOIdx::getLookup(const std::string& idxPath, unsigned int id, Entry* idxEnt
     // Look up in *idx.mul for the offset of the ID in *.mul
     // - Lookup:    size=4. Is either undefined ($FFFFFFFF -1) or the file offset in *.MUL
     // - Size:      size=4. Size of the pointed block.
-    // - Unk:       size=4. Unknown
+    // - Extra:     size=4. Extra info, used only by certain mul files.
+    //      gumpart.mul:    width = ( Extra >> 16 ) & 0xFFFF;   height = Extra & 0xFFFF;
     fin.seekg(id * 12);
     fin.read(reinterpret_cast<char*>(&idxEntry->lookup), 4);
     fin.read(reinterpret_cast<char*>(&idxEntry->size), 4);
-    fin.read(reinterpret_cast<char*>(&idxEntry->unknown), 4);
+    fin.read(reinterpret_cast<char*>(&idxEntry->extra), 4);
     fin.close();
 
     return true;

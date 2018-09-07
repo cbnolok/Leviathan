@@ -1,18 +1,20 @@
 #ifndef UOANIMUOP_H
 #define UOANIMUOP_H
 
-#include "uoppackage/uoppackage.h"
 #include <string>
 #include <vector>
 #include <functional>   // for std::function (callback)
+#include <memory>
 
 
 class QImage;
 
+namespace uopp {
+    class UOPPackage;
+}
 
 namespace uocf
 {
-
 
 class UOHues;
 
@@ -35,8 +37,8 @@ class UOAnimUOP
     };
 
 public:
-    UOAnimUOP(std::string clientPath, std::function<void(int)> reportProgress);
-    //~UOAnimUOP();
+    UOAnimUOP(std::string clientPath, const std::function<void (int)> &reportProgress);
+    ~UOAnimUOP();
 
     bool isInitializing() const {
         return m_isInitializing;
@@ -47,7 +49,7 @@ public:
     UOHues* m_UOHues;
 private:
     std::string m_clientPath;
-    uopp::UOPPackage m_animUOPs[4];
+    std::unique_ptr<uopp::UOPPackage> m_animUOPs[4];
     std::vector<UOPAnimationData> m_animationsData;
 
     // sort animationsData by [animID][groupID]:
@@ -56,8 +58,8 @@ private:
     UOPAnimationData* m_animationsMatrix[kAnimIdMax][kGroupIdMax];  // the matrix is thread-safe if we aren't writing in the same position in different threads
     bool m_isInitializing;
 
-    void buildAnimTable(std::function<void(int)> reportProgress);
-    UOPFrameData loadFrameData(int animID, int groupID, int direction, int frame, char *&decData, size_t& decDataSize); // decData: buffer for decompressed anim data
+    void buildAnimTable(const std::function<void(int)>& reportProgress);
+    UOPFrameData loadFrameData(int animID, int groupID, int direction, int frame, std::vector<char>* decompressedData);
 };
 
 

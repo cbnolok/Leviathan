@@ -14,40 +14,34 @@ SubDlg_SearchObj::SubDlg_SearchObj(QWidget *parent) :
     QTimer::singleShot(50, ui->lineEdit_value, SLOT(setFocus()));
 }
 
-ScriptSearch::SearchData_t SubDlg_SearchObj::getSearchData()
+ScriptSearch::SearchData SubDlg_SearchObj::getSearchData()
 {
-    ScriptSearch::SearchData_t ret;
+    ScriptSearch::SearchData ret;
 
-    using s_t = ScriptSearch::SearchBy_t;
     if (ui->radioButton_id->isChecked())
-        ret.searchBy = s_t::ID;
+        ret.searchBy = ScriptSearch::SearchBy::ID;
     else if (ui->radioButton_defname->isChecked())
-        ret.searchBy = s_t::Defname;
+        ret.searchBy = ScriptSearch::SearchBy::Defname;
     else //if (ui->radioButton_description->isChecked())
-        ret.searchBy = s_t::Description;
+        ret.searchBy = ScriptSearch::SearchBy::Description;
 
     ret.caseSensitive = ui->checkBox_casesensitive->isChecked();
     ret.key = ui->lineEdit_value->text().toStdString();
 
-    ret.initialized = true;
     return ret;
 }
 
-void SubDlg_SearchObj::setSearchData(ScriptSearch::SearchData_t data)
+void SubDlg_SearchObj::setSearchData(ScriptSearch::SearchData data)
 {
-    if (!data.initialized)
-        return;
-
     ui->checkBox_casesensitive->setChecked(data.caseSensitive);
     ui->lineEdit_value->setText(data.key.c_str());
 
-    using s_t = ScriptSearch::SearchBy_t;
     switch (data.searchBy)
     {
-        case s_t::ID:           ui->radioButton_id->setChecked(true);           break;
-        case s_t::Defname:      ui->radioButton_defname->setChecked(true);      break;
-        //case s_t::Description:
-        default:                ui->radioButton_description->setChecked(true);  break;
+        case ScriptSearch::SearchBy::ID:        ui->radioButton_id->setChecked(true);           break;
+        case ScriptSearch::SearchBy::Defname:   ui->radioButton_defname->setChecked(true);      break;
+        //case ScriptSearch::SearchBy::Description:
+        default:                                ui->radioButton_description->setChecked(true);  break;
     }
 }
 

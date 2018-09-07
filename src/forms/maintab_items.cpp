@@ -55,6 +55,8 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
     // Set stretch factors to the splitter between the QGraphicsView and the lists layout
     ui->splitter_img_lists->setStretchFactor(0,3);  // column 0: lists layout
     ui->splitter_img_lists->setStretchFactor(1,1);  // column 1: QGraphicsView
+
+    m_subdlg_searchObj = std::make_unique<SubDlg_SearchObj>(window());
 }
 
 MainTab_Items::~MainTab_Items()
@@ -140,10 +142,10 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
     if (m_organizer_model->rowCount() == 0)     // Empty list, can't proceed.
         return;
 
-    QStandardItem *subsection_item = m_organizer_model->itemFromIndex(selected);
-    if (!m_subsectionMap.count(subsection_item)) // If the selected item isn't in the map, it is a Category, not a Subsection.
+    QStandardItem *subsectionItem = m_organizer_model->itemFromIndex(selected);
+    if (!m_subsectionMap.count(subsectionItem)) // If the selected item isn't in the map, it is a Category, not a Subsection.
         return;
-    ScriptSubsection *subsection_inst = m_subsectionMap[subsection_item];
+    ScriptSubsection *subsectionInst = m_subsectionMap[subsectionItem];
     //if (subsectionObj == nullptr)   // Checking again (maybe useless, but...), because if the pointer isn't valid the program will crash.
     //    return;
 
@@ -159,15 +161,13 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
     QList<QStandardItem*> dupeItem_rowsElements;
 
     /* Populate the object list */
-    for (size_t subsection_i = 0; subsection_i < subsection_inst->m_objects.size(); ++subsection_i)
+    for (ScriptObj* obj : subsectionInst->m_objects)
     {
         // Build the two QStandardItem for each ScriptObj in this Subsection
-
-        ScriptObj *obj = subsection_inst->m_objects[subsection_i];
         QList<QStandardItem*> row;
 
         /* Build the description part */
-        QStandardItem *description_item = new QStandardItem(obj->m_description.c_str());
+        QStandardItem *descriptionItem = new QStandardItem(obj->m_description.c_str());
 
         QString bodyStr;
         if (obj->m_baseDef)
@@ -184,27 +184,27 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
         //else
             colorStr = obj->m_color.c_str();
 
-        description_item->setToolTip(
+        descriptionItem->setToolTip(
                     bodyStr                                                                     + "\n" +
                     "Color: "               + colorStr                                          + "\n" +
                     "Script File: "         + g_scriptFileList[obj->m_scriptFileIndex].c_str()  + "\n" +
                     "Script File Line: "    + QString::number(obj->m_scriptLine));
 
         if (obj->m_type == SCRIPTOBJ_TYPE_TEMPLATE)
-            description_item->setForeground(QBrush(QColor("purple")));
+            descriptionItem->setForeground(QBrush(QColor("purple")));
         else if (obj->m_type == SCRIPTOBJ_TYPE_MULTI)
-            description_item->setForeground(QBrush(QColor("orange")));
+            descriptionItem->setForeground(QBrush(QColor("orange")));
 
-        row.append(description_item);
+        row.append(descriptionItem);
 
         /* Build the defname part */
-        std::string def = obj->m_defname.empty() ? obj->m_ID : obj->m_defname;
-        QStandardItem *defname_item = new QStandardItem(def.c_str());
-        row.append(defname_item);
+        const std::string& def = obj->m_defname.empty() ? obj->m_ID : obj->m_defname;
+        QStandardItem *defnameItem = new QStandardItem(def.c_str());
+        row.append(defnameItem);
 
         /* Store the elements in the map and append the whole row to the view */
-        m_objMapQItemToScript[description_item] = obj;    // For each row, only the Description item is "linked" to the obj via the map.
-        m_objMapScriptToQItem[obj] = description_item;
+        m_objMapQItemToScript[descriptionItem] = obj;    // For each row, only the Description item is "linked" to the obj via the map.
+        m_objMapScriptToQItem[obj] = descriptionItem;
 
         if (obj->m_dupeItem.empty())
             root->appendRow(row);
@@ -218,29 +218,30 @@ void MainTab_Items::onManual_treeView_organizer_selectionChanged(const QModelInd
     for (int dupeItem_rowsElements_i = 0; dupeItem_rowsElements_i < dupeItem_rowsElements.size() - 1; dupeItem_rowsElements_i += 2)
     {
         ScriptObj *dupeObj = m_objMapQItemToScript[dupeItem_rowsElements[dupeItem_rowsElements_i]];
+
         // If it's a Dupe item, find the parent item inside the same Category and Subsection and append one another.
-        for (auto it = dupeObj->m_subsection->m_objects.begin(), end = dupeObj->m_subsection->m_objects.end(); it != end; ++it)
+        for (ScriptObj* dupeObjTest : dupeObj->m_subsection->m_objects)
         {
-            if (!(*it)->m_dupeItem.empty())
+            if (!dupeObjTest->m_dupeItem.empty())
                 continue;   // it's another dupe item
 
             if (isStringNumericHex(dupeObj->m_dupeItem))
             {
                 // DUPEITEM property is numerical, so it's an ID
-                if ((*it)->m_ID != dupeObj->m_dupeItem)
+                if (dupeObjTest->m_ID != dupeObj->m_dupeItem)
                     continue;
                 QList<QStandardItem*> dupeItem_row;
                 dupeItem_row << dupeItem_rowsElements[dupeItem_rowsElements_i] << dupeItem_rowsElements[dupeItem_rowsElements_i+1];
-                m_objMapScriptToQItem[*it]->appendRow(dupeItem_row);
+                m_objMapScriptToQItem[dupeObjTest]->appendRow(dupeItem_row);
             }
             else
             {
                 // DUPEITEM property is a string, so a defname
-                if ((*it)->m_defname != (dupeObj->m_dupeItem))
+                if (dupeObjTest->m_defname != (dupeObj->m_dupeItem))
                     continue;
                 QList<QStandardItem*> dupeItem_row;
                 dupeItem_row << dupeItem_rowsElements[dupeItem_rowsElements_i] << dupeItem_rowsElements[dupeItem_rowsElements_i+1];
-                m_objMapScriptToQItem[*it]->appendRow(dupeItem_row);
+                m_objMapScriptToQItem[dupeObjTest]->appendRow(dupeItem_row);
             }
             break;
         }
@@ -266,7 +267,7 @@ void MainTab_Items::on_treeView_objList_doubleClicked(const QModelIndex &index)
     std::string addCmd(m_lockDown ? ".static " : ".add ");
     std::string strToSend = addCmd + IDIndex.data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -328,7 +329,7 @@ void MainTab_Items::on_pushButton_add_clicked()
     std::string addCmd(m_lockDown ? ".static " : ".add ");
     std::string strToSend = addCmd + selection->selectedRows(1)[0].data().toString().toStdString();
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -339,7 +340,7 @@ void MainTab_Items::on_pushButton_remove_clicked()
 {
     std::string strToSend = ".remove";
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
-    if (ksResult != ks::KSERR_OK)
+    if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
         errorDlg.exec();
@@ -407,10 +408,7 @@ void MainTab_Items::on_pushButton_search_clicked()
     if (g_loadedScriptsProfile == -1)
         return;
 
-    SubDlg_SearchObj dlg(window());
-    if (m_lastSearchData.initialized)
-        dlg.setSearchData(m_lastSearchData);
-    if (!dlg.exec())
+    if (!m_subdlg_searchObj->exec())
         return;
 
     const std::vector<ScriptObjTree*> trees =
@@ -420,8 +418,7 @@ void MainTab_Items::on_pushButton_search_clicked()
         getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
     };
 
-    m_lastSearchData = dlg.getSearchData();
-    m_scriptSearch.reset(new ScriptSearch(trees, m_lastSearchData));
+    m_scriptSearch = std::make_unique<ScriptSearch>(trees, m_subdlg_searchObj->getSearchData());
     doSearch(false);
 }
 

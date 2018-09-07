@@ -4,10 +4,10 @@
 
 
 ScriptSearch::ScriptSearch
-    (const std::vector<ScriptObjTree *> &trees, SearchData_t data) :
+    (const std::vector<ScriptObjTree *> &trees, SearchData data) :
     m_trees(trees), m_searchBy(data.searchBy), m_caseSensitive(data.caseSensitive), m_key(data.key),
     m_curTreeIdx(0), m_it(m_trees[0]->begin()), m_lastFoundTreeIdx(0), m_it_lastFound(m_trees[0]->end()),
-    m_lastOperation(LastOperation_t::None)
+    m_lastOperation(LastOperation::None)
 {
     if (!data.caseSensitive)
         strToUpper(m_key);
@@ -18,21 +18,19 @@ ScriptObj* ScriptSearch::isMatch()
     ScriptObj* obj = *m_it;
 
     std::string tmp;
-    if ( m_searchBy == SearchBy_t::ID )
+    if ( m_searchBy == SearchBy::ID )
         tmp = obj->m_ID;
-    else if ( m_searchBy == SearchBy_t::Defname )
+    else if ( m_searchBy == SearchBy::Defname )
         tmp = obj->m_defname;
-    else if ( m_searchBy == SearchBy_t::Description )
+    else if ( m_searchBy == SearchBy::Description )
         tmp = obj->m_description;
 
     if (!m_caseSensitive)
         strToUpper(tmp);
 
-
     if (tmp.find(m_key) != std::string::npos)
         return obj;
-    else
-        return nullptr;
+    return nullptr;
 }
 
 ScriptObj* ScriptSearch::next()
@@ -45,7 +43,7 @@ ScriptObj* ScriptSearch::next()
             m_it = m_it_lastFound;
         }
     }
-    if (m_lastOperation != LastOperation_t::None)
+    if (m_lastOperation != LastOperation::None)
         ++m_it;
 
     while (*m_it)
@@ -53,7 +51,7 @@ ScriptObj* ScriptSearch::next()
         ScriptObj* result = isMatch();
         if (result)
         {
-            m_lastOperation = LastOperation_t::Next;
+            m_lastOperation = LastOperation::Next;
             m_lastFoundTreeIdx = m_curTreeIdx;
             m_it_lastFound = m_it;
             return result;
@@ -78,7 +76,7 @@ ScriptObj* ScriptSearch::previous()
             m_it = m_it_lastFound;
         }
     }
-    if (m_lastOperation != LastOperation_t::None)
+    if (m_lastOperation != LastOperation::None)
         --m_it;
 
     while (*m_it)
@@ -86,7 +84,7 @@ ScriptObj* ScriptSearch::previous()
         ScriptObj* result = isMatch();
         if (result)
         {
-            m_lastOperation = LastOperation_t::Previous;
+            m_lastOperation = LastOperation::Previous;
             m_lastFoundTreeIdx = m_curTreeIdx;
             m_it_lastFound = m_it;
             return result;

@@ -27,15 +27,15 @@ BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
     std::string windowTitle(length + 1, '\0');
     length = GetWindowTextA(hWnd, &windowTitle[0], length);
     windowTitle.resize(length);
-    if (windowTitle.find(UOClientWindowTitles[CLIENT_CLASSIC]) != std::string::npos)
+    if (windowTitle.find(UOClientWindowTitles[(int)UOClientType::Classic]) != std::string::npos)
     {
-        classInstance->m_clientType = CLIENT_CLASSIC;
+        classInstance->m_clientType = UOClientType::Classic;
         classInstance->m_UOHandle = hWnd;
         return FALSE;
     }
-    else if (windowTitle.find(UOClientWindowTitles[CLIENT_ENHANCED]) != std::string::npos)
+    if (windowTitle.find(UOClientWindowTitles[(int)UOClientType::Enhanced]) != std::string::npos)
     {
-        classInstance->m_clientType = CLIENT_ENHANCED;
+        classInstance->m_clientType = UOClientType::Enhanced;
         classInstance->m_UOHandle = hWnd;
         return FALSE;
     }
@@ -47,10 +47,10 @@ bool KeystrokeSender_Windows::findUOWindow()
     EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(this));
     if (m_UOHandle == nullptr)
     {
-        m_error = KSERR_NOWINDOW;
+        m_error = KSError::NoWindow;
         return false;
     }
-    m_error = KSERR_OK;
+    m_error = KSError::Ok;
     return true;
 }
 
@@ -66,18 +66,15 @@ bool KeystrokeSender_Windows::canSend()
         std::string windowName;
         windowName.resize(101);
         GetWindowTextA(m_UOHandle, &windowName[0], 100);
-        if ( (m_clientType == CLIENT_CLASSIC) && (windowName.find(UOClientWindowTitles[CLIENT_CLASSIC]) != std::string::npos) )
+        if ( (m_clientType == UOClientType::Classic) && (windowName.find(UOClientWindowTitles[(int)UOClientType::Classic]) != std::string::npos) )
             return true;
-        else if ( (m_clientType == CLIENT_ENHANCED) && (windowName.find(UOClientWindowTitles[CLIENT_ENHANCED]) != std::string::npos) )
+        if ( (m_clientType == UOClientType::Enhanced) && (windowName.find(UOClientWindowTitles[(int)UOClientType::Enhanced]) != std::string::npos) )
             return true;
-        else if (findUOWindow())
+        if (findUOWindow())
             return true;
-        else
-            return false;
+        return false;
     }
-    else
-        return findUOWindow();
-    return true;
+    return findUOWindow();
 }
 
 bool KeystrokeSender_Windows::sendChar(const char ch)
@@ -117,7 +114,7 @@ bool KeystrokeSender_Windows::sendString(const std::string &str, bool enterTermi
 {
     if ( str.length() < 1 )
     {
-        m_error = KSERR_STRINGSHORT;
+        m_error = KSError::StringShort;
         return false;
     }
 
@@ -187,7 +184,7 @@ KSError KeystrokeSender_Windows::sendStringsFast(const std::vector<std::string>&
     for (const std::string& str : strings)
     {
         ks.sendString(str, enterTerminated);
-        if (ks.m_error != KSERR_OK)
+        if (ks.m_error != KSError::Ok)
             return ks.m_error;
     }
     return ks.m_error;
@@ -211,7 +208,7 @@ KSError KeystrokeSender_Windows::sendCharFastAsync(const char ch, bool setFocusT
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 KSError KeystrokeSender_Windows::sendEnterFastAsync(bool setFocusToWindow)
@@ -229,7 +226,7 @@ KSError KeystrokeSender_Windows::sendEnterFastAsync(bool setFocusToWindow)
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 KSError KeystrokeSender_Windows::sendStringFastAsync(const std::string& str, bool enterTerminated, bool setFocusToWindow)
@@ -239,7 +236,7 @@ KSError KeystrokeSender_Windows::sendStringFastAsync(const std::string& str, boo
         return ks_check.m_error;
 
     if ( str.length() < 1 )
-        return KSERR_STRINGSHORT;
+        return KSError::StringShort;
 
     // send the keys asynchronously, so that i don't pause the calling thread
     std::thread sender(
@@ -250,7 +247,7 @@ KSError KeystrokeSender_Windows::sendStringFastAsync(const std::string& str, boo
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 KSError KeystrokeSender_Windows::sendStringsFastAsync(const std::vector<std::string> &strings, bool enterTerminated, bool setFocusToWindow)
@@ -268,7 +265,7 @@ KSError KeystrokeSender_Windows::sendStringsFastAsync(const std::vector<std::str
         });
     sender.detach();
 
-    return KSERR_OK;    // assuming all went fine, since i'm not tracking what's happening in the other thread
+    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 

@@ -5,7 +5,7 @@ namespace ks
 {
 
 char const * getErrorStringStatic(KSError err) {
-    return KSErrorString[err];
+    return KSErrorString[(int)err];
 }
 
 void KeystrokeSender::setSetFocusToWindow(bool value) {
@@ -17,7 +17,7 @@ KSError KeystrokeSender::getError() const {
 }
 
 std::string KeystrokeSender::getErrorString() const {
-    return KSErrorString[m_error];
+    return KSErrorString[(int)m_error];
 }
 UOClientType KeystrokeSender::getClientType() const {
     return m_clientType;

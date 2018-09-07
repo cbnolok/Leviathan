@@ -14,7 +14,7 @@ struct UOIdx
     {
         unsigned int lookup;
         unsigned int size;
-        unsigned int unknown;
+        unsigned int extra;
     };
 
     UOIdx(std::string idxPath);

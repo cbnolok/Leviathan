@@ -71,41 +71,168 @@ public:
 class ScriptObjTree
 {
 public:
-    //ScriptObjTree();
+    ScriptObjTree() = default;
     ~ScriptObjTree();
     std::vector<ScriptCategory*> m_categories;
     ScriptCategory *findCategory(const std::string &categoryName, bool createNew = true); // createNew: create a new category if one named categoryName doesn't exist.
 
-    class iterator;
+    // Iterators
+    template <typename PointerType> class base_iterator;
+    using iterator = base_iterator<ScriptObj*>;
     iterator end();         // invalid iterator (obtained when incrementing an iterator to the last item)
     iterator begin();       // iterator to first item
     iterator back_it();     // iterator to last item
+    using const_iterator = base_iterator<const ScriptObj*>;
+    const_iterator cend() const;
+    const_iterator cbegin() const;
+    const_iterator cback_it() const;
 };
 
-class ScriptObjTree::iterator
+template <typename PointerType>
+class ScriptObjTree::base_iterator
 {
-    friend iterator ScriptObjTree::end();
-    friend iterator ScriptObjTree::begin();
-    friend iterator ScriptObjTree::back_it();
 private:
-    ScriptObjTree* m_parentTree;
+    const ScriptObjTree* m_parentTree;
     size_t m_currentCategoryIdx;
     size_t m_currentSubsectionIdx;
     size_t m_currentObjectIdx;
 
 public:
-    iterator(); // constructs an invalid iterator
-    iterator(ScriptObjTree* parentTree, size_t currentCategoryIdx, size_t currentSubsectionIdx, size_t currentObjectIdx);
-    void operator=(const iterator& source);
-    bool operator==(const iterator& toCmp) const;
-    bool operator!=(const iterator& toCmp) const;
-    iterator operator++();      // pre-increment
-    iterator operator++(int);   // post-increment
-    iterator operator--();      // pre-decrement
-    iterator operator--(int);   // post-decrement
-    ScriptObj* operator*();
+    base_iterator() = delete; // would construct an invalid iterator
+    base_iterator(const ScriptObjTree* parentTree, size_t currentCategoryIdx, size_t currentSubsectionIdx, size_t currentObjectIdx);
+    ~base_iterator() = default;
+    base_iterator(const base_iterator&) = default;                // copy constructor
+    base_iterator(base_iterator&&) noexcept = default;            // move constructor
+    base_iterator& operator=(const base_iterator&) = default;     // copy assignment operator
+    base_iterator& operator=(base_iterator&&) noexcept = default; // move assignment operator
+    bool operator==(const base_iterator&) const;
+    bool operator!=(const base_iterator&) const;
+    base_iterator operator++();      // pre-increment
+    base_iterator operator++(int);   // post-increment
+    base_iterator operator--();      // pre-decrement
+    base_iterator operator--(int);   // post-decrement
+    PointerType operator*();
 
     static const size_t kInvalidIdx = (size_t)-1;
 };
+
+
+
+/*--        ScriptObjTree::iterator           --*/
+
+template <typename T>
+ScriptObjTree::base_iterator<T>::base_iterator(const ScriptObjTree *parentTree, size_t currentCategoryIdx, size_t currentSubsectionIdx, size_t currentObjectIdx) :
+    m_parentTree(parentTree),
+    m_currentCategoryIdx(currentCategoryIdx), m_currentSubsectionIdx(currentSubsectionIdx), m_currentObjectIdx(currentObjectIdx)
+{
+}
+
+template <typename T>
+bool ScriptObjTree::base_iterator<T>::operator==(const base_iterator& toCmp) const
+{
+    return ( (m_parentTree == toCmp.m_parentTree) &&
+         (m_currentCategoryIdx == toCmp.m_currentCategoryIdx) &&
+         (m_currentSubsectionIdx == toCmp.m_currentSubsectionIdx) &&
+         (m_currentObjectIdx == toCmp.m_currentObjectIdx) );
+}
+
+template <typename T>
+bool ScriptObjTree::base_iterator<T>::operator!=(const base_iterator& toCmp) const
+{
+    return ( (m_parentTree != toCmp.m_parentTree) ||
+         (m_currentCategoryIdx != toCmp.m_currentCategoryIdx) ||
+         (m_currentSubsectionIdx != toCmp.m_currentSubsectionIdx) ||
+         (m_currentObjectIdx != toCmp.m_currentObjectIdx) );
+}
+
+template <typename T>
+ScriptObjTree::base_iterator<T> ScriptObjTree::base_iterator<T>::operator++()   // pre-increment
+{
+    ScriptCategory* curCategory = m_parentTree->m_categories[m_currentCategoryIdx];
+    ScriptSubsection* curSubsection = curCategory->m_subsections[m_currentSubsectionIdx];
+    //ScriptObj& curObj = curSubsection[m_currentObjIdx];
+    if (m_currentObjectIdx < curSubsection->m_objects.size() - 1)
+        ++ m_currentObjectIdx;
+    else
+    {
+        m_currentObjectIdx = 0;
+        if (m_currentSubsectionIdx < curCategory->m_subsections.size() - 1)
+            ++ m_currentSubsectionIdx;
+        else
+        {
+            m_currentSubsectionIdx = 0;
+            if (m_currentCategoryIdx < m_parentTree->m_categories.size() - 1)
+                ++ m_currentCategoryIdx;
+            else
+            {
+                // "end" iterator
+                m_currentObjectIdx = kInvalidIdx;
+                m_currentSubsectionIdx = kInvalidIdx;
+                m_currentCategoryIdx = kInvalidIdx;
+            }
+        }
+    }
+    return *this;
+}
+
+template <typename T>
+ScriptObjTree::base_iterator<T> ScriptObjTree::base_iterator<T>::operator++(int) // post-increment
+{
+    iterator oldIt = *this;
+    ++(*this);  // do pre-increment
+    return oldIt;
+}
+
+template <typename T>
+ScriptObjTree::base_iterator<T> ScriptObjTree::base_iterator<T>::operator--()   // pre-decrement
+{
+    if (m_currentObjectIdx > 0)
+        -- m_currentObjectIdx;
+    else
+    {
+        if (m_currentSubsectionIdx > 0)
+            -- m_currentSubsectionIdx;
+        else
+        {
+            if (m_currentCategoryIdx > 0)
+                -- m_currentCategoryIdx;
+            else
+            {
+                // "end" iterator
+                m_currentObjectIdx = kInvalidIdx;
+                m_currentSubsectionIdx = kInvalidIdx;
+                m_currentCategoryIdx = kInvalidIdx;
+                return *this;
+            }
+            // set the current sebsection index to the last subsection of the active category
+            m_currentSubsectionIdx = m_parentTree->m_categories[m_currentCategoryIdx]->m_subsections.size() - 1;
+        }
+        // set the current object index to the last object of the active subsection of the active category
+        m_currentObjectIdx = m_parentTree->m_categories[m_currentCategoryIdx]->m_subsections[m_currentSubsectionIdx]->m_objects.size() - 1;
+    }
+    return *this;
+}
+
+template <typename T>
+ScriptObjTree::base_iterator<T> ScriptObjTree::base_iterator<T>::operator--(int) // post-decrement
+{
+    iterator oldIt = iterator(m_parentTree, m_currentCategoryIdx, m_currentSubsectionIdx, m_currentObjectIdx);
+   --(*this);  // do pre-decrement
+    return oldIt;
+}
+
+template <typename PointerType>
+PointerType ScriptObjTree::base_iterator<PointerType>::operator*()
+{
+    if (m_parentTree == nullptr)
+        return nullptr;
+    if ( (m_currentCategoryIdx == kInvalidIdx) || (m_currentSubsectionIdx == kInvalidIdx) || (m_currentObjectIdx == kInvalidIdx) )
+        return nullptr;
+
+    return m_parentTree->
+            m_categories[m_currentCategoryIdx]->
+            m_subsections[m_currentSubsectionIdx]->
+            m_objects[m_currentObjectIdx];
+}
 
 #endif // SCRIPTOBJECTS_H

@@ -24,6 +24,7 @@ public:
 
     bool read(std::ifstream& fin, UOPError* errorQueue = nullptr);
     bool readData(std::ifstream& fin, UOPError* errorQueue = nullptr);
+    void freeData();
     bool unpack(std::vector<char> *decompressedData, UOPError* errorQueue = nullptr);   // extract the file
     bool searchByHash(unsigned long long hash) const;
     bool compressAndReplaceData(const std::vector<char>* sourceDecompressed, CompressionFlag compression, UOPError* errorQueue = nullptr);
@@ -31,24 +32,25 @@ public:
     bool createFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, UOPError* errorQueue = nullptr);    // create file in memory
 
 public:
-    int getIndex() const;
-    long long getDataBlockAddress() const;
-    int getDataBlockLength() const;
+    unsigned int getIndex() const;
+    unsigned long long getDataBlockAddress() const;
+    unsigned int getDataBlockLength() const;
     unsigned int getCompressedSize() const;
     unsigned int getDecompressedSize() const;
     unsigned long long getFileHash() const;
     unsigned int getDataBlockHash() const;
     CompressionFlag getCompression() const;
     const std::string& getFileName() const;     // can be empty!
+    bool hasData() const;
     const std::vector<char>* getDataVec() const;
     std::vector<char>* getDataVec();
     bool isAdded() const;
 
 private:
     UOPBlock* m_parent;
-    int m_index;
-    long long m_dataBlockAddress;
-    int m_dataBlockLength;
+    unsigned int m_index;
+    unsigned long long m_dataBlockAddress;
+    unsigned int m_dataBlockLength;
     unsigned int m_compressedSize;
     unsigned int m_decompressedSize;
     unsigned long long m_fileHash;

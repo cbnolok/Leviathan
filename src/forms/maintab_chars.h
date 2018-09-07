@@ -1,10 +1,11 @@
 #ifndef MAINTAB_CHARS_H
 #define MAINTAB_CHARS_H
 
-#include "subdlg_searchobj.h"
 #include <QWidget>
 #include <memory>   // for smart pointers
 
+class SubDlg_SearchObj;
+class ScriptSearch;
 class ScriptCategory;
 class ScriptSubsection;
 class ScriptObj;
@@ -54,8 +55,8 @@ private:
     QStandardItemModel *m_organizer_model;
     QStandardItemModel *m_objList_model;
 
+    std::unique_ptr<SubDlg_SearchObj> m_subdlg_searchObj;
     std::unique_ptr<ScriptSearch> m_scriptSearch;
-    ScriptSearch::SearchData_t m_lastSearchData;
 
     void doSearch (bool backwards);
 };

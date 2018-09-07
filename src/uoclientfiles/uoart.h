@@ -30,7 +30,7 @@ class UOArt
 {  
 public:
     UOArt(std::string clientPath, UOHues* hues = nullptr);
-    //~UOArt();
+    ~UOArt();
 
     static const int kLandtilesOffset   = 0;
     static const int kItemsOffset       = 0x4000;   // the (world)items are stored after this id

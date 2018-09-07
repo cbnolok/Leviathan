@@ -8,18 +8,18 @@ namespace ks
 {
 
 
-enum UOClientType
+enum class UOClientType
 {
-    CLIENT_UNK      = -1,
-    CLIENT_CLASSIC  = 0,
-    CLIENT_ENHANCED = 1,
+    Unknown  = -1,
+    Classic  = 0,
+    Enhanced = 1,
 };
 
-enum KSError
+enum class KSError
 {
-    KSERR_OK         = 0,    // no error
-    KSERR_NOWINDOW,
-    KSERR_STRINGSHORT,
+    Ok         = 0,    // no error
+    NoWindow,
+    StringShort,
 };
 
 extern const char * const UOClientWindowTitles[];
