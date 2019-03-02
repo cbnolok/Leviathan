@@ -4,7 +4,8 @@
 #ifdef _WIN32
 
 #include "keystrokesender_common.h"
-#include <windef.h>     // for the definitions of BOOL, CALLBACK, HWND, LPARAM
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 
 
 namespace ks
@@ -43,7 +44,7 @@ protected:
     UOClientType m_clientType = UOClientType::Unknown;
 
 private:
-    HWND m_UOHandle = 0;
+    HWND m_UOHandle = nullptr;
 
     bool findUOWindow();
 };

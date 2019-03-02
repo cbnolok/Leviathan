@@ -15,7 +15,7 @@ unsigned int UOPBlock::getIndex() const {
 unsigned int UOPBlock::getFilesCount() const {
     return m_fileCount;
 }
-UOPFile* UOPBlock::getFile(int index) const {
+UOPFile* UOPBlock::getFile(unsigned int index) const {
     return m_files[index];
 }
 unsigned long long UOPBlock::getNextBlockAddress() const {

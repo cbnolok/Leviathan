@@ -42,7 +42,7 @@ class Dlg_HuePicker : public QDialog
     Q_OBJECT
 
 public:
-    explicit Dlg_HuePicker(QWidget *parent = 0);
+    explicit Dlg_HuePicker(QWidget *parent = nullptr);
     ~Dlg_HuePicker();
 
 private slots:

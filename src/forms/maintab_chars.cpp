@@ -249,7 +249,7 @@ void MainTab_Chars::onManual_treeView_objList_selectionChanged(const QModelIndex
     if (hue < 0)    // template or random expr (not supported yet) or strange string
         hue = 0;
 
-    g_UOAnim->setHuesCachePointer(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
+    g_UOAnim->setCachePointers(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
     QImage* frameimg = g_UOAnim->drawAnimFrame(id, 0, 1, 0, hue);
     if (frameimg == nullptr)
         return;
@@ -338,7 +338,7 @@ void MainTab_Chars::doSearch(bool backwards)
 
     ui->treeView_organizer->scrollTo(subsectionIdx, QAbstractItemView::PositionAtCenter);
     //ui->treeView_organizer->setExpanded(categoryIdx, true);   // automatically expanded by the select method
-    ui->treeView_organizer->selectionModel()->select(subsectionIdx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
+    ui->treeView_organizer->selectionModel()->select(subsectionIdx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     if (subsectionIdx != prevSubsectionIdx)
     {
         onManual_treeView_organizer_selectionChanged(subsectionIdx, emptyIdx);  // load the new subsection into treeView_objList
@@ -351,7 +351,7 @@ void MainTab_Chars::doSearch(bool backwards)
     onManual_treeView_objList_selectionChanged(objIdx, emptyIdx);
     ui->treeView_objList->setFocus();
     ui->treeView_objList->scrollTo(objIdx, QAbstractItemView::PositionAtCenter);
-    ui->treeView_objList->selectionModel()->select(objIdx, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Toggle);
+    ui->treeView_objList->selectionModel()->select(objIdx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
 void MainTab_Chars::on_pushButton_search_clicked()

@@ -68,7 +68,15 @@ SOURCES += \
     uoppackage/uophash.cpp \
     uoppackage/uoppackage.cpp \
     cpputils/strings.cpp \
-    cpputils/sysio.cpp
+    cpputils/sysio.cpp \
+    forms/dlg_worldmap.cpp \
+    uoclientfiles/uoradarcol.cpp \
+    uoclientfiles/uomap.cpp \
+    uoclientfiles/uostatics.cpp \
+    uoclientfiles/exceptions.cpp \
+    forms/maintab_travel.cpp \
+    uoclientfiles/colors.cpp \
+    forms/base_mapview.cpp
 
 HEADERS  += \
     globals.h \
@@ -130,7 +138,15 @@ HEADERS  += \
     uoppackage/uopfile.h \
     uoppackage/uophash.h \
     uoppackage/uoppackage.h \
-    cpputils/maps.h
+    cpputils/maps.h \
+    forms/dlg_worldmap.h \
+    uoclientfiles/uoradarcol.h \
+    uoclientfiles/uomap.h \
+    uoclientfiles/uostatics.h \
+    uoclientfiles/exceptions.h \
+    forms/maintab_travel.h \
+    uoclientfiles/colors.h \
+    forms/base_mapview.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -144,7 +160,9 @@ FORMS    += \
     forms/subdlg_searchobj.ui \
     forms/subdlg_spawn.ui \
     forms/dlg_huepicker.ui \
-    forms/maintab_tools.ui
+    forms/maintab_tools.ui \
+    forms/dlg_worldmap.ui \
+    forms/maintab_travel.ui
 
 
 Release:DESTDIR     = release
@@ -174,12 +192,13 @@ win32:!unix
 
         #   Dynamically link zlib
         contains(QT_ARCH, x86_64) {
-            LIBS += -L\"$$PWD\\..\\winlibs\\64\" -lz
+            LIBS += -L\"$$PWD/../winlibs/64\" -lz
         } else {
-            LIBS += -L\"$$PWD\\..\\winlibs\\32\" -lz
+            LIBS += -L\"$$PWD/../winlibs/32\" -lz
         }
 
         #QMAKE_CXXFLAGS += -Wno-unknown-pragmas  # disable unknown pragma warning
+        QMAKE_CXXFLAGS += -Wno-implicit-fallthrough
         QMAKE_CXXFLAGS += -fopenmp      # enable OpenMP pragmas
     }
 
@@ -189,17 +208,12 @@ win32:!unix
         #   Dynamically link zlib and user32 (the latter for postmessage and such in KeystrokeSender...)
         #   (is user32 automatically dynamically linked by MinGW?)
         contains(QT_ARCH, x86_64) {
-            LIBS += -luser32 -L\"$$PWD\\..\\winlibs\\64\" -lzlibwapi
+            LIBS += -luser32 -L\"$$PWD/../winlibs/64\" -lzlib
         } else {
-            LIBS += -luser32 -L\"$$PWD\\..\\winlibs\\32\" -lzlibwapi
+            LIBS += -luser32 -L\"$$PWD/../winlibs/32\" -lzlib
         }
         DEFINES += "ZLIB_WINAPI=1"
         DEFINES += "ZLIB_DLL=1"
-        #contains(QT_ARCH, x86_64) {
-        #    LIBS += user32.lib \"$$PWD\\..\\winlibs\\64\\zlibwapi.lib\"
-        #} else {
-        #    LIBS += user32.lib \"$$PWD\\..\\winlibs\\32\\zlibwapi.lib\"
-        #}
 
         #QMAKE_CXXFLAGS += /wd4068  # disable unknown pragma warning
         QMAKE_CXXFLAGS += /openmp   # enable OpenMP pragmas
@@ -221,6 +235,7 @@ unix {
     QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas
 
     # disable some specific warnings
+    QMAKE_CXXFLAGS += -Wno-implicit-fallthrough
     QMAKE_CXXFLAGS += -Wmisleading-indentation #-Wno-unknown-pragmas
 }
 

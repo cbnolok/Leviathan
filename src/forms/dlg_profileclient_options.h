@@ -18,7 +18,7 @@ class Dlg_ProfileClient_Options : public QDialog
     Q_OBJECT
 
 public:
-    explicit Dlg_ProfileClient_Options(QWidget *parent = 0);
+    explicit Dlg_ProfileClient_Options(QWidget *parent = nullptr);
     ~Dlg_ProfileClient_Options();
 
 private slots:

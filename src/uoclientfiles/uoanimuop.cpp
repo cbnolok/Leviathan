@@ -14,8 +14,8 @@
 namespace uocf
 {
 
-UOAnimUOP::UOAnimUOP(std::string clientPath, const std::function<void(int)>& reportProgress) :
-    m_UOHues(nullptr), m_clientPath(std::move(clientPath)), m_animationsMatrix{{}}, m_isInitializing(false)
+UOAnimUOP::UOAnimUOP(const std::string &clientPath, const std::function<void(int)>& reportProgress) :
+    m_UOHues(nullptr), m_clientPath(clientPath), m_animationsMatrix{{}}, m_isInitializing(false)
 {
     buildAnimTable(reportProgress);
 }
@@ -58,10 +58,10 @@ void UOAnimUOP::buildAnimTable(const std::function<void(int)>& reportProgress)
             return;
         }
 
-        for (size_t block_i = 0, block_max = package->getBlocksCount(); block_i < block_max; ++block_i)
+        for (unsigned block_i = 0, block_max = package->getBlocksCount(); block_i < block_max; ++block_i)
         {
             const uopp::UOPBlock* curBlock = package->getBlock(block_i);
-            for (size_t file_i = 0, file_max = curBlock->getFilesCount(); file_i < file_max; ++file_i)
+            for (unsigned file_i = 0, file_max = curBlock->getFilesCount(); file_i < file_max; ++file_i)
             {
                 const uopp::UOPFile* curFile = curBlock->getFile(file_i);
                 UOPAnimationData data = {};
@@ -69,7 +69,7 @@ void UOAnimUOP::buildAnimTable(const std::function<void(int)>& reportProgress)
                 data.blockIdx = block_i;
                 data.fileIdx = file_i;
                 data.hash = curFile->getFileHash();
-                m_animationsData.push_back(data);
+                m_animationsData.emplace_back(std::move(data));
             }
 
             // it's so fast we can even do not report progress (or use OpenMP)...
@@ -112,11 +112,14 @@ void UOAnimUOP::buildAnimTable(const std::function<void(int)>& reportProgress)
                m_animationsMatrix[animId][groupId] = &m_animationsData[found];
         }
 
-        int progressValNow = ( (groupId*100)/kGroupIdMax );
-        if ( reportProgress && (progressValNow > progressVal) )
+        if (reportProgress)
         {
-            progressVal = progressValNow;
-            reportProgress(progressVal);
+            int progressValNow = ( (groupId*100)/kGroupIdMax );
+            if ( progressValNow > progressVal )
+            {
+                progressVal = progressValNow;
+                reportProgress(progressVal);
+            }
         }
 
     }
@@ -252,7 +255,7 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
 }
 
 
-QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex)
+QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int frame, unsigned int hueIndex)
 {
     if (isInitializing())
         return nullptr;
@@ -342,8 +345,8 @@ QImage* UOAnimUOP::drawAnimFrame(int bodyID, int action, int direction, int fram
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
             if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
             {
-                UOHueEntry hue = m_UOHues->getHueEntry(hueIndex-1);
-                color_argb16 = hue.applyToColor(color_argb16, applyToGrayOnly);
+                const UOHueEntry& hue = m_UOHues->getHueEntry(hueIndex-1);
+                color_argb16 = hue.applyToColor16(color_argb16, applyToGrayOnly);
             }
             ARGB32 color_argb32 = convert_ARGB16_to_ARGB32(color_argb16);
 

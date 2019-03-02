@@ -50,8 +50,8 @@ private:
     unsigned int getBodyLookupIndex(int body, int action, int direction, int animFileNumber);   // return the in-file index of the anim we want to show
 
 public:
-    UOAnimMUL(std::string clientPath);
-    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex);
+    UOAnimMUL(const std::string& clientPath);
+    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, unsigned int hueIndex);
 };
 
 

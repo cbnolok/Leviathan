@@ -13,7 +13,7 @@ class MainTab_Log : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainTab_Log(QWidget *parent = 0);
+    explicit MainTab_Log(QWidget *parent = nullptr);
     ~MainTab_Log();
     void appendText(const char *str);
 

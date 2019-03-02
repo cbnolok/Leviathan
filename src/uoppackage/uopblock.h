@@ -27,7 +27,7 @@ public:
 public:
     unsigned int getIndex() const;
     unsigned int getFilesCount() const;
-    UOPFile* getFile(int index) const;
+    UOPFile* getFile(unsigned int index) const;
     unsigned long long getNextBlockAddress() const;
     bool isEmpty() const;
 

@@ -8,14 +8,14 @@ DDSInfo::DDSInfo(const char *DDSData) :
     height(0), width(0), textureFormat(TextureFormat::Unknown)
 {
     using uint = unsigned int;
-    static const unsigned DDSD_MIPMAPCOUNT_BIT = 0x00020000;
-    static const unsigned DDPF_ALPHAPIXELS = 0x00000001;
-    static const unsigned DDPF_ALPHA = 0x00000002;
-    static const unsigned DDPF_FOURCC = 0x00000004;
-    static const unsigned DDPF_RGB = 0x00000040;
-    //static const unsigned DDPF_YUV = 0x00000200;
-    static const unsigned DDPF_LUMINANCE = 0x00020000;
-    //static const unsigned DDPF_NORMAL = 0x80000000;
+    static const uint DDSD_MIPMAPCOUNT_BIT  = 0x00020000;
+    static const uint DDPF_ALPHAPIXELS      = 0x00000001;
+    static const uint DDPF_ALPHA            = 0x00000002;
+    static const uint DDPF_FOURCC           = 0x00000004;
+    static const uint DDPF_RGB              = 0x00000040;
+    //static const uint DDPF_YUV            = 0x00000200;
+    static const uint DDPF_LUMINANCE        = 0x00020000;
+    //static const uint DDPF_NORMAL         = 0x80000000;
     /*
     char[4] magic = "DDS ";
     struct DDS_HEADER {
@@ -39,7 +39,7 @@ DDSInfo::DDSInfo(const char *DDSData) :
 
     size_t dataOffset = 0;
 #define READMEMFULL(dest, size) \
-    memcpy((void*)&(dest), (const void*)(DDSData+dataOffset), (size)); \
+    memcpy(static_cast<void*>(&(dest)), static_cast<const void*>(DDSData+dataOffset), (size)); \
     dataOffset += (size);
 
     char magic[4]; READMEMFULL(magic, 4);
@@ -50,20 +50,20 @@ DDSInfo::DDSInfo(const char *DDSData) :
     }
 
     //this header byte should be 124 for DDS image files
-    int dwSize = 0; READMEMFULL(dwSize, 4);
+    uint dwSize = 0; READMEMFULL(dwSize, 4);
     if (dwSize != 124)
     {
         errorString = "Invalid header size";
         return;
     }
 
-    int dwFlags = 0; READMEMFULL(dwFlags, 4);
+    uint dwFlags = 0; READMEMFULL(dwFlags, 4);
     READMEMFULL(height, 4);
     READMEMFULL(width, 4);
 
-    int dwPitchOrLinearSize = 0; READMEMFULL(dwPitchOrLinearSize, 4);
-    int dwDepth = 0; READMEMFULL(dwDepth, 4);
-    int dwMipMapCount = 0; READMEMFULL(dwMipMapCount, 4);
+    uint dwPitchOrLinearSize = 0; READMEMFULL(dwPitchOrLinearSize, 4);
+    uint dwDepth = 0; READMEMFULL(dwDepth, 4);
+    uint dwMipMapCount = 0; READMEMFULL(dwMipMapCount, 4);
 
     if ((dwFlags & DDSD_MIPMAPCOUNT_BIT) == 0)
     {
@@ -84,24 +84,24 @@ DDSInfo::DDSInfo(const char *DDSData) :
     uint dds_pxlf_dwBBitMask = 0; READMEMFULL(dds_pxlf_dwBBitMask, 4);
     uint dds_pxlf_dwABitMask = 0; READMEMFULL(dds_pxlf_dwABitMask, 4);
 
-    int dwCaps = 0; READMEMFULL(dwCaps, 4);
-    int dwCaps2 = 0; READMEMFULL(dwCaps2, 4);
-    int dwCaps3 = 0; READMEMFULL(dwCaps3, 4);
-    int dwCaps4 = 0; READMEMFULL(dwCaps4, 4);
-    int dwReserved2 = 0; READMEMFULL(dwReserved2, 4);
+    uint dwCaps = 0; READMEMFULL(dwCaps, 4);
+    uint dwCaps2 = 0; READMEMFULL(dwCaps2, 4);
+    uint dwCaps3 = 0; READMEMFULL(dwCaps3, 4);
+    uint dwCaps4 = 0; READMEMFULL(dwCaps4, 4);
+    uint dwReserved2 = 0; READMEMFULL(dwReserved2, 4);
 
     //bool isCompressed = false;
     //bool asNormal = false;
     //bool isNormalMap = (dds_pxlf_dwFlags & DDPF_NORMAL) != 0; //|| asNormal;
 
-    bool alpha = (dds_pxlf_dwFlags & DDPF_ALPHA) != 0;
-    bool fourcc = (dds_pxlf_dwFlags & DDPF_FOURCC) != 0;
-    bool rgb = (dds_pxlf_dwFlags & DDPF_RGB) != 0;
-    bool alphapixel = (dds_pxlf_dwFlags & DDPF_ALPHAPIXELS) != 0;
-    bool luminance = (dds_pxlf_dwFlags & DDPF_LUMINANCE) != 0;
-    bool rgb888 = dds_pxlf_dwRBitMask == 0x000000ff && dds_pxlf_dwGBitMask == 0x0000ff00 && dds_pxlf_dwBBitMask == 0x00ff0000;
-    bool bgr888 = dds_pxlf_dwRBitMask == 0x00ff0000 && dds_pxlf_dwGBitMask == 0x0000ff00 && dds_pxlf_dwBBitMask == 0x000000ff;
-    bool rgb565 = dds_pxlf_dwRBitMask == 0x0000F800 && dds_pxlf_dwGBitMask == 0x000007E0 && dds_pxlf_dwBBitMask == 0x0000001F;
+    bool alpha =        (dds_pxlf_dwFlags & DDPF_ALPHA) != 0;
+    bool fourcc =       (dds_pxlf_dwFlags & DDPF_FOURCC) != 0;
+    bool rgb =          (dds_pxlf_dwFlags & DDPF_RGB) != 0;
+    bool alphapixel =   (dds_pxlf_dwFlags & DDPF_ALPHAPIXELS) != 0;
+    bool luminance =    (dds_pxlf_dwFlags & DDPF_LUMINANCE) != 0;
+    bool rgb888 =   dds_pxlf_dwRBitMask == 0x000000ff && dds_pxlf_dwGBitMask == 0x0000ff00 && dds_pxlf_dwBBitMask == 0x00ff0000;
+    bool bgr888 =   dds_pxlf_dwRBitMask == 0x00ff0000 && dds_pxlf_dwGBitMask == 0x0000ff00 && dds_pxlf_dwBBitMask == 0x000000ff;
+    bool rgb565 =   dds_pxlf_dwRBitMask == 0x0000F800 && dds_pxlf_dwGBitMask == 0x000007E0 && dds_pxlf_dwBBitMask == 0x0000001F;
     bool argb4444 = dds_pxlf_dwABitMask == 0x0000f000 && dds_pxlf_dwRBitMask == 0x00000f00 && dds_pxlf_dwGBitMask == 0x000000f0 && dds_pxlf_dwBBitMask == 0x0000000f;
     bool rbga4444 = dds_pxlf_dwABitMask == 0x0000000f && dds_pxlf_dwRBitMask == 0x0000f000 && dds_pxlf_dwGBitMask == 0x000000f0 && dds_pxlf_dwBBitMask == 0x00000f00;
 

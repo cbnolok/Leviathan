@@ -26,14 +26,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     // Setting version in the title bar
-    #define _STRINGIFY(x) #x
-    #define TOSTRING(x) _STRINGIFY(x)
+    #define SUB_STRINGIFY(x) #x
+    #define TOSTRING(x) SUB_STRINGIFY(x)
     QString version = TOSTRING(LEVIATHAN_VERSION);
-    #undef _STRINGIFY
+    #undef SUB_STRINGIFY
     #undef TOSTRING
     #ifndef BUILD_NOT_AUTOMATIC
         version += "(automated)";
     #endif
+    constexpr unsigned bits = sizeof(void*) * 8;
+    version += " (" + QString::number(bits) + " bits build)";
     this->setWindowTitle(this->windowTitle() + " - version " + version);
 
 
@@ -95,8 +97,6 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(scriptsProfilesSignalMapper, SIGNAL(mapped(int)), this, SLOT(onManual_actionLoadScriptsProfile_mapped(int)));
         ui->menuProfiles->addMenu(menuLoadScriptsProfile);
     }
-
-    // TODO: add in a submenu the actions to load every single, stored profile
 
     // Generate Settings entry
     //ui->menuProfiles->addSeparator();

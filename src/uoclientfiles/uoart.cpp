@@ -16,14 +16,14 @@
 namespace uocf
 {
 
-UOArt::UOArt(std::string clientPath, UOHues *hues) :
-    m_clientPath(std::move(clientPath)), m_lastFileType(ClientFileType::Uninitialized), m_UOHues(hues)
+UOArt::UOArt(const std::string &clientPath, UOHues *hues) :
+    m_clientPath(clientPath), m_lastFileType(ClientFileType::Uninitialized), m_UOHues(hues)
 {
 }
 
 UOArt::~UOArt() = default;
 
-void UOArt::setHuesCachePointer(UOHues* hues)
+void UOArt::setCachePointers(UOHues* hues)
 {
     m_UOHues = hues;
 }
@@ -143,7 +143,7 @@ QImage* UOArt::drawArtEnhanced(bool drawLegacy, unsigned int id, unsigned int hu
     //  from the QImage (imageBuf) that used as internal buffer the pointer to our decompressedImgBuf.
     // By doing so, our QImage will be independent from our buffer, so we can finally delete it.
     // Without doing this, we'll encounter random crashes when the image is used.
-    delete decompressedImgBuf;
+    delete[] decompressedImgBuf;
 
     // Apply hue
     if (hueIndex)
@@ -153,11 +153,9 @@ QImage* UOArt::drawArtEnhanced(bool drawLegacy, unsigned int id, unsigned int hu
             for (int y = 0; y < texInfo.height; ++y)
             {
                 // QImage::pixel returns a QRgb, which is ARGB quadruplet on the format #AARRGGBB, equivalent to an unsigned int.
-                unsigned int argb32 = image->pixel(x, y);
-                ARGB16 argb16 = convert_ARGB32_to_ARGB16(ARGB32(argb32));
-                argb16 = m_UOHues->getHueEntry(hueIndex).applyToColor(argb16, partialHue);
-                argb32 = convert_ARGB16_to_ARGB32(argb16).getVal();
-                image->setPixel(x, y, argb32);
+                const unsigned int argb32Val = image->pixel(x, y);
+                ARGB32 argb32Hued = m_UOHues->getHueEntry(hueIndex).applyToColor32(argb32Val, partialHue);
+                image->setPixel(x, y, argb32Hued.getVal());
             }
         }
     }
@@ -253,7 +251,7 @@ QImage* UOArt::drawArtClassic(bool drawFromUOP, unsigned int id, unsigned int hu
     size_t READMEM_dataOffset = 0;
     const char* READMEM_dataPtr = dataVec.data();
 #define READMEM(dest, size) \
-    memcpy((void*)&(dest), (const void*)(READMEM_dataPtr+READMEM_dataOffset), (size)); \
+    memcpy(static_cast<void*>(&(dest)), static_cast<const void*>(READMEM_dataPtr+READMEM_dataOffset), (size)); \
     READMEM_dataOffset += (size);
 
     if (id < kItemsOffset)
@@ -306,8 +304,8 @@ QImage* UOArt::drawArtClassic(bool drawFromUOP, unsigned int id, unsigned int hu
                 //  continue;
                 if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
                 {
-                    UOHueEntry hue = m_UOHues->getHueEntry(hueIndex-1);
-                    color_argb16 = hue.applyToColor(color_argb16, partialHue);
+                    const UOHueEntry& hue = m_UOHues->getHueEntry(hueIndex-1);
+                    color_argb16 = hue.applyToColor16(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = convert_ARGB16_to_ARGB32(color_argb16);
                 img->setPixel(X+draw, Y, color_argb32.getVal());
@@ -329,8 +327,8 @@ QImage* UOArt::drawArtClassic(bool drawFromUOP, unsigned int id, unsigned int hu
                 //  continue;
                 if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
                 {
-                    UOHueEntry hue = m_UOHues->getHueEntry(hueIndex-1);
-                    color_argb16 = hue.applyToColor(color_argb16, partialHue);
+                    const UOHueEntry& hue = m_UOHues->getHueEntry(hueIndex-1);
+                    color_argb16 = hue.applyToColor16(color_argb16, partialHue);
                 }
                 ARGB32 color_argb32 = convert_ARGB16_to_ARGB32(color_argb16);
                 img->setPixel(X+draw, Y, color_argb32.getVal());
@@ -399,7 +397,7 @@ QImage* UOArt::drawArtClassic(bool drawFromUOP, unsigned int id, unsigned int hu
                 READMEM(xRun, 2);
                 if (xOffset + xRun != 0)
                 {
-                    X += xOffset ;
+                    X += xOffset;
                     for (unsigned jj=0; jj < xRun; ++jj)
                     {
                         uint16_t rawcolor_argb16 = 0;
@@ -407,8 +405,8 @@ QImage* UOArt::drawArtClassic(bool drawFromUOP, unsigned int id, unsigned int hu
                         ARGB16 color_argb16 = ARGB16(rawcolor_argb16);
                         if (hueIndex > 0)   // client starts to count from 1 (0 means do not change the color)
                         {
-                            UOHueEntry hue = m_UOHues->getHueEntry(hueIndex-1);
-                            color_argb16 = hue.applyToColor(color_argb16, partialHue);
+                            const UOHueEntry& hue = m_UOHues->getHueEntry(hueIndex-1);
+                            color_argb16 = hue.applyToColor16(color_argb16, partialHue);
                         }
                         ARGB32 color_argb32 = convert_ARGB16_to_ARGB32(color_argb16);
                         img->setPixel(X, Y, color_argb32.getVal());

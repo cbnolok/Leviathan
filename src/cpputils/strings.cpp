@@ -43,7 +43,7 @@ void strTrim(std::string &string)
 }
 
 
-bool isStringNumericHex(std::string &s)
+bool isStringNumericHex(const std::string &s)
 {
     return !s.empty() && (s.find_first_not_of(" \t0123456789ABCDEFabcdef") == std::string::npos);
     /*
@@ -53,7 +53,7 @@ bool isStringNumericHex(std::string &s)
     */
 }
 
-bool isStringNumericDec(std::string &s)
+bool isStringNumericDec(const std::string &s)
 {
     return !s.empty() && (s.find_first_not_of(" \t0123456789") == std::string::npos);
     /*

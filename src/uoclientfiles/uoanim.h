@@ -19,10 +19,10 @@ class UOHues;
 class UOAnim
 {
 public:
-    UOAnim(std::string clientPath, std::function<void(int)> reportProgress = nullptr);
-    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex);
+    UOAnim(const std::string& clientPath, std::function<void(int)> reportProgress = nullptr);
+    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, unsigned int hueIndex);
 
-    void setHuesCachePointer(UOHues* hues);
+    void setCachePointers(UOHues* hues);
 
 private:
     UOAnimMUL m_UOAnimMUL;

@@ -13,8 +13,8 @@
 namespace uocf
 {
 
-UOAnimMUL::UOAnimMUL(std::string clientPath) :
-    m_UOHues(nullptr), m_clientPath(std::move(clientPath))
+UOAnimMUL::UOAnimMUL(const std::string &clientPath) :
+    m_UOHues(nullptr), m_clientPath(clientPath)
 {
     loadBodyDef();
     loadBodyConvDef();
@@ -221,7 +221,7 @@ unsigned int UOAnimMUL::getBodyLookupIndex(int body, int action, int direction, 
 
 /////
 
-QImage* UOAnimMUL::drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex)
+QImage* UOAnimMUL::drawAnimFrame(int bodyID, int action, int direction, int frame, unsigned int hueIndex)
 {
     int animFileNumber = 0;
 
@@ -368,8 +368,8 @@ QImage* UOAnimMUL::drawAnimFrame(int bodyID, int action, int direction, int fram
             ARGB16 color_argb16 = palette[palette_index]; // ^ 0x8000;
             if (hueIndex > 0) // client starts to count from 1 (0 means do not change the color)
             {
-                UOHueEntry hue = m_UOHues->getHueEntry(hueIndex-1);
-                color_argb16 = hue.applyToColor(color_argb16, applyToGrayOnly);
+                const UOHueEntry& hue = m_UOHues->getHueEntry(hueIndex-1);
+                color_argb16 = hue.applyToColor16(color_argb16, applyToGrayOnly);
             }
             ARGB32 color_argb32 = convert_ARGB16_to_ARGB32(color_argb16);
 

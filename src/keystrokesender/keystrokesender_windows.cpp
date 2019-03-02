@@ -4,9 +4,6 @@
 #include <thread>
 #include <chrono>
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winuser.h>
 
 const int kDelayKeystrokes = 50; //milliseconds
 
@@ -105,7 +102,7 @@ bool KeystrokeSender_Windows::sendEnter()
     std::this_thread::sleep_for(std::chrono::milliseconds(kDelayKeystrokes));
 
     // KeyUp
-    PostMessage(m_UOHandle, WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1 << 31) ));
+    PostMessage(m_UOHandle, WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1u << 31) ));
 
     return true;
 }

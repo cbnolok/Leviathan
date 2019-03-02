@@ -14,7 +14,7 @@ class SubDlg_SearchObj : public QDialog
     Q_OBJECT
 
 public:
-    explicit SubDlg_SearchObj(QWidget *parent = 0);
+    explicit SubDlg_SearchObj(QWidget *parent = nullptr);
     ~SubDlg_SearchObj();
 
     ScriptSearch::SearchData getSearchData();

@@ -15,7 +15,7 @@ class SubDlg_Spawn : public QDialog
     Q_OBJECT
 
 public:
-    explicit SubDlg_Spawn(QWidget *parent = 0);
+    explicit SubDlg_Spawn(QWidget *parent = nullptr);
     ~SubDlg_Spawn();
 
 private slots:

@@ -2,6 +2,7 @@
 #define GLOBALS_H
 
 #include <functional>
+#include <vector>
 #include "settings/appsettings.h"
 #include "settings/clientprofile.h"
 #include "settings/scriptsprofile.h"
@@ -45,13 +46,19 @@ bool appendToLog(const std::string &str);
 
 namespace uocf
 {
-    class UOHues;
     class UOArt;
     class UOAnim;
+    class UOHues;
+    class UOMap;
+    class UOStatics;
+    class UORadarCol;
 }
-extern uocf::UOHues *g_UOHues;
-extern uocf::UOArt *g_UOArt;
+extern uocf::UOArt  *g_UOArt;
 extern uocf::UOAnim *g_UOAnim;
+extern uocf::UOHues *g_UOHues;
+extern uocf::UORadarCol *g_UORadarCol;
+extern std::vector<uocf::UOMap *> g_UOMaps;
+extern std::vector<uocf::UOStatics *> g_UOStatics;
 
 void loadClientFiles(std::function<void(int)> reportProgress);
 

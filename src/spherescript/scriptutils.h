@@ -15,11 +15,11 @@ public:
     static int strToSphereInt16(const char *str);
 
     static std::string numericalStrFormattedAsSphereInt(int num);  // Return a numerical string formatted as a sphere hex number ("0123")
-    static std::string numericalStrFormattedAsSphereInt(std::string &str);
+    static std::string numericalStrFormattedAsSphereInt(const std::string& str);
     static std::string numericalStrFormattedAsSphereInt(const char *str);
 
 
-    static int findTableSorted(std::string stringToFind, std::vector<const char*> &table, int tableSize);
+    static int findTableSorted(std::string stringToFind, const std::vector<const char*> &table, int tableSize);
 
 
     // All the script resource blocks in SphereServer.

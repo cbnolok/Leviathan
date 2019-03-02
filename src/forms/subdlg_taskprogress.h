@@ -13,7 +13,7 @@ class SubDlg_TaskProgress : public QWidget
     Q_OBJECT
 
 public:
-    explicit SubDlg_TaskProgress(QWidget *parent = 0);
+    explicit SubDlg_TaskProgress(QWidget *parent = nullptr);
     ~SubDlg_TaskProgress();
 
 public slots:

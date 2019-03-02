@@ -10,8 +10,8 @@ void strToLower(std::string &string);   // Transforms the pased string to lowerc
 void strToLower(char *string);
 void strTrim(std::string &string);      // Remove leading and trailing spaces and newlines
 
-bool isStringNumericHex(std::string &s);
-bool isStringNumericDec(std::string &s);
+bool isStringNumericHex(const std::string &s);
+bool isStringNumericDec(const std::string &s);
 
 
 // Function by Marius: https://stackoverflow.com/questions/236129/split-a-string-in-c

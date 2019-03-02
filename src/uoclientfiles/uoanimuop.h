@@ -37,14 +37,14 @@ class UOAnimUOP
     };
 
 public:
-    UOAnimUOP(std::string clientPath, const std::function<void (int)> &reportProgress);
+    UOAnimUOP(const std::string& clientPath, const std::function<void (int)> &reportProgress);
     ~UOAnimUOP();
 
     bool isInitializing() const {
         return m_isInitializing;
     }
     bool animExists(int animID);
-    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, int hueIndex);
+    QImage* drawAnimFrame(int bodyID, int action, int direction, int frame, unsigned int hueIndex);
 
     UOHues* m_UOHues;
 private:

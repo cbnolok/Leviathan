@@ -8,7 +8,7 @@ namespace ks {
 class KeystrokeSender;
 }
 class SubDlg_SearchObj;
-class ScriptSearch;
+struct ScriptSearch;
 class ScriptCategory;
 class ScriptSubsection;
 class ScriptObj;
@@ -25,7 +25,7 @@ class MainTab_Items : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainTab_Items(QWidget *parent = 0);
+    explicit MainTab_Items(QWidget *parent = nullptr);
     ~MainTab_Items();
     void updateViews();
 

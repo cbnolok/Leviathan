@@ -5,7 +5,7 @@
 #include <memory>   // for smart pointers
 
 class SubDlg_SearchObj;
-class ScriptSearch;
+struct ScriptSearch;
 class ScriptCategory;
 class ScriptSubsection;
 class ScriptObj;
@@ -22,7 +22,7 @@ class MainTab_Chars : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainTab_Chars(QWidget *parent = 0);
+    explicit MainTab_Chars(QWidget *parent = nullptr);
     ~MainTab_Chars();
     void updateViews();
 

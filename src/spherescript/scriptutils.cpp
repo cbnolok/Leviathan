@@ -32,9 +32,9 @@ int ScriptUtils::strToSphereInt(std::string str)   // it's important to work on 
     int ret;
     try
     {
-        ret = std::stoi(str, 0 , base);
+        ret = std::stoi(str, nullptr, base);
     }
-    catch (std::invalid_argument e)
+    catch (const std::invalid_argument&)
     {
         ret = -1;        // If no valid conversion can be done, return -1.
     }
@@ -44,8 +44,7 @@ int ScriptUtils::strToSphereInt(std::string str)   // it's important to work on 
 
 int ScriptUtils::strToSphereInt(const char *str)
 {
-    std::string stdstr(str);
-    return strToSphereInt(stdstr);
+    return strToSphereInt(std::string(str));
 }
 
 int ScriptUtils::strToSphereInt16(std::string str)
@@ -56,18 +55,17 @@ int ScriptUtils::strToSphereInt16(std::string str)
 
 int ScriptUtils::strToSphereInt16(const char *str)
 {
-    std::string stdstr(str);
-    return strToSphereInt16(stdstr);
+    return strToSphereInt16(std::string(str));
 }
 
 std::string ScriptUtils::numericalStrFormattedAsSphereInt(int num)
 {
     std::stringstream stream;
     stream << "0" << std::noshowbase << std::hex << num;
-    return std::string(stream.str());
+    return stream.str();
 }
 
-std::string ScriptUtils::numericalStrFormattedAsSphereInt(std::string &str)  // return a numerical string formatted as a sphere hex number ("0123")
+std::string ScriptUtils::numericalStrFormattedAsSphereInt(const std::string &str)  // return a numerical string formatted as a sphere hex number ("0123")
 {
     int num = strToSphereInt(str);
     if (num == -1)
@@ -77,14 +75,13 @@ std::string ScriptUtils::numericalStrFormattedAsSphereInt(std::string &str)  // 
 
 std::string ScriptUtils::numericalStrFormattedAsSphereInt(const char *str)
 {
-    std::string stdstr(str);
-    return numericalStrFormattedAsSphereInt(stdstr);
+    return numericalStrFormattedAsSphereInt(std::string(str));
 }
 
 
 //-------------
 
-int ScriptUtils::findTableSorted(std::string stringToFind, std::vector<const char*> &table, int tableSize)
+int ScriptUtils::findTableSorted(std::string stringToFind, const std::vector<const char *> &table, int tableSize)
 {
     // Do a binary search (un-cased) on a sorted table.
     // RETURN: -1 = not found

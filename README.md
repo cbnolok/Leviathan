@@ -5,7 +5,7 @@ Consider it at an embryonal stage, since it lacks lots of features, and a slow-p
 Some things could have be done more easily using Qt classes, but i'd rather write code that can be recycled for other projects (which aren't necessarily using Qt).<br>
 
 # Credits
-Uses Qt Toolkit version 5.6.2.<br>
+Uses Qt Toolkit 5.<br>
 Uses CheckableProxyModel (GPLv3 or later versions, as of 2011) by Andre Somers.<br>
 Used as code base for UOP files handling the UO_Package library by Kons (https://code.google.com/archive/p/kprojects/downloads).<br>
 <br>

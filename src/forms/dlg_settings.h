@@ -13,7 +13,7 @@ class Dlg_Settings : public QDialog
     Q_OBJECT
 
 public:
-    explicit Dlg_Settings(QWidget *parent = 0);
+    explicit Dlg_Settings(QWidget *parent = nullptr);
     ~Dlg_Settings();
 
 private slots:

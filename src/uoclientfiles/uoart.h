@@ -29,7 +29,7 @@ class UOHues;
 class UOArt
 {  
 public:
-    UOArt(std::string clientPath, UOHues* hues = nullptr);
+    UOArt(const std::string& clientPath, UOHues* hues = nullptr);
     ~UOArt();
 
     static const int kLandtilesOffset   = 0;
@@ -43,12 +43,12 @@ public:
         TextureUOP          // Enhanced Client art file, storing Kingdom Reborn (KR) art tiles
     };
 private:
-    static constexpr const char* kEC_UOPFile = "Texture.uop";
-    static constexpr const char* kEC_LegacyUOPFile = "LegacyTexture.uop";
-    static constexpr const char* kCC_UOPFile = "artLegacyMUL.uop";
+    static constexpr const char* kEC_UOPFile        = "Texture.uop";
+    static constexpr const char* kEC_LegacyUOPFile  = "LegacyTexture.uop";
+    static constexpr const char* kCC_UOPFile        = "artLegacyMUL.uop";
 
 public:
-    void setHuesCachePointer(UOHues* hues);
+    void setCachePointers(UOHues* hues);
 
     QImage* drawArt(unsigned int id, unsigned int hueIndex, bool partialHue);   // auto pick the newer art file format and draw the image
     QImage* drawArtEnhanced(bool drawLegacy, unsigned int id, unsigned int hueIndex, bool partialHue);

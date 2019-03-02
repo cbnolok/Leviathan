@@ -42,9 +42,8 @@ Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
     m_hueTableBlocks.reserve(hueTableBlocksH*hueTableBlocksV);
 
     // default image for the grid element
-    QImage qimg(1,1,QImage::Format_RGB32);
-    qimg.fill(qRgb(0,0,0));
-    QPixmap qpix = QPixmap::fromImage(qimg);
+    QPixmap qpix(1,1);
+    qpix.fill(QColor(qRgb(0,0,0)));
 
     m_hueTableMapClick = new QSignalMapper();
     m_hueTableMapDoubleClick = new QSignalMapper();
@@ -117,16 +116,16 @@ void Dlg_HuePicker::drawHueBar()
     static const int colorBlockWidth = 14;
     static const int colorBlockHeight = 22;
 
-    QImage qimgHueDetail(uocf::UOHueEntry::kColorTableSize * colorBlockWidth, colorBlockHeight, QImage::Format_RGB32);
+    QImage qimgHueDetail(uocf::UOHueEntry::kTableColorsCount * colorBlockWidth, colorBlockHeight, QImage::Format_RGB32);
     if (!g_UOHues || !m_selectedHueIndex)
         qimgHueDetail.fill(0);
     else
     {
-        int hueIdx = (m_selectedHueIndex == -1) ? 0 : m_selectedHueIndex;
-        uocf::UOHueEntry hueSelected = g_UOHues->getHueEntry(hueIdx);
-        for (int i = 0; i < uocf::UOHueEntry::kColorTableSize; ++i)   // color blocks = 32
+        uint hueIdx = (m_selectedHueIndex == -1) ? 0 : uint(m_selectedHueIndex);
+        const uocf::UOHueEntry& hueSelected = g_UOHues->getHueEntry(hueIdx);
+        for (int i = 0; i < int(uocf::UOHueEntry::kTableColorsCount); ++i)   // color blocks = 32
         {
-            uocf::ARGB32 color32 = uocf::ARGB32(hueSelected.getColor(i));
+            uocf::ARGB32 color32 = hueSelected.getColor32(unsigned(i));
             color32.adjustBrightness(m_brightnessPercent);
             uint rawcolor = color32.getVal();
             for (int x = (colorBlockWidth * i); x < (colorBlockWidth * i) + colorBlockWidth; ++x)
@@ -146,10 +145,10 @@ void Dlg_HuePicker::drawHueTable()
         return;
 
     setUpdatesEnabled(false);
-    int hueIdx = 0;
+    unsigned int hueIdx = 0;
     for (EnhancedLabel* curLabel : m_hueTableBlocks)
     {
-        uocf::UOHueEntry curHue = g_UOHues->getHueEntry(hueIdx);
+        const uocf::UOHueEntry& curHue = g_UOHues->getHueEntry(hueIdx);
 
         // Get the "mean" color
         /*
@@ -170,11 +169,10 @@ void Dlg_HuePicker::drawHueTable()
         qimg.fill(qRgb(meanR,meanG,meanB));
         */
 
-        uocf::ARGB32 color32 = uocf::ARGB32(curHue.getColor(m_shadeIndex));
+        uocf::ARGB32 color32 = curHue.getColor32(unsigned(m_shadeIndex));
         color32.adjustBrightness(m_brightnessPercent);
-        QImage qimg(1,1,QImage::Format_RGB32);
-        qimg.fill(color32.getVal());
-        QPixmap qpix = QPixmap::fromImage(qimg);
+        QPixmap qpix(1,1);
+        qpix.fill(QColor(color32.getVal()));
         curLabel->setPixmap(qpix);
 
         ++hueIdx;
@@ -198,12 +196,12 @@ void Dlg_HuePicker::drawPreview()
     int hueIdx = (m_selectedHueIndex == -1) ? 0 : m_selectedHueIndex;
     if (m_previewIsItem)
     {
-        g_UOArt->setHuesCachePointer(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
+        g_UOArt->setCachePointers(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
         frameimg = g_UOArt->drawArt(uocf::UOArt::kItemsOffset + m_previewDisplayId, hueIdx+1, false);
     }
     else
     {
-        g_UOAnim->setHuesCachePointer(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
+        g_UOAnim->setCachePointers(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
         frameimg = g_UOAnim->drawAnimFrame(m_previewDisplayId, 0, 1, 0, hueIdx+1);
     }
     if (frameimg == nullptr)

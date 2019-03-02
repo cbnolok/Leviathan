@@ -209,7 +209,7 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
     if (!attach())
         return false;
 
-	if (m_setFocusToWindow)
+    if (m_setFocusToWindow)
         setForegroundWindow(m_display, m_UOWindow);
 
     bool ret = _sendChar(ch);
@@ -228,7 +228,7 @@ bool KeystrokeSender_Linux::sendEnter()
     if (!attach())
         return false;
 
-	if (m_setFocusToWindow)
+    if (m_setFocusToWindow)
         setForegroundWindow(m_display, m_UOWindow);
 
     bool ret = _sendEnter();

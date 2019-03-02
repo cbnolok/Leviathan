@@ -21,7 +21,7 @@ class Dlg_ProfileScripts_Options : public QDialog
     Q_OBJECT
 
 public:
-    explicit Dlg_ProfileScripts_Options(QWidget *parent = 0);
+    explicit Dlg_ProfileScripts_Options(QWidget *parent = nullptr);
     ~Dlg_ProfileScripts_Options();
 
 private slots:

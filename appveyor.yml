@@ -6,41 +6,72 @@ shallow_clone: true
 clone_depth: 1
 
 install:
-  # Set Qt toolkit path
-  - set QTDIR=C:\Qt\5.9\mingw53_32
-
-  # Use MinGW shipped with Qt, since the one on C:\ is different and gives compilation errors!
-  - set PATH=%PATH%;%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin
-
   # Build Leviathan version file
   - python appveyor_generateversion.py
   
 build_script:
   - cd src
+  - mkdir deploy32
+  - mkdir deploy64
+
+  - set OPATH=%PATH%
+# 32 bits build (mingw 5.3.0, qt 5.10.1)
+  # Set Qt toolkit path
+  - set QTOOLS=C:\Qt\Tools\mingw530_32\bin
+  - set QTDIR=C:\Qt\5.10.1\mingw53_32 # required
+  - set PATH=%OPATH%;%QTOOLS%;%QTDIR%\bin
   - qmake Leviathan.pro CONFIG+=release
   - mingw32-make -j2
-  - cd ..
-  #- cd %APPVEYOR_BUILD_FOLDER%
 
-after_build:
-  - mkdir deploy
-  - copy /Y src\release\Leviathan.exe deploy
+  - copy /Y release\Leviathan.exe deploy32
 
   # Prepare the libraries and the other files to deploy  
-  - C:\Qt\5.9\mingw53_32\bin\windeployqt.exe --force --compiler-runtime --no-translations --no-opengl-sw --no-system-d3d-compiler --no-quick-import --no-angle --no-webkit2 deploy
-  - copy /Y "c:\Qt\tools\mingw530_32\bin\libstdc++-6.dll" deploy	# the one from the non-Qt MinGW package gives problems
-  - copy /Y "c:\Qt\tools\mingw530_32\bin\libgomp*.dll" deploy		# we need the OpenMP libraries
-  - del deploy\*64*.dll
+  - call %QTDIR%\bin\windeployqt.exe --force --compiler-runtime --no-translations --no-opengl-sw --no-system-d3d-compiler --no-quick-import --no-angle --no-webkit2 deploy32
+  # windeployqt only copies the required Qt dlls, not the c++ ones, even if i added --compiler-runtime
+  - copy /Y "%QTOOLS%\libstdc++-6.dll" deploy32
+  - copy /Y "%QTOOLS%\libgcc_s_dw2-1.dll" deploy32
+  - copy /Y "%QTOOLS%\libwinpthread-1.dll" deploy32
+  - copy /Y "%QTOOLS%\libgomp*.dll" deploy32		# we need the OpenMP libraries
 
   # Copy extra required libs
-  - copy /Y winlibs\32\zlibwapi.dll deploy
+  - copy /Y ..\winlibs\32\zlib.dll deploy32
 
   # Pack everything in a zip
-  - 7z a LeviathanWin32-automated-%APPVEYOR_REPO_TAG_NAME%.zip deploy\*
+  - 7z a LeviathanWin32-automated-%APPVEYOR_REPO_TAG_NAME%.zip .\deploy32\*
+
+
+# 64 bits build (mingw 7.3.0, qt 5.12.1)
+  # Set Qt toolkit path
+  - set QTOOLS=C:\Qt\Tools\mingw730_64\bin
+  - set QTDIR=C:\Qt\5.12.1\mingw73_64 # required
+  - set PATH=%OPATH%;%QTOOLS%;%QTDIR%\bin
+  - mingw32-make clean
+  - del Makefile*
+  - del .qmake.stash
+  - qmake Leviathan.pro CONFIG+=release
+  - mingw32-make -j2
+
+  - copy /Y release\Leviathan.exe deploy64
+
+  # Prepare the libraries and the other files to deploy  
+  - call %QTDIR%\bin\windeployqt.exe --force --compiler-runtime --no-translations --no-opengl-sw --no-system-d3d-compiler --no-quick-import --no-angle --no-webkit2 deploy64
+  # windeployqt only copies the required Qt dlls, not the c++ ones, even if i added --compiler-runtime
+  - copy /Y "%QTOOLS%\libstdc++-6.dll" deploy64
+  - copy /Y "%QTOOLS%\libgcc_s_seh-1.dll" deploy64
+  - copy /Y "%QTOOLS%\libwinpthread-1.dll" deploy64
+  - copy /Y "%QTOOLS%\libgomp*.dll" deploy64		# we need the OpenMP libraries
+
+  # Copy extra required libs
+  - copy /Y ..\winlibs\64\zlib.dll deploy64
+
+  # Pack everything in a zip
+  - 7z a LeviathanWin64-automated-%APPVEYOR_REPO_TAG_NAME%.zip .\deploy64\*
 
 artifacts:
-  - path: LeviathanWin32-automated-$(APPVEYOR_REPO_TAG_NAME).zip
-    name: zipbin
+  - path: src/LeviathanWin32-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+    name: zipbin32
+  - path: src/LeviathanWin64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+    name: zipbin64
 
 deploy:
   release: $(APPVEYOR_REPO_TAG_NAME)
@@ -48,7 +79,7 @@ deploy:
   provider: GitHub
   auth_token:
     secure: Hb86lGnsXj56Q4P+Y1pRpovrFJ5Qa/Bn6+Zr9L6Maqmlx978GU3hFhWcqpTD326w
-  artifact: zipbin
+  artifact: zipbin32, zipbin64
   draft: false
   prerelease: false
   on:

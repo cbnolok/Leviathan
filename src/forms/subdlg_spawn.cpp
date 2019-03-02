@@ -42,7 +42,7 @@ void SubDlg_Spawn::on_pushButton_init_clicked()
         return;
 
     std::string attr_cmd = ".act.attr 0b0";
-    std::string defname_cmd = ".act.more "  + m_selectedScriptObj->m_defname;
+    std::string defname_cmd = ".act.more " + (m_selectedScriptObj->m_defname.empty() ? m_selectedScriptObj->m_ID : m_selectedScriptObj->m_defname);
 
     //std::string maxDist_cmd = ".act.morez " + ui->lineEdit_maxDist->text().toStdString();
     //std::string minTime_cmd = ".act.morex " + ui->lineEdit_minTime->text().toStdString();
@@ -53,8 +53,12 @@ void SubDlg_Spawn::on_pushButton_init_clicked()
     std::vector<std::string> stringsToSend = { attr_cmd, defname_cmd, morep_cmd };
     if (ui->lineEdit_amount->text().toInt())
     {
-        std::string amount_cmd  = ".act.amount "+ ui->lineEdit_amount->text().toStdString();
+        std::string amount_cmd  = ".act.amount " + ui->lineEdit_amount->text().toStdString();
         stringsToSend.push_back(amount_cmd);
+    }
+    if (m_selectedScriptObj->m_type == SCRIPTOBJ_TYPE_ITEM)
+    {
+        stringsToSend.emplace_back(".act.type t_spawn_item");
     }
     stringsToSend.emplace_back(".act.timer 1");
 
