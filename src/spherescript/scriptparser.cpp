@@ -64,7 +64,6 @@ void ScriptParser::run()
         //emit notifyTPMessage(msg + g_scriptFileList[i].c_str());
         loadFile(i, false);
         emit notifyTPProgressVal(i);
-        QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
     }
 
 
@@ -120,7 +119,6 @@ void ScriptParser::run()
         {
             progressVal = progressValNow;
             emit notifyTPProgressVal(progressVal);
-            QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
         }
     }
 
@@ -246,13 +244,13 @@ void ScriptParser::run()
                 {
                     progressVal = progressValNow;
                     emit notifyTPProgressVal(progressVal);
-                    QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
                 }
             }
         }
     }
 
     appendToLog(std::string("Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\" loaded."));
+    emit finished();
 }
 
 

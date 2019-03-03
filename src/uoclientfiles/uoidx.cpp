@@ -24,11 +24,6 @@ void UOIdx::closeStream()
     m_stream.close();
 }
 
-bool UOIdx::hasCache()
-{
-    return !m_cache.empty();
-}
-
 void UOIdx::clearCache()
 {
     m_cache.clear();
@@ -43,9 +38,15 @@ auto readLookup = [](std::ifstream &fin, UOIdx::Entry* idxEntry)
     // - Size:      size=4. Size of the pointed block.
     // - Extra:     size=4. Extra info, used only by certain mul files.
     //      gumpart.mul:    width = ( Extra >> 16 ) & 0xFFFF;   height = Extra & 0xFFFF;
-    fin.read(reinterpret_cast<char*>(&idxEntry->lookup), 4);
-    fin.read(reinterpret_cast<char*>(&idxEntry->size), 4);
-    fin.read(reinterpret_cast<char*>(&idxEntry->extra), 4);
+    char buf[12];
+    fin.read(buf, 12);
+
+    if (!fin.good())
+        throw InvalidStreamException("UOIdx", "readLookup I/O error");
+
+    memcpy(&idxEntry->lookup,   buf,     4);
+    memcpy(&idxEntry->size,     buf + 4, 4);
+    memcpy(&idxEntry->extra,    buf + 8, 4);
 };
 
 void UOIdx::cacheData()
@@ -77,9 +78,6 @@ bool UOIdx::getLookup(unsigned int id, Entry *idxEntry)
         throw InvalidStreamException("UOIdx", "getLookup accessing closed stream.");
 
     m_stream.seekg(id * Entry::kSize);
-    if (m_stream.bad())
-        return false;
-
     readLookup(m_stream, idxEntry);
     return true;
 }
@@ -94,9 +92,6 @@ bool UOIdx::getLookup(const std::string& filePath, unsigned int id, Entry* idxEn
         return false;
 
     fin.seekg(id * Entry::kSize);
-    if (fin.bad())
-        return false;
-
     readLookup(fin, idxEntry);
 
     fin.close();

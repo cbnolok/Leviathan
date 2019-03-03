@@ -80,11 +80,6 @@ void UOStatics::closeStream()
     m_stream.close();
 }
 
-bool UOStatics::hasIdxCache()
-{
-    return m_staidx.hasCache();
-}
-
 void UOStatics::clearIdxCache()
 {
     m_staidx.clearCache();
@@ -95,20 +90,29 @@ void UOStatics::cacheIdxData()
     m_staidx.cacheData();
 }
 
-unsigned int UOStatics::getBlockIndex(unsigned int xTile, unsigned int yTile) noexcept
+unsigned int UOStatics::getBlockIndex(unsigned int xTile, unsigned int yTile) const noexcept
 {
-    unsigned xBlock = xTile / StaticsBlock::kTilesPerRow;
-    unsigned yBlock = yTile / StaticsBlock::kTilesPerColumn;
-    unsigned yBlockCount = m_mapHeight / StaticsBlock::kTilesPerColumn;
+    const unsigned xBlock = xTile / StaticsBlock::kTilesPerRow;
+    const unsigned yBlock = yTile / StaticsBlock::kTilesPerColumn;
+    const unsigned yBlockCount = m_mapHeight / StaticsBlock::kTilesPerColumn;
     return (xBlock * yBlockCount) + yBlock;
 }
 
 UOIdx::Entry UOStatics::readIdxToBlock(unsigned int xTile, unsigned int yTile)
 {
-    unsigned nBlock = getBlockIndex(xTile, yTile);
-    UOIdx::Entry idxEntry = {};
-    m_staidx.getLookup(nBlock, &idxEntry);
-    return idxEntry;
+    const unsigned nBlock = getBlockIndex(xTile, yTile);
+    UOIdx::Entry idxEntry;
+    if (m_staidx.getLookup(nBlock, &idxEntry))
+        return idxEntry;
+    return {};
+}
+
+UOIdx::Entry UOStatics::readIdxToBlock(unsigned int index)
+{
+    UOIdx::Entry idxEntry;
+    if (m_staidx.getLookup(index, &idxEntry))
+        return idxEntry;
+    return {};
 }
 
 StaticsBlock UOStatics::readBlock(const UOIdx::Entry &idxEntry)
@@ -117,11 +121,13 @@ StaticsBlock UOStatics::readBlock(const UOIdx::Entry &idxEntry)
         throw InvalidStreamException("UOStatics", "readBlock accessing closed stream.");
 
     StaticsBlock block;
-    const unsigned nBlocks = (idxEntry.size / StaticsEntry::kSize);
-    block.entries.resize(nBlocks);
-    m_stream.seekg(idxEntry.lookup);
+    block.initialized = false;
+    const unsigned nEntries = (idxEntry.size / StaticsEntry::kSize);
+    block.entries.resize(nEntries);
 
-    for (unsigned i = 0; i < nBlocks; ++i)
+    m_stream.seekg(idxEntry.lookup);
+    /*
+    for (unsigned i = 0; i < nEntries; ++i)
     {
         m_stream.read(reinterpret_cast<char*>(&block.entries[i].id), 2);
         m_stream.read(reinterpret_cast<char*>(&block.entries[i].xOffset), 1);
@@ -129,11 +135,29 @@ StaticsBlock UOStatics::readBlock(const UOIdx::Entry &idxEntry)
         m_stream.read(reinterpret_cast<char*>(&block.entries[i].z), 1);
         m_stream.read(reinterpret_cast<char*>(&block.entries[i].hue), 2);
     }
+    */
+    std::vector<char> bufVec(7 * nEntries);
+    char* buf = bufVec.data();
+    m_stream.read(buf, std::streamsize(bufVec.size()));
+    size_t off = 0;
+    for (unsigned i = 0; i < nEntries; ++i)
+    {
+        memcpy(&block.entries[i].id,        buf + off, 2);  off += 2;
+        memcpy(&block.entries[i].xOffset,   buf + off, 1);  off += 1;
+        memcpy(&block.entries[i].yOffset,   buf + off, 1);  off += 1;
+        memcpy(&block.entries[i].z,         buf + off, 1);  off += 1;
+        memcpy(&block.entries[i].hue,       buf + off, 2);  off += 2;
+    }
+
+    if (!m_stream.good())
+        throw InvalidStreamException("UOStatics", "readBlock I/O error");
+
+    block.initialized = true;
     return block;
 }
 
 
-auto getBlockOffsetsFromCoords = [](unsigned int &x, unsigned int &y)
+auto getBlockOffsetsFromCoords = [](unsigned int &x, unsigned int &y) noexcept
 {
     x = x % StaticsBlock::kTilesPerRow;
     y = y % StaticsBlock::kTilesPerColumn;

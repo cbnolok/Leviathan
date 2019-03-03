@@ -12,7 +12,7 @@ namespace uocf
 
 struct StaticsEntry
 {
-    static const int kSize = 2 + 1 + 1 + 1 + 2;
+    static const unsigned int kSize = 2 + 1 + 1 + 1 + 2;
 
     unsigned short id;
     unsigned char xOffset;
@@ -24,9 +24,10 @@ struct StaticsEntry
 struct StaticsBlock
 {
     // Each block contains 64 tiles, treated as an 8x8 matrix loaded left to right, top to bottom.
-    static const int kTilesPerRow = 8;
-    static const int kTilesPerColumn = 8;
-    static const int kTilesPerBlock = kTilesPerRow * kTilesPerColumn;
+    static const unsigned int kTilesPerRow = 8;
+    static const unsigned int kTilesPerColumn = 8;
+    static const unsigned int kTilesPerBlock = kTilesPerRow * kTilesPerColumn;
+    bool initialized;
 
     std::vector<StaticsEntry> entries;
 
@@ -45,11 +46,14 @@ struct UOStatics
         return m_stream.is_open();
     }
 
-    bool hasIdxCache();
+    inline bool hasIdxCache() const noexcept {
+        return m_staidx.hasCache();
+    }
     void clearIdxCache();
     void cacheIdxData();
 
-    unsigned int getBlockIndex(unsigned int xTile, unsigned int yTile) noexcept;
+    unsigned int getBlockIndex(unsigned int xTile, unsigned int yTile) const noexcept;
+    UOIdx::Entry readIdxToBlock(unsigned int index);
     UOIdx::Entry readIdxToBlock(unsigned int xTile, unsigned int yTile);
     StaticsBlock readBlock(const UOIdx::Entry& idxEntry);
 

@@ -119,7 +119,7 @@ bool Base_MapView::eventFilter(QObject* watched, QEvent* event)
 }
 
 
-void Base_MapView::setMapPlane(int mapPlane)
+void Base_MapView::setMapPlane(uint mapPlane)
 {
     m_mapPlane = mapPlane;
     m_selectedMapPoint = QPoint();
@@ -218,10 +218,10 @@ void Base_MapView::redrawMap()
 
 bool Base_MapView::drawMapReset()
 {
-    m_selectedMapData = g_UOMaps[m_mapPlane];
+    m_selectedMapData = g_UOMaps.empty() ? nullptr : g_UOMaps[m_mapPlane];
     if (!m_selectedMapData)
         return false;
-    uocf::UOStatics *selectedStaticsData = g_UOStatics[m_mapPlane];
+    uocf::UOStatics *selectedStaticsData = g_UOStatics.empty() ? nullptr : g_UOStatics[m_mapPlane];
     m_selectedMapData->setCachePointers(g_UORadarCol, selectedStaticsData, g_UOHues);
 
     if (m_mapImage)

@@ -4,10 +4,12 @@
 #include <sstream>
 #include <QImage>
 
-#include "../globals.h"
 #include "../cpputils/strings.h"
 #include "uoidx.h"
 #include "uohues.h"
+
+#include "../globals.h"
+#define LOG(x) appendToLog(x)
 
 
 namespace uocf
@@ -26,14 +28,14 @@ UOAnimMUL::UOAnimMUL(const std::string &clientPath) :
 
 bool UOAnimMUL::loadBodyDef()
 {
-    appendToLog("Loading Body.def");
+    LOG("Loading Body.def");
 
     std::ifstream fileStream;
     // it's fundamental to open the file in binary mode, otherwise tellg and seekg won't work properly...
     fileStream.open(m_clientPath + "Body.def", std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open())
     {
-        appendToLog("Error opening file Body.def");
+        LOG("Error opening file Body.def");
         return false;
     }
 
@@ -86,7 +88,7 @@ bool UOAnimMUL::loadBodyDef()
 
 bool UOAnimMUL::loadBodyConvDef()
 {
-    appendToLog("Loading BodyConv.def");
+    LOG("Loading BodyConv.def");
 
 /*
     0 - 199 = Monsters
@@ -101,7 +103,7 @@ bool UOAnimMUL::loadBodyConvDef()
     fileStream.open(m_clientPath + "Bodyconv.def", std::ifstream::in | std::ifstream::binary);
     if (!fileStream.is_open())
     {
-        appendToLog("Error opening file Bodyconv.def");
+        LOG("Error opening file Bodyconv.def");
         return false;
     }
 
@@ -257,7 +259,7 @@ QImage* UOAnimMUL::drawAnimFrame(int bodyID, int action, int direction, int fram
     UOIdx::Entry idxEntry;
     if (! UOIdx::getLookup(m_clientPath + animFileStr + ".idx", bodyIndex, &idxEntry))
     {
-        appendToLog( QString("Error looking up %1.idx (requested id %2).").arg(animFileStr.c_str(), QString::number(bodyID)).toStdString() );
+        LOG( QString("Error looking up %1.idx (requested id %2).").arg(animFileStr.c_str(), QString::number(bodyID)).toStdString() );
         return nullptr;
     }
 

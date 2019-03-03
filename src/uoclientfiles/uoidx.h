@@ -15,7 +15,7 @@ struct UOIdx
     struct Entry
     {
         static const unsigned int kInvalid = 0xFFFFFFFF;
-        static const int kSize = 4 + 4 + 4;
+        static const unsigned int kSize = 4 + 4 + 4;
 
         unsigned int lookup;
         unsigned int size;
@@ -30,7 +30,9 @@ struct UOIdx
         return m_stream.is_open();
     }
 
-    bool hasCache();
+    inline bool hasCache() const noexcept {
+        return !m_cache.empty();
+    }
     void clearCache();
     void cacheData();
 

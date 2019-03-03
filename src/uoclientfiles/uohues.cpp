@@ -1,20 +1,23 @@
 #include "uohues.h"
 #include <fstream>
 #include "exceptions.h"
+
 #include "../globals.h"
+#define LOG(x) appendToLog(x)
+
 
 namespace uocf
 {
 
 UOHues::UOHues(const std::string& huesPath) : m_hues{}
 {
-    appendToLog("Loading hues.mul");
+    LOG("Loading hues.mul");
 
     std::ifstream fin;
     fin.open(huesPath, std::ifstream::in | std::ifstream::binary);
     if (!fin.is_open())
     {
-        appendToLog("Error opening hues.mul");
+        LOG("Error opening hues.mul"); // EXC
         return;
     }
 

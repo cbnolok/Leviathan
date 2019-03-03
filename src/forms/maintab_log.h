@@ -2,6 +2,7 @@
 #define TAB_LOG_H
 
 #include <QWidget>
+#include <string>
 
 
 namespace Ui {
@@ -15,10 +16,10 @@ class MainTab_Log : public QWidget
 public:
     explicit MainTab_Log(QWidget *parent = nullptr);
     ~MainTab_Log();
-    void appendText(const char *str);
 
 private slots:
     void on_pushButton_clear_clicked();
+    void appendText(QString str);
 
 private:
     Ui::MainTab_Log *ui;

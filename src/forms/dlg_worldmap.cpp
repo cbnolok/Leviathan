@@ -19,7 +19,7 @@ Dlg_WorldMap::Dlg_WorldMap(QWidget *parent) :
     connect(&m_mapViewer, SIGNAL(mouseMoved(QPoint)), this, SLOT(mouseMove(QPoint)));
     connect(&m_mapViewer, SIGNAL(mouseClicked(QPoint)), this, SLOT(mouseClick(QPoint)));
     m_mapViewer.m_scaleFactor = uint(ui->horizontalSlider_scale->value());
-    m_mapViewer.m_mapPlane = ui->spinBox_map->value();
+    m_mapViewer.m_mapPlane = uint(ui->spinBox_map->value());
     m_mapViewer.m_drawFull = (ui->checkBox_preRender->checkState() != Qt::CheckState::Unchecked);
 
     // draw image
@@ -63,7 +63,7 @@ void Dlg_WorldMap::on_horizontalSlider_zoom_sliderMoved(int position)
 
 void Dlg_WorldMap::on_spinBox_map_valueChanged(int arg1)
 {
-    m_mapViewer.setMapPlane(arg1);
+    m_mapViewer.setMapPlane(uint(arg1));
 }
 
 void Dlg_WorldMap::on_checkBox_preRender_stateChanged(int arg1)
@@ -78,7 +78,7 @@ void Dlg_WorldMap::on_checkBox_preRender_stateChanged(int arg1)
 void Dlg_WorldMap::on_pushButton_go_clicked()
 {
     int x = m_mapViewer.m_selectedMapPoint.x(), y = m_mapViewer.m_selectedMapPoint.y();
-    int z = m_mapViewer.m_selectedMapZ, m = m_mapViewer.m_mapPlane;
+    int z = m_mapViewer.m_selectedMapZ, m = int(m_mapViewer.m_mapPlane);
     QString qstrToSend = QString(".go %1 %2 %3 %4").arg(x).arg(y).arg(z).arg(m);
 
     auto ksResult = ks::KeystrokeSender::sendStringFastAsync(qstrToSend.toStdString(), true, g_sendKeystrokeAndFocusClient);

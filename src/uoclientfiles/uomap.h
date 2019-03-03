@@ -5,7 +5,7 @@
 #include <string>
 #include <functional>
 #include <fstream>
-#include <map>
+#include <vector>
 
 class QRect;
 class QImage;
@@ -20,7 +20,7 @@ class UOHues;
 
 struct MapCell
 {
-    static const int kSize = 2 + 1;
+    static const unsigned int kSize = 2 + 1;
 
     unsigned short id;
     char z;
@@ -28,10 +28,11 @@ struct MapCell
 
 struct MapBlock
 {
-    static const int kCellsPerRow = 8;
-    static const int kCellsPerColumn = 8;
-    static const int kCellsPerBlock = kCellsPerRow * kCellsPerColumn;
-    static const int kSize = 4 + (kCellsPerBlock * MapCell::kSize);
+    static const unsigned int kCellsPerRow = 8;
+    static const unsigned int kCellsPerColumn = 8;
+    static const unsigned int kCellsPerBlock = kCellsPerRow * kCellsPerColumn;
+    static const unsigned int kSize = 4 + (kCellsPerBlock * MapCell::kSize);
+    bool initialized;
 
     unsigned int header;
     // Each block contains 64 cells, treated as an 8x8 matrix loaded left to right, top to bottom.
@@ -42,7 +43,7 @@ struct MapBlock
 class UOMap
 {
 public:
-    static const int kMaxSupportedMap = 5;
+    static const unsigned int kMaxSupportedMap = 5;
     static const unsigned int kScaleFactorMin = 0;
     static const unsigned int kScaleFactorMax = 4;
 
@@ -59,14 +60,19 @@ public:
     }
     void openStream();
     void closeStream();
+    void setupDataCache();
     void freeDataCache();
 
-    unsigned int getWidth() const;
-    unsigned int getHeight() const;
+    inline unsigned int getWidth() const {
+        return m_width;
+    }
+    inline unsigned int getHeight() const {
+        return m_height;
+    }
 
     unsigned int getBlockIndex(unsigned int xTile, unsigned int yTile) const noexcept;
     const MapBlock*     getCacheMapBlock(unsigned int x, unsigned int y);
-    const StaticsBlock* getCacheStaticsBlock(unsigned int x, unsigned int y);
+    const StaticsBlock *getCacheStaticsBlock(unsigned int x, unsigned int y);
 
     const MapCell&  getCellFromBlock(const MapBlock& block, unsigned int xTile, unsigned int yTile) const;
     const MapCell&  readCell(unsigned int xTile, unsigned int yTile);
@@ -97,8 +103,8 @@ private:
     UOHues *m_UOHues;
     //UOTiledata
 
-    std::map<unsigned, MapBlock> m_cachedMapBlocks;
-    std::map<unsigned, StaticsBlock> m_cachedStaticsBlocks;
+    std::vector<MapBlock> m_cachedMapBlocks;
+    std::vector<StaticsBlock> m_cachedStaticsBlocks;
 };
 
 

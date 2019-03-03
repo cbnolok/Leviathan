@@ -146,7 +146,8 @@ HEADERS  += \
     uoclientfiles/exceptions.h \
     forms/maintab_travel.h \
     uoclientfiles/colors.h \
-    forms/base_mapview.h
+    forms/base_mapview.h \
+    logging.h
 
 FORMS    += \
     forms/mainwindow.ui \

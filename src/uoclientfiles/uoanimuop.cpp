@@ -3,13 +3,14 @@
 #include <QImage>
 #include <QGraphicsPixmapItem>
 
-#include "../globals.h"
 #include "../cpputils/strings.h"
 #include "../cpputils/sysio.h"
 #include "uoppackage/uophash.h"
 #include "uoppackage/uoppackage.h"
 #include "uohues.h"
 
+#include "../globals.h"
+#define LOG(x) appendToLog(x)
 
 namespace uocf
 {
@@ -31,7 +32,7 @@ void UOAnimUOP::buildAnimTable(const std::function<void(int)>& reportProgress)
 
     // We need to know which animations are in the uop files
 
-    appendToLog("Building UOP animations table...");
+    LOG("Building UOP animations table...");
     int progressVal = 0;
 
     // Parse anim data in each AnimationFrame*.uop
@@ -42,7 +43,7 @@ void UOAnimUOP::buildAnimTable(const std::function<void(int)>& reportProgress)
 
         if (!isValidFile(path))
         {
-            appendToLog("File does not exist: " + path);
+            LOG("File does not exist: " + path);
             continue;
         }
 
@@ -53,8 +54,8 @@ void UOAnimUOP::buildAnimTable(const std::function<void(int)>& reportProgress)
         package->load(path, &uopErrorQueue);
         if (uopErrorQueue.errorOccurred())   // check if there was an error when extracting the uop file
         {
-            appendToLog("UOPPackage error!");
-            appendToLog(uopErrorQueue.buildErrorsString());
+            LOG("UOPPackage error!");
+            LOG(uopErrorQueue.buildErrorsString());
             return;
         }
 
@@ -148,7 +149,7 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
 
     // extract selected frame data from the UOP in memory
     std::unique_ptr<uopp::UOPPackage>& animPkg = m_animUOPs[animData->animFileIdx - 1];
-    uopp::UOPFile* animFile = animPkg->getFileByIndex((int)animData->blockIdx, (int)animData->fileIdx);
+    uopp::UOPFile* animFile = animPkg->getFileByIndex(animData->blockIdx, animData->fileIdx);
 
     unsigned int decDataSize = animFile->getDecompressedSize();
     decompressedData->resize(decDataSize);
@@ -162,8 +163,8 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
 
     if (uopErrorQueue.errorOccurred())   // check if there was an error when extracting the uop file
     {
-        appendToLog("UOPPackage error!");
-        appendToLog(uopErrorQueue.buildErrorsString());
+        LOG("UOPPackage error!");
+        LOG(uopErrorQueue.buildErrorsString());
         return UOPFrameData{};
     }
 

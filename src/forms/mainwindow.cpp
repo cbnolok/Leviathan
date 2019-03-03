@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QtConcurrent/QtConcurrent>
 #include <QTimer>
 #include <QSignalMapper>
 
@@ -25,6 +26,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    m_futureWatcher.setParent(this);
+    connect(&m_futureWatcher, SIGNAL(finished()), this, SLOT(loadTaskDone()));
+
     // Setting version in the title bar
     #define SUB_STRINGIFY(x) #x
     #define TOSTRING(x) SUB_STRINGIFY(x)
@@ -34,10 +38,9 @@ MainWindow::MainWindow(QWidget *parent) :
     #ifndef BUILD_NOT_AUTOMATIC
         version += "(automated)";
     #endif
-    constexpr unsigned bits = sizeof(void*) * 8;
+    const unsigned bits = sizeof(void*) * 8;
     version += " (" + QString::number(bits) + " bits build)";
     this->setWindowTitle(this->windowTitle() + " - version " + version);
-
 
     // Load settings and profiles
     g_settings.updateFromJson();
@@ -46,6 +49,38 @@ MainWindow::MainWindow(QWidget *parent) :
 
     /*  Setting up the menubar */
 
+    setupMenuBar();
+
+
+    /* Setting up the tabs in this form */
+
+    m_MainTab_Items_inst = new MainTab_Items();
+    ui->tabWidget->insertTab(0, m_MainTab_Items_inst, "Items");
+    m_MainTab_Chars_inst = new MainTab_Chars();
+    ui->tabWidget->insertTab(1, m_MainTab_Chars_inst, "Chars");
+    m_MainTab_Tools_inst = new MainTab_Tools();
+    ui->tabWidget->insertTab(2, m_MainTab_Tools_inst, "Tools");
+    m_MainTab_Log_inst = new MainTab_Log();
+    ui->tabWidget->insertTab(3, m_MainTab_Log_inst, "Log");          // this is a global class
+
+
+    /* Startup-time operations */
+
+    if (g_settings.m_loadDefaultProfilesAtStartup)
+        QTimer::singleShot(50, this, SLOT(loadDefaultProfiles_Async()));
+}
+
+MainWindow::~MainWindow()
+{
+    delete m_MainTab_Items_inst;
+    delete m_MainTab_Chars_inst;
+    delete m_MainTab_Log_inst;
+    delete ui;
+}
+
+
+void MainWindow::setupMenuBar()
+{
     // Generate Client Profiles menu entries
     QAction *actionEditClientProfiles = new QAction("Edit Client Profiles", nullptr);
     ui->menuProfiles->addAction(actionEditClientProfiles);
@@ -104,39 +139,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->menuProfiles->addAction(actionSettings);
     ui->menuBar->addAction(actionSettings);
     connect(actionSettings, SIGNAL(triggered(bool)), this, SLOT(onManual_actionSettings_triggered()));
-
-
-    /* Setting up the tabs in this form */
-
-    m_MainTab_Items_inst = new MainTab_Items();
-    ui->tabWidget->insertTab(0, m_MainTab_Items_inst, "Items");
-    m_MainTab_Chars_inst = new MainTab_Chars();
-    ui->tabWidget->insertTab(1, m_MainTab_Chars_inst, "Chars");
-    m_MainTab_Tools_inst = new MainTab_Tools();
-    ui->tabWidget->insertTab(2, m_MainTab_Tools_inst, "Tools");
-    g_MainTab_Log_inst = new MainTab_Log();
-    ui->tabWidget->insertTab(3, g_MainTab_Log_inst, "Log");          // this is a global class
-
-
-    /* Startup-time operations */
-
-    if (g_settings.m_loadDefaultProfilesAtStartup)
-        QTimer::singleShot(50, this, SLOT(loadDefaultProfiles()));
 }
 
-MainWindow::~MainWindow()
-{
-    delete m_MainTab_Items_inst;
-    delete m_MainTab_Chars_inst;
-    delete g_MainTab_Log_inst;
-    delete ui;
-}
-
-
-void MainWindow::on_tabWidget_currentChanged(int /* UNUSED: index */)
-{
-    ui->tabWidget->currentWidget()->setFocus();     // i need the keyboard focus to be able to use CTRL + F to start a search
-}
 
 /* Menu bar actions */
 
@@ -150,9 +154,8 @@ void MainWindow::onManual_actionLoadDefaultClientProfile_triggered()
 {
     int clientProfileIdx = getDefaultClientProfile();
     if (clientProfileIdx != -1)
-        loadClientProfile(clientProfileIdx);
+        loadClientProfile_Async(clientProfileIdx);
 }
-
 
 void MainWindow::onManual_actionEditScriptsProfiles_triggered()
 {
@@ -164,7 +167,7 @@ void MainWindow::onManual_actionLoadDefaultScriptsProfile_triggered()
 {
     int scriptsProfileIdx = getDefaultScriptsProfile();
     if (scriptsProfileIdx != -1)
-        loadScriptProfile(scriptsProfileIdx);
+        loadScriptProfile_Async(scriptsProfileIdx);
 }
 
 void MainWindow::onManual_actionSettings_triggered()
@@ -175,12 +178,20 @@ void MainWindow::onManual_actionSettings_triggered()
 
 void MainWindow::onManual_actionLoadClientProfile_mapped(int index)
 {
-    loadClientProfile(index);
+    loadClientProfile_Async(index);
 }
 
 void MainWindow::onManual_actionLoadScriptsProfile_mapped(int index)
 {
-    loadScriptProfile(index);
+    loadScriptProfile_Async(index);
+}
+
+
+/* UI slots */
+
+void MainWindow::on_tabWidget_currentChanged(int /* UNUSED: index */)
+{
+    ui->tabWidget->currentWidget()->setFocus();     // i need the keyboard focus to be able to use CTRL + F to start a search
 }
 
 void MainWindow::on_checkBox_onTop_toggled(bool checked)
@@ -201,10 +212,52 @@ void MainWindow::on_checkBox_focus_toggled(bool checked)
     g_sendKeystrokeAndFocusClient = checked;
 }
 
+
+/* Other slots */
+
+void MainWindow::loadDefaultProfiles_Async()
+{
+    if (m_futureWatcher.isRunning())
+        return;
+
+    int clientProfileIdx = getDefaultClientProfile();
+    int scriptsProfileIdx = getDefaultScriptsProfile();
+    if (clientProfileIdx == -1 && scriptsProfileIdx == -1)
+        return;
+
+    m_loadProgressDlg = new SubDlg_TaskProgress(window());
+    m_loadProgressDlg->move(window()->rect().center() - m_loadProgressDlg->rect().center());
+    m_loadProgressDlg->show();
+
+    // Setting the progress bar to "pulse"
+    m_loadProgressDlg->setProgressMax(0);
+    m_loadProgressDlg->setProgressVal(0);
+    m_loadProgressDlg->setLabelText("Loading client files...");
+
+    setEnabled(false);
+    m_futureTask = QtConcurrent::run(this, &MainWindow::loadDefaultProfiles_helper);
+    m_futureWatcher.setFuture(m_futureTask);
+}
+
+void MainWindow::loadTaskDone()
+{
+    setEnabled(true);
+    if (m_loadProgressDlg)
+    {
+        m_loadProgressDlg->close();
+        delete m_loadProgressDlg;
+        m_loadProgressDlg = nullptr;
+    }
+    m_MainTab_Chars_inst->updateViews();
+    m_MainTab_Items_inst->updateViews();
+}
+
+
+/* Other methods */
+
 int MainWindow::getDefaultClientProfile()
 {
     // Check which Client Profile is the default one and return its index
-
     for (size_t i = 0; i < g_clientProfiles.size(); ++i)
     {
         if (g_clientProfiles[i].m_defaultProfile)
@@ -217,7 +270,6 @@ int MainWindow::getDefaultClientProfile()
 int MainWindow::getDefaultScriptsProfile()
 {
     // Check which Scripts Profile is the default one and return its index
-
     for (size_t i = 0; i < g_scriptsProfiles.size(); ++i)
     {
         if (g_scriptsProfiles[i].m_defaultProfile)
@@ -227,57 +279,73 @@ int MainWindow::getDefaultScriptsProfile()
     return -1;
 }
 
-void MainWindow::loadDefaultProfiles()
+
+void MainWindow::loadDefaultProfiles_helper()
 {
     int clientProfileIdx = getDefaultClientProfile();
     if (clientProfileIdx != -1)
-        loadClientProfile(clientProfileIdx);
+        loadClientProfile_helper(clientProfileIdx);
 
     int scriptsProfileIdx = getDefaultScriptsProfile();
     if (scriptsProfileIdx != -1)
-        loadScriptProfile(scriptsProfileIdx);
+        loadScriptProfile_helper(scriptsProfileIdx);
 }
 
-void MainWindow::loadClientProfile(int index)
+void MainWindow::loadClientProfile_helper(int index)
 {
     g_loadedClientProfile = index;
-
-    // The Ui must be built only in the main thread...
-    SubDlg_TaskProgress progressDlg(window());   // Do not set a parent? The object cannot be moved to another thread if it has a parent?
-    progressDlg.move(window()->rect().center() - progressDlg.rect().center());
-    progressDlg.show();
-
-    // Setting the progress bar to "pulse"
-    progressDlg.setProgressMax(0);
-    progressDlg.setProgressVal(0);
-
-    // Loading stuff
-    progressDlg.setLabelText("Loading client files...");
-    auto setProgress = [](int /*i*/) {QApplication::processEvents();}; //{ progressDlg.setProgressVal(i); };
-    loadClientFiles(setProgress);  // in common.cpp
-
-    progressDlg.close();
+    loadClientFiles(nullptr);
 }
 
-void MainWindow::loadScriptProfile(int index)
+void MainWindow::loadScriptProfile_helper(int index)
 {
-    // The Ui must be built only in the main thread...
-    SubDlg_TaskProgress progressDlg(window());   // Do not set a parent? The object cannot be moved to another thread if it has a parent?
-    progressDlg.move(window()->rect().center() - progressDlg.rect().center());
-    progressDlg.show();
-
     // Set up the parser and the progress window.
     ScriptParser parser(index);
 
-    //connect(thread, SIGNAL(started()), parser, SLOT(start()), Qt::DirectConnection);
-    connect(&parser, SIGNAL(notifyTPProgressMax(int)), &progressDlg, SLOT(setProgressMax(int)));
-    connect(&parser, SIGNAL(notifyTPProgressVal(int)), &progressDlg, SLOT(setProgressVal(int)));
-    connect(&parser, SIGNAL(notifyTPMessage(QString)), &progressDlg, SLOT(setLabelText(QString)));
+    if (m_loadProgressDlg)
+    {
+        connect(&parser, SIGNAL(notifyTPProgressMax(int)), m_loadProgressDlg, SLOT(setProgressMax(int)));
+        connect(&parser, SIGNAL(notifyTPProgressVal(int)), m_loadProgressDlg, SLOT(setProgressVal(int)));
+        connect(&parser, SIGNAL(notifyTPMessage(QString)), m_loadProgressDlg, SLOT(setLabelText(QString)));
+    }
+
     parser.run();
+}
 
-    progressDlg.close();
+void MainWindow::loadClientProfile_Async(int index)
+{
+    if (m_futureWatcher.isRunning())
+        return;
 
-    m_MainTab_Chars_inst->updateViews();
-    m_MainTab_Items_inst->updateViews();
+    // The Ui must be built only in the main thread...
+    m_loadProgressDlg = new SubDlg_TaskProgress(window());
+    m_loadProgressDlg->move(window()->rect().center() - m_loadProgressDlg->rect().center());
+    m_loadProgressDlg->show();
+
+    // Setting the progress bar to "pulse"
+    m_loadProgressDlg->setProgressMax(0);
+    m_loadProgressDlg->setProgressVal(0);
+
+    // Loading stuff
+    m_loadProgressDlg->setLabelText("Loading client files...");
+
+    setEnabled(false);
+    m_futureTask = QtConcurrent::run(this, &MainWindow::loadClientProfile_helper, index);
+    m_futureWatcher.setFuture(m_futureTask);
+}
+
+void MainWindow::loadScriptProfile_Async(int index)
+{
+    if (m_futureWatcher.isRunning())
+        return;
+
+    // The Ui must be built only in the main thread...
+    m_loadProgressDlg = new SubDlg_TaskProgress(window());
+    m_loadProgressDlg->move(window()->rect().center() - m_loadProgressDlg->rect().center());
+    m_loadProgressDlg->show();
+
+    setEnabled(false);
+    m_futureTask = QtConcurrent::run(this, &MainWindow::loadScriptProfile_helper, index);
+    m_futureWatcher.setFuture(m_futureTask);
 }
 

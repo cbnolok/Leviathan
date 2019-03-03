@@ -1,7 +1,9 @@
 #include "uoradarcol.h"
 #include "exceptions.h"
-#include "../globals.h"
 #include <fstream>
+
+#include "../globals.h"
+#define LOG(x) appendToLog(x)
 
 
 namespace uocf
@@ -9,7 +11,7 @@ namespace uocf
 
 UORadarCol::UORadarCol(const std::string& filePath)
 {
-    appendToLog("Loading radarcol...");
+    LOG("Loading radarcol...");
     std::ifstream fin;
     fin.open(filePath, std::ifstream::in | std::ifstream::binary);
 

@@ -12,14 +12,6 @@ namespace uocf
 {
 
 
-unsigned int UOMap::getWidth() const {
-    return m_width;
-}
-unsigned int UOMap::getHeight() const {
-    return m_height;
-}
-
-
 UOMap::UOMap(const std::string& clientPath, unsigned int fileIndex) :
     m_clientPath(clientPath),
     m_fileIndex(fileIndex),
@@ -72,11 +64,12 @@ UOMap::UOMap(const std::string& clientPath, unsigned int fileIndex) :
             throw UnsupportedActionException("UOMap", m_filePath);
     }
 
-    int blocks = (m_width * m_height) / MapBlock::kCellsPerBlock;
-    std::streamoff expectedSize = MapBlock::kSize * blocks;
-
-    if (size < expectedSize)
+    unsigned mapBlocks = (m_width * m_height) / MapBlock::kCellsPerBlock;
+    unsigned mapFileExpectedSize = MapBlock::kSize * mapBlocks;
+    if (size < mapFileExpectedSize)
         throw MalformedFileException("UOMap", m_filePath);
+
+    setupDataCache();
 }
 
 
@@ -93,11 +86,12 @@ UOMap::UOMap(const std::string& clientPath, unsigned int fileIndex, unsigned int
     std::streamoff size = m_stream.tellg();
     closeStream();
 
-    int blocks = (m_width * m_height) / MapBlock::kCellsPerBlock;
-    std::streamoff expectedSize = MapBlock::kSize * blocks;
-
-    if (size < expectedSize)
+    unsigned mapBlocks = (m_width * m_height) / MapBlock::kCellsPerBlock;
+    unsigned mapFileExpectedSize = MapBlock::kSize * mapBlocks;
+    if (size < mapFileExpectedSize)
         throw MalformedFileException("UOMap", m_filePath);
+
+    setupDataCache();
 }
 
 void UOMap::setCachePointers(UORadarCol* radarcol, UOStatics *statics_optional, UOHues *hues_optional)
@@ -122,78 +116,93 @@ void UOMap::closeStream()
     m_stream.close();
 }
 
+
+void UOMap::setupDataCache()
+{
+    if (!m_cachedMapBlocks.size())
+    {
+        unsigned mapBlocks = (m_width * m_height) / MapBlock::kCellsPerBlock;
+        m_cachedMapBlocks.resize(mapBlocks, {});
+    }
+
+    if (!m_cachedStaticsBlocks.size())
+    {
+        unsigned staticsBlocks = (m_width * m_height) / StaticsBlock::kTilesPerBlock;
+        m_cachedStaticsBlocks.resize(staticsBlocks, {});
+    }
+}
+
 void UOMap::freeDataCache()
 {
     m_cachedMapBlocks.clear();
+    m_cachedMapBlocks.shrink_to_fit();
     m_cachedStaticsBlocks.clear();
+    m_cachedStaticsBlocks.shrink_to_fit();
 }
 
 
 unsigned int UOMap::getBlockIndex(unsigned int xTile, unsigned int yTile) const noexcept
 {
-    unsigned xBlock = xTile / MapBlock::kCellsPerRow;
-    unsigned yBlock = yTile / MapBlock::kCellsPerColumn;
-    unsigned yBlockCount = m_height / MapBlock::kCellsPerColumn;
+    const unsigned xBlock = xTile / MapBlock::kCellsPerRow;
+    const unsigned yBlock = yTile / MapBlock::kCellsPerColumn;
+    const unsigned yBlockCount = m_height / MapBlock::kCellsPerColumn;
     return (xBlock * yBlockCount) + yBlock;
 }
 
 const MapBlock* UOMap::getCacheMapBlock(unsigned int x, unsigned int y)
 {
-    unsigned int index = getBlockIndex(x, y);
+    if (!m_cachedMapBlocks.size())
+        setupDataCache();
 
-    const MapBlock *mapBlock;
-    auto itMapFind = m_cachedMapBlocks.find(index);
-    if (itMapFind == m_cachedMapBlocks.end())
+    const unsigned int index = getBlockIndex(x, y);
+    MapBlock* mapBlock = &m_cachedMapBlocks[index];
+    if (!mapBlock->initialized)
     {
         bool openClose = !isStreamOpened();
         if (openClose)
             openStream();
 
-        auto itInsert = m_cachedMapBlocks.insert(std::make_pair(index, readBlock(index)));
-        mapBlock = &itInsert.first->second;
+        *mapBlock = readBlock(index);
 
         if (openClose)
             closeStream();
     }
-    else
-    {
-        mapBlock = &itMapFind->second;
-    }
+
     return mapBlock;
 }
 
 const StaticsBlock* UOMap::getCacheStaticsBlock(unsigned int x, unsigned int y)
 {
-    const UOIdx::Entry staticsBlockIdxEntry = m_UOStatics->readIdxToBlock(x, y);
+    const unsigned int index = m_UOStatics->getBlockIndex(x, y);
+
+    const UOIdx::Entry staticsBlockIdxEntry = m_UOStatics->readIdxToBlock(index);
     if (staticsBlockIdxEntry.lookup == UOIdx::Entry::kInvalid)
         return nullptr;
 
-    const StaticsBlock *staticsBlock;
-    auto itStaticsFind = m_cachedStaticsBlocks.find(staticsBlockIdxEntry.lookup);
-    if (itStaticsFind == m_cachedStaticsBlocks.end())
+    if (!m_cachedStaticsBlocks.size())
+        setupDataCache();
+
+    StaticsBlock *staticsBlock = &m_cachedStaticsBlocks[index];
+    if (!staticsBlock->initialized)
     {
         bool openClose = !m_UOStatics->isStreamOpened();
         if (openClose)
             m_UOStatics->openStream();
 
-        auto itInsert = m_cachedStaticsBlocks.insert(std::make_pair(staticsBlockIdxEntry.lookup, m_UOStatics->readBlock(staticsBlockIdxEntry)));
-        staticsBlock = &itInsert.first->second;
+        *staticsBlock = m_UOStatics->readBlock(staticsBlockIdxEntry);
 
         if (openClose)
             m_UOStatics->closeStream();
     }
-    else
-    {
-        staticsBlock = &itStaticsFind->second;
-    }
+
     return staticsBlock;
 }
 
 
 const MapCell& UOMap::getCellFromBlock(const MapBlock& block, unsigned int xTile, unsigned int yTile) const
 {
-    unsigned xCell = xTile % MapBlock::kCellsPerRow;
-    unsigned yCell = yTile % MapBlock::kCellsPerColumn;
+    const unsigned xCell = xTile % MapBlock::kCellsPerRow;
+    const unsigned yCell = yTile % MapBlock::kCellsPerColumn;
     return block.cells[(yCell * MapBlock::kCellsPerColumn) + xCell];
 }
 
@@ -214,13 +223,31 @@ MapBlock UOMap::readBlock(unsigned int index)
     static const int kMapBlockSize = 4 + (MapBlock::kCellsPerBlock * 3);
     m_stream.seekg(index * kMapBlockSize);
 
-    MapBlock block = {};
+    MapBlock block;
+    block.initialized = false;
+    /*
     m_stream.read(reinterpret_cast<char*>(&block.header), 4);
     for (unsigned i = 0; i < MapBlock::kCellsPerBlock; ++i)
     {
         m_stream.read(reinterpret_cast<char*>(&block.cells[i].id), 2);
         m_stream.read(reinterpret_cast<char*>(&block.cells[i].z), 1);
     }
+    */
+    char buf[4 + (3 * MapBlock::kCellsPerBlock)];
+    m_stream.read(buf, sizeof(buf));
+
+    size_t off = 0;
+    memcpy(&block.header, buf, 4);  off += 4;
+    for (unsigned i = 0; i < MapBlock::kCellsPerBlock; ++i)
+    {
+        memcpy(&block.cells[i].id, buf + off, 2);   off += 2;
+        memcpy(&block.cells[i].z,  buf + off, 1);   off += 1;
+    }
+
+    if (!m_stream.good())
+        throw InvalidStreamException("UOMap", "readBlock I/O error");
+
+    block.initialized = true;
     return block;
 }
 
@@ -308,15 +335,19 @@ bool UOMap::drawRectInImage(QImage *image, int xImageOffset, int yImageOffset, c
         if ((xImage >= int(widthScaled)) || (xImage >= destImageWidth))
             break;
 
-        ++xTileRelative;
-        if ((scaleFactor == 1) && (xTileRelative % 2))
-            continue;
-        if ((scaleFactor == 2) && (xTileRelative % 4))
-            continue;
-        if ((scaleFactor == 3) && (xTileRelative % 8))
-            continue;
-        if ((scaleFactor == 4) && (xTileRelative % 16))
-            continue;
+        if (scaleFactor)
+        {
+            ++xTileRelative;
+            if ((scaleFactor == 1) && (xTileRelative % 2))
+                continue;
+            if ((scaleFactor == 2) && (xTileRelative % 4))
+                continue;
+            if ((scaleFactor == 3) && (xTileRelative % 8))
+                continue;
+            if ((scaleFactor == 4) && (xTileRelative % 16))
+                continue;
+            xTileRelative = 0;
+        }
 
         yImage = -1;
         for (unsigned y = yMapStart, yEnd = yMapStart + height; y < yEnd; ++y)
@@ -324,62 +355,68 @@ bool UOMap::drawRectInImage(QImage *image, int xImageOffset, int yImageOffset, c
             if ((yImage >= int(heightScaled)) || (yImage >= destImageHeight))
                 break;
 
-            ++yTileRelative;
-            if ((scaleFactor == 1) && (yTileRelative % 2))
-                continue;
-            if ((scaleFactor == 2) && (yTileRelative % 4))
-                continue;
-            if ((scaleFactor == 3) && (yTileRelative % 8))
-                continue;
-            if ((scaleFactor == 4) && (yTileRelative % 16))
-                continue;
+            if (scaleFactor)
+            {
+                ++yTileRelative;
+                if ((scaleFactor == 1) && (yTileRelative % 2))
+                    continue;
+                if ((scaleFactor == 2) && (yTileRelative % 4))
+                    continue;
+                if ((scaleFactor == 3) && (yTileRelative % 8))
+                    continue;
+                if ((scaleFactor == 4) && (yTileRelative % 16))
+                    continue;
+                yTileRelative = 0;
+            }
 
             ++yImage;
+
             const uint pixelVal = image->pixel(xImageOffset + xImage, yImageOffset + yImage);
-            if ((pixelVal & 0x00FFFFFF) != kUninitializedRGB) // ignore alpha bits to check if the pixel color is pure white
-                continue; // if not white (new qimage is manually initialized by fill(kUninitializedRGB)), no need to redraw existing pixel
-
-            // Get map block
-            if (!isStreamOpened())
-                openStream();
-
-            const MapBlock* mapBlock = getCacheMapBlock(x, y);
-
-            // Get map cell
-            const MapCell& mapCell = getCellFromBlock(*mapBlock, x, y);
-            bool drawingLandtile = true;
-            ARGB32 tileColor;
-
-            if (drawStatics)
+            // new qimage is manually initialized by fill(kUninitializedRGB), if the color is different, no need to redraw existing pixel
+            if ((pixelVal & 0x00FFFFFF) == kUninitializedRGB) // ignore alpha bits to check if the pixel color is pure white
             {
-                if (!m_UOStatics->isStreamOpened())
-                    m_UOStatics->openStream();
+                // Get map block
+                if (!isStreamOpened())
+                    openStream();
 
-                // Get statics block
-                const StaticsBlock *staticsBlock = getCacheStaticsBlock(x, y);
-                if (staticsBlock)
+                const MapBlock* mapBlock = getCacheMapBlock(x, y);
+
+                // Get map cell
+                const MapCell& mapCell = getCellFromBlock(*mapBlock, x, y);
+                bool drawingLandtile = true;
+                ARGB32 tileColor;
+
+                if (drawStatics)
                 {
-                    // Get highest static tile at coordinates
-                    StaticsEntry highestStatic;
-                    if (m_UOStatics->getTopItemFromBlock(&highestStatic, *staticsBlock, x, y))
-                    {
-                        if (highestStatic.z >= mapCell.z)
-                        {
-                            drawingLandtile = false;
-                            tileColor = m_UORadarcol->getItemColor32(highestStatic.id);
+                    if (!m_UOStatics->isStreamOpened())
+                        m_UOStatics->openStream();
 
-                            // Do we need to hue it?
-                            if (m_UOHues && (highestStatic.hue > 0))
-                                tileColor = m_UOHues->getHueEntry(highestStatic.hue - 1).applyToColor32(tileColor);
+                    // Get statics block
+                    const StaticsBlock *staticsBlock = getCacheStaticsBlock(x, y);
+                    if (staticsBlock)
+                    {
+                        // Get highest static tile at coordinates
+                        StaticsEntry highestStatic;
+                        if (m_UOStatics->getTopItemFromBlock(&highestStatic, *staticsBlock, x, y))
+                        {
+                            if (highestStatic.z >= mapCell.z)
+                            {
+                                drawingLandtile = false;
+                                tileColor = m_UORadarcol->getItemColor32(highestStatic.id);
+
+                                // Do we need to hue it?
+                                if (m_UOHues && (highestStatic.hue > 0))
+                                    tileColor = m_UOHues->getHueEntry(highestStatic.hue - 1).applyToColor32(tileColor);
+                            }
                         }
                     }
                 }
-            }
-            if (drawingLandtile)
-                tileColor = m_UORadarcol->getLandColor32(mapCell.id);
+                if (drawingLandtile)
+                    tileColor = m_UORadarcol->getLandColor32(mapCell.id);
 
-            // Draw tile
-            image->setPixel(xImageOffset + xImage, yImageOffset + yImage, tileColor.getVal());
+                // Draw tile
+                image->setPixel(xImageOffset + xImage, yImageOffset + yImage, tileColor.getVal());
+            }
 
             // Report progress
             if (reportProgress)

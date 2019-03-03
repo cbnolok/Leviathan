@@ -20,6 +20,7 @@ signals:
     void notifyTPProgressMax(int max);
     void notifyTPProgressVal(int val);
     void notifyTPMessage(QString msg);
+    void finished();
 
 public slots:
     void run();

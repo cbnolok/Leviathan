@@ -6,7 +6,6 @@
 #include "settings/appsettings.h"
 #include "settings/clientprofile.h"
 #include "settings/scriptsprofile.h"
-#include "forms/maintab_log.h"
 
 
 extern AppSettings g_settings;     // contains general settings
@@ -37,9 +36,7 @@ ScriptObjTree * getScriptObjTree(int objType);           // returns the right gl
 
 // Log stuff
 
-extern MainTab_Log *g_MainTab_Log_inst;
-bool appendToLog(const char* str);
-bool appendToLog(const std::string &str);
+void appendToLog(const std::string &str);
 
 
 // Client files stuff

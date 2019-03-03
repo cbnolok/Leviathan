@@ -1,4 +1,5 @@
 #include "globals.h"
+#include "logging.h"
 #include "spherescript/scriptobjects.h"
 #include "uoclientfiles/exceptions.h"
 #include "uoclientfiles/uoart.h"
@@ -48,21 +49,10 @@ ScriptObjTree * getScriptObjTree(int objType)
 
 /*  Log stuff   */
 
-// The tab_log (which is a QWidget class) instance must be constructed after the main application,
-//  so i can't do it here. It's done in mainwindow.cpp.
-MainTab_Log *g_MainTab_Log_inst = nullptr;
-
-bool appendToLog(const char *str)
+LogEventEmitter g_logEventEmitter;
+void appendToLog(const std::string &str)
 {
-    if (g_MainTab_Log_inst == nullptr)
-        return false;
-    g_MainTab_Log_inst->appendText(str);
-    return true;
-}
-
-bool appendToLog(const std::string &str)
-{
-    return appendToLog(str.c_str());
+    g_logEventEmitter.append(str);
 }
 
 
@@ -93,9 +83,9 @@ void loadClientFiles(std::function<void(int)> reportProgress)
     g_UOArt         = new uocf::UOArt (clientFolder);
     g_UOAnim        = new uocf::UOAnim(clientFolder, reportProgress);
 
-    g_UOMaps.resize(uocf::UOMap::kMaxSupportedMap);
-    g_UOStatics.resize(uocf::UOMap::kMaxSupportedMap);
-    for (unsigned i = 0; i < uocf::UOMap::kMaxSupportedMap; ++i)
+    g_UOMaps.resize(uocf::UOMap::kMaxSupportedMap + 1);
+    g_UOStatics.resize(uocf::UOMap::kMaxSupportedMap + 1);
+    for (unsigned i = 0; i <= uocf::UOMap::kMaxSupportedMap; ++i)
     {
         try
         {

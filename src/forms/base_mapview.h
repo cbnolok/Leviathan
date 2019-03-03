@@ -52,7 +52,7 @@ public slots:
 public:
     bool m_updateDisabled;
 
-    int m_mapPlane;
+    uint m_mapPlane;
     uocf::UOMap* m_selectedMapData;
 
     bool m_drawFull;
@@ -77,7 +77,7 @@ public:
         return m_zoom;
     }
     */
-    void setMapPlane(int mapPlane);
+    void setMapPlane(uint mapPlane);
     void setDrawFull(bool drawFull);
     void setScaleFactor(uint scaleFactor);
     void setDeltaZoom(double deltaZoom);

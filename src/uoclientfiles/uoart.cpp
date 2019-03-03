@@ -4,7 +4,6 @@
 #include <QFileInfo>
 #include <QImage>
 
-#include "../globals.h"
 #include "../cpputils/sysio.h"
 #include "../uoppackage/uoppackage.h"
 #include "../uoppackage/uopfile.h"
@@ -12,6 +11,8 @@
 #include "ddsinfo.h"
 #include "uohues.h"
 
+#include "../globals.h"
+#define LOG(x) appendToLog(x)
 
 namespace uocf
 {
@@ -95,23 +96,23 @@ QImage* UOArt::drawArtEnhanced(bool drawLegacy, unsigned int id, unsigned int hu
 
     if (uopFile == nullptr)
     {
-        appendToLog(QString("Error looking up %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
-        appendToLog(uopError.buildErrorsString());
+        LOG(QString("Error looking up %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
+        LOG(uopError.buildErrorsString());
         return nullptr;
     }
     std::ifstream fin = m_uopPackage->getOpenedStream();
     if (fin.bad())
     {
-        appendToLog(QString("Error seeking from %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
-        appendToLog(uopError.buildErrorsString());
+        LOG(QString("Error seeking from %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
+        LOG(uopError.buildErrorsString());
         return nullptr;
     }
 
     auto* decompressedDataVec = new std::vector<char>();
     if (!uopFile->readData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
     {
-        appendToLog(QString("Error unpacking from %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
-        appendToLog(uopError.buildErrorsString());
+        LOG(QString("Error unpacking from %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
+        LOG(uopError.buildErrorsString());
         return nullptr;
     }
 
@@ -119,7 +120,7 @@ QImage* UOArt::drawArtEnhanced(bool drawLegacy, unsigned int id, unsigned int hu
     DDSInfo texInfo(DDSDataPtr);
     if (!texInfo.errorString.empty())
     {
-        appendToLog(std::string("DDSInfo error: ") + texInfo.errorString);
+        LOG(std::string("DDSInfo error: ") + texInfo.errorString);
         return nullptr;
     }
 
@@ -176,7 +177,7 @@ bool UOArt::getClassicPixelData(bool drawFromUOP, unsigned int id, std::vector<c
             loadUOP(ClientFileType::TextureUOP, lastModified, CC_UOPPath, &uopError);
             if (uopError.errorOccurred())
             {
-                appendToLog(uopError.buildErrorsString());
+                LOG(uopError.buildErrorsString());
                 return false;
             }
         }
@@ -185,21 +186,21 @@ bool UOArt::getClassicPixelData(bool drawFromUOP, unsigned int id, std::vector<c
         uopp::UOPFile* uopFile = m_uopPackage->getFileByName(packedFileName);
         if (uopFile == nullptr)
         {
-            appendToLog(QString("Error looking up %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
+            LOG(QString("Error looking up %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
             return false;
         }
         std::ifstream fin = m_uopPackage->getOpenedStream();
         if (fin.bad())
         {
-            appendToLog(QString("Error seeking from %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
+            LOG(QString("Error seeking from %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
             return false;
         }
 
         auto* decompressedDataVec = new std::vector<char>();
         if (!uopFile->readData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
         {
-            appendToLog(QString("Error unpacking from %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
-            appendToLog(uopError.buildErrorsString());
+            LOG(QString("Error unpacking from %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
+            LOG(uopError.buildErrorsString());
             return false;
         }
         *data = *uopFile->getDataVec();
@@ -211,14 +212,14 @@ bool UOArt::getClassicPixelData(bool drawFromUOP, unsigned int id, std::vector<c
         UOIdx::Entry idxEntry = {};
         if (! UOIdx::getLookup(IDXPath, id, &idxEntry))
         {
-            appendToLog(QString("Error looking up artidx.mul (requested id %1).").arg(id).toStdString());
+            LOG(QString("Error looking up artidx.mul (requested id %1).").arg(id).toStdString());
             return false;
         }
         std::ifstream fin;
         fin.open(m_clientPath + "art.mul", std::ifstream::in | std::ifstream::binary);
         if (!fin.is_open())
         {
-            appendToLog("Error loading art.mul");
+            LOG("Error loading art.mul");
             return false;
         }
         fin.seekg(idxEntry.lookup);

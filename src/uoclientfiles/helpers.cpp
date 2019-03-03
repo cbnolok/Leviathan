@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include <cstdint>
 
 namespace uocf
 {
@@ -15,13 +16,13 @@ void remap_BGRA32_to_RGBA32_image(int width, int length, unsigned char* decompre
     }
 }
 
-uint32_t remap_RGBA32_to_ARGB32_pixel(uint32_t RGBA)
+unsigned int remap_RGBA32_to_ARGB32_pixel(unsigned int RGBA)
 {
-    uint8_t r = (uint8_t)(RGBA & 0xFF000000);
-    uint8_t g = (uint8_t)(RGBA & 0x00FF0000);
-    uint8_t b = (uint8_t)(RGBA & 0x0000FF00);
-    uint8_t a = (uint8_t)(RGBA & 0x000000FF);
-    return ((a << 24) | (r << 16) | (g << 8) | b);
+    uint8_t r = uint8_t(RGBA & 0xFF000000);
+    uint8_t g = uint8_t(RGBA & 0x00FF0000);
+    uint8_t b = uint8_t(RGBA & 0x0000FF00);
+    uint8_t a = uint8_t(RGBA & 0x000000FF);
+    return static_cast<unsigned int>((a << 24) | (r << 16) | (g << 8) | b);
 }
 
 

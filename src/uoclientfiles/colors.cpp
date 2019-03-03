@@ -3,7 +3,7 @@
 namespace uocf
 {
 
-ARGB32 convert_ARGB16_to_ARGB32(const ARGB16 argb16, bool maxOpacity)
+ARGB32 convert_ARGB16_to_ARGB32(const ARGB16 argb16, bool maxOpacity) noexcept
 {
     // In ARGB16 each color is 5 bits, so a value between 0-31
     uint8_t a = uint8_t(argb16.getA());
@@ -44,12 +44,12 @@ ARGB32 convert_ARGB16_to_ARGB32(const ARGB16 argb16, bool maxOpacity)
     return ARGB32(a, r, g, b);
 }
 
-ARGB16 convert_ARGB32_to_ARGB16(const ARGB32 argb32, bool maxOpacity)
+ARGB16 convert_ARGB32_to_ARGB16(const ARGB32 argb32, bool maxOpacity) noexcept
 {
-    uint8_t a = argb32.getA();
-    uint8_t r = argb32.getR();
-    uint8_t g = argb32.getG();
-    uint8_t b = argb32.getB();
+    unsigned char a = argb32.getA();
+    unsigned char r = argb32.getR();
+    unsigned char g = argb32.getG();
+    unsigned char b = argb32.getB();
 
     r /= 8;        // R
     g /= 8;        // G
@@ -62,7 +62,7 @@ ARGB16 convert_ARGB32_to_ARGB16(const ARGB32 argb32, bool maxOpacity)
 }
 
 
-void ARGB32::adjustBrightness(int percent)
+void ARGB32::adjustBrightness(int percent) noexcept
 {
     int tempR = m_color_r + ((m_color_r * percent) / 100);
     if (tempR > 255)    tempR = 255;
