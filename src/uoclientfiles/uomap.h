@@ -2,10 +2,7 @@
 #define UOMAP_H
 
 #include "uostatics.h"
-#include <string>
 #include <functional>
-#include <fstream>
-#include <vector>
 
 class QRect;
 class QImage;
@@ -84,10 +81,10 @@ public:
     static void scaleCoordsImageToMap(unsigned int scaleFactor, unsigned int *x, unsigned int *y);
     void clipCoordsToMapSize(unsigned int *xMapStart, unsigned int *yMapStart, unsigned int *width, unsigned int *height);
     bool drawRectInImage(QImage *image, int xImageOffset, int yImageOffset,
-                         const std::function<void (int)> &reportProgress,
+                         std::function<void (int)> reportProgress,
                          unsigned int xMapStart, unsigned int yMapStart, unsigned int width, unsigned int height,
                          unsigned int scaleFactor = 1, bool drawStatics = true);
-    QImage* drawRect(const std::function<void (int)> &reportProgress,
+    QImage* drawRect(std::function<void (int)> reportProgress,
                      unsigned int xMapStart, unsigned int yMapStart, unsigned int width, unsigned int height,
                      unsigned int scaleFactor = 1, bool drawStatics = true);
 
@@ -103,8 +100,10 @@ private:
     UOHues *m_UOHues;
     //UOTiledata
 
-    std::vector<MapBlock> m_cachedMapBlocks;
-    std::vector<StaticsBlock> m_cachedStaticsBlocks;
+    unsigned int m_cachedMapBlocksCount;
+    std::unique_ptr<MapBlock[]> m_cachedMapBlocks;
+    unsigned int m_cachedStaticsBlocksCount;
+    std::unique_ptr<StaticsBlock[]> m_cachedStaticsBlocks;
 };
 
 

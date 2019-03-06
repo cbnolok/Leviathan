@@ -1,5 +1,6 @@
 #include "uostatics.h"
 #include "exceptions.h"
+#include <cstring> // for memcpy
 
 namespace uocf
 {
@@ -8,8 +9,9 @@ namespace uocf
 std::vector<StaticsEntry> StaticsBlock::getItemsAtOffsets(unsigned char xOffset, unsigned char yOffset) const
 {
     std::vector<StaticsEntry> retVec;
-    for (const StaticsEntry& cur : entries)
+    for (unsigned i = 0; i < entriesCount; ++i)
     {
+        const StaticsEntry& cur = entries[i];
         if ((cur.xOffset == xOffset) && (cur.yOffset == yOffset))
             retVec.emplace_back(cur);
     }
@@ -19,8 +21,9 @@ std::vector<StaticsEntry> StaticsBlock::getItemsAtOffsets(unsigned char xOffset,
 std::vector<StaticsEntry> StaticsBlock::getItemsAtOffsets(unsigned char xOffset, unsigned char yOffset, char z) const
 {
     std::vector<StaticsEntry> retVec;
-    for (const StaticsEntry& cur : entries)
+    for (unsigned i = 0; i < entriesCount; ++i)
     {
+        const StaticsEntry& cur = entries[i];
         if ((cur.xOffset == xOffset) && (cur.yOffset == yOffset) && (cur.z == z))
             retVec.emplace_back(cur);
     }
@@ -35,16 +38,18 @@ bool StaticsBlock::getTopItem(StaticsEntry *entry, unsigned char xOffset, unsign
         return false;
 
     *entry = entriesAtOff[0];
-    for (const StaticsEntry& cur : entriesAtOff)
+    for (unsigned i = 0; i < entriesCount; ++i)
     {
+        const StaticsEntry& cur = entries[i];
         if (cur.z > entry->z)
             *entry = cur;
     }
     */
 
     const StaticsEntry *highest = nullptr;
-    for (const StaticsEntry& cur : entries)
+    for (unsigned i = 0; i < entriesCount; ++i)
     {
+        const StaticsEntry& cur = entries[i];
         if ((cur.xOffset == xOffset) && (cur.yOffset == yOffset) && (!highest || (cur.z > highest->z)))
             highest = &cur;
     }
@@ -121,9 +126,15 @@ StaticsBlock UOStatics::readBlock(const UOIdx::Entry &idxEntry)
         throw InvalidStreamException("UOStatics", "readBlock accessing closed stream.");
 
     StaticsBlock block;
+    const unsigned entriesCount = (idxEntry.size / StaticsEntry::kSize);
+    block.entriesCount = entriesCount;
+    if (entriesCount == 0)
+    {
+        block.initialized = true;
+        return block;
+    }
     block.initialized = false;
-    const unsigned nEntries = (idxEntry.size / StaticsEntry::kSize);
-    block.entries.resize(nEntries);
+    block.entries = std::make_unique<StaticsEntry[]>(entriesCount);
 
     m_stream.seekg(idxEntry.lookup);
     /*
@@ -136,17 +147,17 @@ StaticsBlock UOStatics::readBlock(const UOIdx::Entry &idxEntry)
         m_stream.read(reinterpret_cast<char*>(&block.entries[i].hue), 2);
     }
     */
-    std::vector<char> bufVec(7 * nEntries);
-    char* buf = bufVec.data();
-    m_stream.read(buf, std::streamsize(bufVec.size()));
-    size_t off = 0;
-    for (unsigned i = 0; i < nEntries; ++i)
+    std::unique_ptr<char[]> buf = std::make_unique<char[]>(idxEntry.size);
+    char* bufPtr = buf.get();
+    m_stream.read(bufPtr, std::streamsize(idxEntry.size));
+    for (unsigned i = 0; i < entriesCount; ++i)
     {
-        memcpy(&block.entries[i].id,        buf + off, 2);  off += 2;
-        memcpy(&block.entries[i].xOffset,   buf + off, 1);  off += 1;
-        memcpy(&block.entries[i].yOffset,   buf + off, 1);  off += 1;
-        memcpy(&block.entries[i].z,         buf + off, 1);  off += 1;
-        memcpy(&block.entries[i].hue,       buf + off, 2);  off += 2;
+        StaticsEntry& entry = block.entries[i];
+        memcpy(&entry.id,        bufPtr, 2);  bufPtr += 2;
+        memcpy(&entry.xOffset,   bufPtr, 1);  bufPtr += 1;
+        memcpy(&entry.yOffset,   bufPtr, 1);  bufPtr += 1;
+        memcpy(&entry.z,         bufPtr, 1);  bufPtr += 1;
+        memcpy(&entry.hue,       bufPtr, 2);  bufPtr += 2;
     }
 
     if (!m_stream.good())

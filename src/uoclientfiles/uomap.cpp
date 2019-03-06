@@ -1,7 +1,8 @@
 #include "uomap.h"
 
 #include <QImage>
-#include <cmath>
+#include <cmath>    // for pow
+#include <cstring>  // for memcpy
 
 #include "exceptions.h"
 #include "uoradarcol.h"
@@ -69,6 +70,7 @@ UOMap::UOMap(const std::string& clientPath, unsigned int fileIndex) :
     if (size < mapFileExpectedSize)
         throw MalformedFileException("UOMap", m_filePath);
 
+    m_cachedMapBlocksCount = m_cachedStaticsBlocksCount = 0;
     setupDataCache();
 }
 
@@ -91,6 +93,7 @@ UOMap::UOMap(const std::string& clientPath, unsigned int fileIndex, unsigned int
     if (size < mapFileExpectedSize)
         throw MalformedFileException("UOMap", m_filePath);
 
+    m_cachedMapBlocksCount = m_cachedStaticsBlocksCount = 0;
     setupDataCache();
 }
 
@@ -119,25 +122,29 @@ void UOMap::closeStream()
 
 void UOMap::setupDataCache()
 {
-    if (!m_cachedMapBlocks.size())
+    if (!m_cachedMapBlocksCount)
     {
-        unsigned mapBlocks = (m_width * m_height) / MapBlock::kCellsPerBlock;
-        m_cachedMapBlocks.resize(mapBlocks, {});
+        m_cachedMapBlocksCount = (m_width * m_height) / MapBlock::kCellsPerBlock;
+        m_cachedMapBlocks = std::make_unique<MapBlock[]>(m_cachedMapBlocksCount);
+        for (unsigned i = 0; i < m_cachedMapBlocksCount; ++i)
+            m_cachedMapBlocks[i].initialized = false;
     }
 
-    if (!m_cachedStaticsBlocks.size())
+    if (!m_cachedStaticsBlocksCount)
     {
-        unsigned staticsBlocks = (m_width * m_height) / StaticsBlock::kTilesPerBlock;
-        m_cachedStaticsBlocks.resize(staticsBlocks, {});
+        m_cachedStaticsBlocksCount = (m_width * m_height) / StaticsBlock::kTilesPerBlock;
+        m_cachedStaticsBlocks = std::make_unique<StaticsBlock[]>(m_cachedStaticsBlocksCount);
+        for (unsigned i = 0; i < m_cachedStaticsBlocksCount; ++i)
+            m_cachedStaticsBlocks[i].initialized = false;
     }
 }
 
 void UOMap::freeDataCache()
 {
-    m_cachedMapBlocks.clear();
-    m_cachedMapBlocks.shrink_to_fit();
-    m_cachedStaticsBlocks.clear();
-    m_cachedStaticsBlocks.shrink_to_fit();
+    m_cachedMapBlocksCount = 0;
+    m_cachedMapBlocks.reset(nullptr);
+    m_cachedStaticsBlocksCount = 0;
+    m_cachedStaticsBlocks.reset(nullptr);
 }
 
 
@@ -151,7 +158,7 @@ unsigned int UOMap::getBlockIndex(unsigned int xTile, unsigned int yTile) const 
 
 const MapBlock* UOMap::getCacheMapBlock(unsigned int x, unsigned int y)
 {
-    if (!m_cachedMapBlocks.size())
+    if (!m_cachedMapBlocksCount)
         setupDataCache();
 
     const unsigned int index = getBlockIndex(x, y);
@@ -179,7 +186,7 @@ const StaticsBlock* UOMap::getCacheStaticsBlock(unsigned int x, unsigned int y)
     if (staticsBlockIdxEntry.lookup == UOIdx::Entry::kInvalid)
         return nullptr;
 
-    if (!m_cachedStaticsBlocks.size())
+    if (!m_cachedStaticsBlocksCount)
         setupDataCache();
 
     StaticsBlock *staticsBlock = &m_cachedStaticsBlocks[index];
@@ -236,7 +243,7 @@ MapBlock UOMap::readBlock(unsigned int index)
     char buf[4 + (3 * MapBlock::kCellsPerBlock)];
     m_stream.read(buf, sizeof(buf));
 
-    size_t off = 0;
+    unsigned off = 0;
     memcpy(&block.header, buf, 4);  off += 4;
     for (unsigned i = 0; i < MapBlock::kCellsPerBlock; ++i)
     {
@@ -298,7 +305,7 @@ void UOMap::clipCoordsToMapSize(unsigned int *xMapStart, unsigned int *yMapStart
         *height = m_height - *yMapStart;
 }
 
-bool UOMap::drawRectInImage(QImage *image, int xImageOffset, int yImageOffset, const std::function<void (int)> &reportProgress,
+bool UOMap::drawRectInImage(QImage *image, int xImageOffset, int yImageOffset, std::function<void (int)> reportProgress,
                             unsigned int xMapStart, unsigned int yMapStart, unsigned int width, unsigned int height,
                             unsigned int scaleFactor, bool drawStatics)
 {
@@ -441,7 +448,7 @@ bool UOMap::drawRectInImage(QImage *image, int xImageOffset, int yImageOffset, c
     return true;
 }
 
-QImage* UOMap::drawRect(const std::function<void (int)> &reportProgress,
+QImage* UOMap::drawRect(std::function<void (int)> reportProgress,
                         unsigned int xMapStart, unsigned int yMapStart, unsigned int width, unsigned int height,
                         unsigned int scaleFactor, bool drawStatics)
 {
@@ -452,7 +459,7 @@ QImage* UOMap::drawRect(const std::function<void (int)> &reportProgress,
     image->fill(kUninitializedRGB);
 
     drawRectInImage(image, 0, 0,
-                    reportProgress,
+                    std::move(reportProgress),
                     xMapStart, yMapStart, width, height,
                     scaleFactor, drawStatics);
 

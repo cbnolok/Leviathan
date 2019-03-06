@@ -10,7 +10,7 @@
 
 
 //#define COUNTOF(array) sizeof(array)/sizeof(array[0])
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#define ARRAY_COUNT(array) (sizeof(array) / sizeof((array)[0]))
 
 ScriptParser::ScriptParser(int profileIndex) :
     m_profileIndex(profileIndex), m_scriptLine(0)
@@ -134,11 +134,11 @@ void ScriptParser::run()
     std::deque<ScriptObj*>*     displayID_childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
     size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
     size_t childrenProcessed = 0;
-    for (uint tree_i = 0; tree_i < ARRAY_SIZE(displayID_trees); ++tree_i)
+    for (uint tree_i = 0; tree_i < ARRAY_COUNT(displayID_trees); ++tree_i)
     {
         // Iterate one time for the items and one for the chars
 
-        auto curChildObjects = displayID_childObjects[tree_i];
+        auto* curChildObjects = displayID_childObjects[tree_i];
         size_t child_s = curChildObjects->size();
         //#pragma omp parallel for schedule(static) private(curChildObjects, child_s)
         for (size_t child_i = 0; child_i < child_s; ++child_i)
@@ -150,7 +150,7 @@ void ScriptParser::run()
             ScriptObj* childObj = (*curChildObjects)[child_i];
             bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
 
-            for (ScriptObj* parentObj : *displayID_trees[tree_i])
+            for (const ScriptObj* parentObj : *displayID_trees[tree_i])
             {
                 if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
                     continue;
@@ -200,44 +200,27 @@ void ScriptParser::run()
     progressVal = 0;
 
     // lambda functions for sorting with std::sort
-    auto _sortCategory      = [](ScriptCategory* a, ScriptCategory* b)      -> bool {return a->m_categoryName   < b->m_categoryName;};
-    auto _sortSubsection    = [](ScriptSubsection* a, ScriptSubsection* b)  -> bool {return a->m_subsectionName < b->m_subsectionName;};
-    auto _sortDescription   = [](ScriptObj* a, ScriptObj* b)                -> bool {return a->m_description    < b->m_description;};
+    auto _sortCategory      = [](const ScriptCategory* a, const ScriptCategory* b)      -> bool {return a->m_categoryName   < b->m_categoryName;};
+    auto _sortSubsection    = [](const ScriptSubsection* a, const ScriptSubsection* b)  -> bool {return a->m_subsectionName < b->m_subsectionName;};
+    auto _sortDescription   = [](const ScriptObj* a, const ScriptObj* b)                -> bool {return a->m_description    < b->m_description;};
 
     ScriptObjTree* sorting_trees[] =
     {   getScriptObjTree(SCRIPTOBJ_TYPE_ITEM),  getScriptObjTree(SCRIPTOBJ_TYPE_CHAR), getScriptObjTree(SCRIPTOBJ_TYPE_DEF), getScriptObjTree(SCRIPTOBJ_TYPE_AREA),
         getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN), getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE), getScriptObjTree(SCRIPTOBJ_TYPE_SPELL), getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
     };
 
-    // sort categories
-    for (uint tree_i = 0; tree_i < ARRAY_SIZE(sorting_trees); ++tree_i)
+    for (uint tree_i = 0; tree_i < ARRAY_COUNT(sorting_trees); ++tree_i)
     {
         auto& categories = sorting_trees[tree_i]->m_categories;
-        std::sort(categories.begin(), categories.end(), _sortCategory);
-    }
-
-    // sort subsections
-    for (uint tree_i = 0; tree_i < ARRAY_SIZE(sorting_trees); ++tree_i)
-    {
-        auto& categories = sorting_trees[tree_i]->m_categories;
+        std::sort(categories.begin(), categories.end(), _sortCategory);    // sort categories
         for (size_t category_i = 0; category_i < categories.size(); ++category_i)
         {
             auto& subsections = categories[category_i]->m_subsections;
-            std::sort(subsections.begin(), subsections.end(), _sortSubsection);
-        }
-    }
-
-    // sort objects
-    for (uint tree_i = 0; tree_i < ARRAY_SIZE(sorting_trees); ++tree_i)
-    {
-        auto& categories = sorting_trees[tree_i]->m_categories;
-        for (size_t category_i = 0; category_i < categories.size(); ++category_i)
-        {
-            auto& subsections = categories[category_i]->m_subsections;
+            std::sort(subsections.begin(), subsections.end(), _sortSubsection);    // sort subsections
             for (size_t subsection_i = 0; subsection_i < subsections.size(); ++subsection_i)
             {
                 auto& objects = subsections[subsection_i]->m_objects;
-                std::sort(objects.begin(), objects.end(), _sortDescription);
+                std::sort(objects.begin(), objects.end(), _sortDescription);   // sort objects
 
                 int progressValNow = (int)( (subsection_i*150)/subsections.size() );
                 if (progressValNow > progressVal)
@@ -259,9 +242,9 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
     //if (g_scriptObjTree == nullptr)
     //    return false;       // if it wasn't initialized we can't store the objects that will be parsed.
 
-    std::string& filePath = g_scriptFileList[fileIndex];
+    const std::string& filePath = g_scriptFileList[fileIndex];
 
-    for (std::string& f : m_loadedScripts)
+    for (const std::string& f : m_loadedScripts)
     {
         if (filePath == f)
             return false;   // this file was already loaded.

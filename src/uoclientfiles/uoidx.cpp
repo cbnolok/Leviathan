@@ -1,5 +1,6 @@
 #include "exceptions.h"
 #include "uoidx.h"
+#include <cstring> // for memcpy
 
 
 namespace uocf
@@ -8,6 +9,7 @@ namespace uocf
 
 UOIdx::UOIdx(const std::string& filePath) : m_filePath(filePath)
 {
+    m_cachedCount = 0;
 }
 
 void UOIdx::openStream()
@@ -26,8 +28,7 @@ void UOIdx::closeStream()
 
 void UOIdx::clearCache()
 {
-    m_cache.clear();
-    m_cache.shrink_to_fit();
+    m_cache.reset(nullptr);
 }
 
 
@@ -54,11 +55,11 @@ void UOIdx::cacheData()
     openStream();
 
     m_stream.seekg(0, std::fstream::end);
-    size_t nEntries = size_t(m_stream.tellg() / Entry::kSize);
+    m_cachedCount = unsigned(m_stream.tellg() / Entry::kSize);
     m_stream.seekg(0, std::fstream::beg);
 
-    m_cache.resize(nEntries);
-    for (size_t i = 0; i < nEntries; ++i)
+    m_cache = std::make_unique<Entry[]>(m_cachedCount);
+    for (size_t i = 0; i < m_cachedCount; ++i)
         readLookup(m_stream, &m_cache[i]);
 
     closeStream();
@@ -68,7 +69,7 @@ bool UOIdx::getLookup(unsigned int id, Entry *idxEntry)
 {
     if (hasCache())
     {
-        if (id > m_cache.size())
+        if (id > m_cachedCount)
             return false;
         *idxEntry = m_cache[id];
         return true;

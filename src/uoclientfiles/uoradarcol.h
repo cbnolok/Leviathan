@@ -12,14 +12,14 @@ class UORadarCol
 public:
     UORadarCol(const std::string& filePath);
 
-    ARGB16 getLandColor16(unsigned int index);
-    ARGB32 getLandColor32(unsigned int index);
+    ARGB16 getLandColor16(unsigned int index) const;
+    ARGB32 getLandColor32(unsigned int index) const;
 
-    ARGB16 getItemColor16(unsigned int index);
-    ARGB32 getItemColor32(unsigned int index);
+    ARGB16 getItemColor16(unsigned int index) const;
+    ARGB32 getItemColor32(unsigned int index) const;
 
 private:
-    static const int kEntriesCount = 0x8000;
+    static const unsigned int kEntriesCount = 0x8000;
     ARGB16 m_colors16[kEntriesCount];
     ARGB32 m_colors32[kEntriesCount];
 };

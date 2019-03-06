@@ -186,8 +186,7 @@ win32:RC_ICONS += icons/leviathan.ico
 ###### Compiler/Linker settings
 
 # windows
-win32:!unix
-{
+win32:!unix {
     contains(QMAKE_CC, gcc) {
         # MinGW
 
@@ -220,6 +219,8 @@ win32:!unix
         QMAKE_CXXFLAGS += /openmp   # enable OpenMP pragmas
     }
 
+    LIBS += -fopenmp
+
     contains(QMAKE_COPY, copy) {    # When it's compiled by AppVeyor, QMAKE_COPY is cp -f, not copy
                                     # this way, we'll copy dlls to build directory only when building locally on Windows
         contains(QT_ARCH, x86_64) {
@@ -230,17 +231,34 @@ win32:!unix
     }
 }
 
-# linux
-unix {
+# linux and mac
+unix:!win32 {
     LIBS += -lz -L/usr/X11R6/lib -lX11      # dynamically link zlib and xlib (the latter for KeystrokeSender)
-    QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas
+
+    # MAC section commented because it's UNTESTED
+    #mac {
+        # looks like OpenMP support here began only with recent LLVM versions?
+        #  (Apple's LLVM versions have a different numeration from the official LLVM branch)
+        #LLVMVER = system(g++ -x c++ -dM -E - < /dev/null | grep -Eo "__apple_build_version__  [0-9]{1,7}" | grep -Eo "[0-9]{1,7}")
+        # OpenMP support began with "standard" version 3.8.0, which may be Apple 703.0.29 or 703.0.31. To be sure, check for 3.9.0 (>= Apple 800.0.38 ?)
+        #greaterThan(LLVMVER, 80000037) {
+        #    QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas
+        #    # or should we use -fopenmp=libomp ?
+        #    #LIBS += -fopenmp
+        #} else {
+            ##QMAKE_CXXFLAGS += -fopenmp     # no openmp for you
+            ##LIBS += -fopenmp
+        #}
+    #}
+    !mac {
+        QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas as default flag for Linux
+        LIBS += -fopenmp    # link against OpenMP library
+    }
 
     # disable some specific warnings
     QMAKE_CXXFLAGS += -Wno-implicit-fallthrough
     QMAKE_CXXFLAGS += -Wmisleading-indentation #-Wno-unknown-pragmas
 }
-
-LIBS += -fopenmp    # link against OpenMP library
 
 SUBDIRS += \
     uoclientfiles/libsquish/libSquish.pro

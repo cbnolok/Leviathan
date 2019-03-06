@@ -15,7 +15,7 @@
 namespace uocf
 {
 
-UOAnimUOP::UOAnimUOP(const std::string &clientPath, const std::function<void(int)>& reportProgress) :
+UOAnimUOP::UOAnimUOP(const std::string &clientPath, std::function<void(int)> reportProgress) :
     m_UOHues(nullptr), m_clientPath(clientPath), m_animationsMatrix{{}}, m_isInitializing(false)
 {
     buildAnimTable(reportProgress);
@@ -191,11 +191,11 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
     //header length
     decDataOff += 4;
     //framecount (total frame number, for every direction)
-    uint32_t frameCount = 0;
+    uint frameCount = 0;
     memcpy(&frameCount, decData + decDataOff, 4);
     decDataOff += 4;
     //address of the first frame
-    uint32_t frameAddress = 0;
+    uint frameAddress = 0;
     memcpy(&frameAddress, decData + decDataOff, 4);
 
     decDataOff = frameAddress;
@@ -234,7 +234,7 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
             }
         }
         */
-        frameDataVec.push_back(curFrameData);
+        frameDataVec.emplace_back(std::move(curFrameData));
     }
     int vectorSize = (int)frameDataVec.size();
     if (vectorSize < 50)

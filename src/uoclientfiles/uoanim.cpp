@@ -6,6 +6,8 @@ namespace uocf
 UOAnim::UOAnim(const std::string &clientPath, std::function<void(int)> reportProgress) :
     m_UOAnimMUL(clientPath), m_UOAnimUOP(clientPath, reportProgress)
 {
+    // Do not pass as a const reference reportProgress to the constructor: be sure to have at least one copy of it, in case
+    //  the referred object isn't valid after some time
 }
 
 void UOAnim::setCachePointers(UOHues* hues)

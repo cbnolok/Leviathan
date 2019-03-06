@@ -110,7 +110,7 @@ bool Base_MapView::eventFilter(QObject* watched, QEvent* event)
                 const QRect viewGeometry = m_graphicsView->geometry();
                 const QPoint mapSizeScaled = coordsFromMapToView( QPoint(int(m_selectedMapData->getWidth()), int(m_selectedMapData->getHeight())) );
                 if ((viewGeometry.width() < mapSizeScaled.x()) || (viewGeometry.height() < mapSizeScaled.y()))
-                    redrawMap();
+                    redrawMap(); // drawMap(); // TODO: make it work with drawmap, without resetting the graphicsview position
             }
         }
     }
@@ -205,15 +205,7 @@ void Base_MapView::redrawMap()
     if (!drawMapReset())
         return;
 
-    if (m_drawFull)
-        drawMapFull();
-    else
-    {
-        const QRect& viewGeometry = m_graphicsView->geometry();
-        const QPoint& viewSizeScaled = coordsFromViewToMap({viewGeometry.width(), viewGeometry.height()});
-        const QRect rectToDraw(0, 0, viewSizeScaled.x(), viewSizeScaled.y());
-        drawMapPart(QPoint(0,0), rectToDraw);
-    }
+    drawMap();
 }
 
 bool Base_MapView::drawMapReset()
@@ -258,6 +250,19 @@ bool Base_MapView::drawMapReset()
     }
 
     return true;
+}
+
+void Base_MapView::drawMap()
+{
+    if (m_drawFull)
+        drawMapFull();
+    else
+    {
+        const QRect& viewGeometry = m_graphicsView->geometry();
+        const QPoint& viewSizeScaled = coordsFromViewToMap({viewGeometry.width(), viewGeometry.height()});
+        const QRect rectToDraw(0, 0, viewSizeScaled.x(), viewSizeScaled.y());
+        drawMapPart(QPoint(0,0), rectToDraw);
+    }
 }
 
 

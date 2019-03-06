@@ -2,8 +2,6 @@
 #define UOSTATICS_H
 
 #include <vector>
-#include <string>
-#include <fstream>
 #include "uoidx.h"
 
 namespace uocf
@@ -29,7 +27,8 @@ struct StaticsBlock
     static const unsigned int kTilesPerBlock = kTilesPerRow * kTilesPerColumn;
     bool initialized;
 
-    std::vector<StaticsEntry> entries;
+    unsigned int entriesCount;
+    std::unique_ptr<StaticsEntry[]> entries;
 
     std::vector<StaticsEntry> getItemsAtOffsets(unsigned char xOffset, unsigned char yOffset) const;
     std::vector<StaticsEntry> getItemsAtOffsets(unsigned char xOffset, unsigned char yOffset, char z)  const;

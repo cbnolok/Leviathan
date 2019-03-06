@@ -29,14 +29,14 @@ UORadarCol::UORadarCol(const std::string& filePath)
 }
 
 
-ARGB16 UORadarCol::getLandColor16(unsigned int index)
+ARGB16 UORadarCol::getLandColor16(unsigned int index) const
 {
     if (index > 0x4000)
         index = 0;
     return m_colors16[index];
 }
 
-ARGB32 UORadarCol::getLandColor32(unsigned int index)
+ARGB32 UORadarCol::getLandColor32(unsigned int index) const
 {
     if (index > 0x4000)
         index = 0;
@@ -44,14 +44,14 @@ ARGB32 UORadarCol::getLandColor32(unsigned int index)
 }
 
 
-ARGB16 UORadarCol::getItemColor16(unsigned int index)
+ARGB16 UORadarCol::getItemColor16(unsigned int index) const
 {
     if (index > 0x4000)
         index = 0x4000;
     return m_colors16[0x4000+index];
 }
 
-ARGB32 UORadarCol::getItemColor32(unsigned int index)
+ARGB32 UORadarCol::getItemColor32(unsigned int index) const
 {
     if (index > 0x4000)
         index = 0x4000;

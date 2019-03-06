@@ -37,7 +37,7 @@ class UOAnimUOP
     };
 
 public:
-    UOAnimUOP(const std::string& clientPath, const std::function<void (int)> &reportProgress);
+    UOAnimUOP(const std::string& clientPath, std::function<void (int)> reportProgress);
     ~UOAnimUOP();
 
     bool isInitializing() const {

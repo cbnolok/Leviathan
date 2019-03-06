@@ -89,6 +89,7 @@ public:
     QPoint coordsFromViewToMap(const QPoint& graphicsViewCoords) const;
     QPoint coordsFromMapToView(const QPoint& graphicsViewCoords) const;
     bool drawMapReset();
+    void drawMap();
     void drawMapFull();
     void drawMapPart(const QPoint& imageOffset, const QRect& rectToDraw);
 

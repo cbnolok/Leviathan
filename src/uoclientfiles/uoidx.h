@@ -3,7 +3,7 @@
 
 #include <string>
 #include <fstream>
-#include <vector>
+#include <memory>
 
 
 namespace uocf
@@ -31,7 +31,7 @@ struct UOIdx
     }
 
     inline bool hasCache() const noexcept {
-        return !m_cache.empty();
+        return bool(m_cache);
     }
     void clearCache();
     void cacheData();
@@ -43,7 +43,9 @@ struct UOIdx
 private:
     std::string m_filePath;
     std::ifstream m_stream;
-    std::vector<Entry> m_cache;
+
+    unsigned int m_cachedCount;
+    std::unique_ptr<Entry[]> m_cache;
 };
 
 
