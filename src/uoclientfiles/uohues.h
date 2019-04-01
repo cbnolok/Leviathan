@@ -12,7 +12,7 @@ class UOHues;
 struct UOHueEntry
 {
     friend class UOHues;
-    static const unsigned int kTableColorsCount = 32;
+    static constexpr unsigned int kTableColorsCount = 32;
 
 private:
     //uint32_t index;
@@ -39,7 +39,7 @@ public:
     const UOHueEntry& getHueEntry(unsigned int index) const;
 
 private:
-    static const unsigned int kHuesCount = 3000;
+    static constexpr unsigned int kHuesCount = 3000;
     UOHueEntry m_hues[kHuesCount];
 };
 

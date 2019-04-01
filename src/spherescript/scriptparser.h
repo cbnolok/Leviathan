@@ -1,7 +1,7 @@
 #ifndef SCRIPTPARSER_H
 #define SCRIPTPARSER_H
 
-#include "../forms/subdlg_taskprogress.h"
+#include <QObject>
 #include <fstream>  // for std::ifstream
 #include <string>
 #include <vector>

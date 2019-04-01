@@ -155,11 +155,9 @@ Qt::CheckState CheckableProxyModel::resolveCheckStateRole(QModelIndex sourceInde
         }
         Qt::CheckState state = resolveCheckStateRole(sourceIndex.parent());
         return state;
-        break;
     }
     case CheckableProxyModel::DeterminedByChildren:
         return getCombinedChildrenCheckState(sourceIndex);
-        break;
     case CheckableProxyModel::Checked:
         return Qt::Checked;
     case CheckableProxyModel::Unchecked:
@@ -193,7 +191,7 @@ Qt::CheckState CheckableProxyModel::getCombinedChildrenCheckState(QModelIndex so
         return Qt::PartiallyChecked;
     }
 
-    Qt::CheckState state;
+    Qt::CheckState state = Qt::Unchecked;
 
     TreeCheckState defaultChildState = getTreeNodeState(sourceIndex).defaultChildState;
     //get state of first child item

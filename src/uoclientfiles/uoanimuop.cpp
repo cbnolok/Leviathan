@@ -156,10 +156,10 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
 
     uopp::UOPError uopErrorQueue;
     std::ifstream fin = animPkg->getOpenedStream();
-    animFile->readData(fin, &uopErrorQueue);
+    animFile->readPackedData(fin, &uopErrorQueue);
     fin.close();
     animFile->unpack(decompressedData, &uopErrorQueue);
-    animFile->freeData();
+    animFile->freePackedData();
 
     if (uopErrorQueue.errorOccurred())   // check if there was an error when extracting the uop file
     {

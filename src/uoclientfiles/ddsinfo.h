@@ -21,7 +21,7 @@ struct DDSInfo
         Unknown
     };
 
-    static constexpr const unsigned int kImageDataStartOffset = 4+124; // 4=magic, 124=DDS_HEADER
+    static constexpr unsigned int kImageDataStartOffset = 4+124; // 4=magic, 124=DDS_HEADER
 
     std::string errorString;
     int height, width;

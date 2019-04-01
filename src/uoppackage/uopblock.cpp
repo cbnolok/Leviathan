@@ -9,22 +9,6 @@ namespace uopp
 {
 
 
-unsigned int UOPBlock::getIndex() const {
-    return m_index;
-}
-unsigned int UOPBlock::getFilesCount() const {
-    return m_fileCount;
-}
-UOPFile* UOPBlock::getFile(unsigned int index) const {
-    return m_files[index];
-}
-unsigned long long UOPBlock::getNextBlockAddress() const {
-    return m_nextBlockAddress;
-}
-bool UOPBlock::isEmpty() const {
-    return (m_fileCount == 0);
-}
-
 UOPBlock::UOPBlock(UOPPackage* parent, unsigned int index) :
     m_parent(parent), m_index(index),
     m_fileCount(0), m_nextBlockAddress(0), m_curFileIdx(0)
@@ -37,13 +21,27 @@ UOPBlock::~UOPBlock()
         delete file;
 }
 
+
+unsigned int UOPBlock::searchByHash(unsigned long long hash) const
+{
+    for ( unsigned int i = 0; i < m_fileCount; ++i )
+    {
+        if ( m_files[i]->searchByHash(hash) )
+            return i;
+    }
+    return kInvalidIdx;
+}
+
+
+//--
+
 void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
 {
     // Read block's header
     fin.read(reinterpret_cast<char*>(&m_fileCount), 4);
     fin.read(reinterpret_cast<char*>(&m_nextBlockAddress), 8);
 
-    // Read files info, i'm not decompressing them
+    // Read files informations (headers), i'm not decompressing their held data
     m_files.reserve(m_fileCount);
     for (unsigned int index = 0; index < m_fileCount; ++index)
     {
@@ -54,40 +52,51 @@ void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
 
 }
 
-unsigned int UOPBlock::searchByHash(unsigned long long hash) const
+bool UOPBlock::readPackedData(std::ifstream& fin, UOPError* errorQueue)
 {
-    for ( unsigned int i = 0; i < m_fileCount; ++i )
+    for (UOPFile* file : m_files)
     {
-        if ( m_files[i]->searchByHash(hash) )
-            return i;
+        if (!file->readPackedData(fin, errorQueue))
+            return false;
     }
-    return (unsigned int)-1;
+
+    return true;
 }
 
-bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, UOPError *errorQueue)
+void UOPBlock::freePackedData()
+{
+    for (UOPFile* file : m_files)
+    {
+        file->freePackedData();
+    }
+}
+
+//--
+
+bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)
 {
     std::stringstream ssHash; ssHash << std::hex << fileHash;
     std::string strHash("0x" + ssHash.str());
     if (fileHash == 0)
     {
-        ADDERROR("Invalid fileHash for UOPPackage::addFile (" + strHash + ")" );
+        ADDERROR("UOPBlock::addFile: Invalid fileHash: " + strHash);
         return false;
     }
     if (compression == CompressionFlag::Uninitialized)
     {
-        ADDERROR("Invalid compression flag for UOPBlock::addFile: " + std::to_string((short)compression) + " (" + strHash + ")");
+        ADDERROR("UOPBlock::addFile: Invalid compression flag: " + std::to_string(short(compression)) + " (fileHash: " + strHash + ")");
         return false;
     }
     if (fin.bad())
     {
-        ADDERROR("Bad filestream for UOPBlock::addFile");
+        ADDERROR("UOPBlock::addFile: Bad filestream");
         return false;
     }
 
     if (m_curFileIdx != 0)
         ++m_curFileIdx;
     UOPFile* file = new UOPFile(this, m_curFileIdx);
-    if (! file->createFile(fin, fileHash, compression, errorQueue) )
+    if (! file->createFile(fin, fileHash, compression, addDataHash, errorQueue) )
     {
         delete file;
         return false;
@@ -98,27 +107,28 @@ bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, Compress
     return true;
 }
 
-bool UOPBlock::addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, UOPError *errorQueue)
+bool UOPBlock::addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)
 {
     if (packedFileName.empty())
     {
-        ADDERROR("Invalid packedFileName for UOPPackage::addFile (" + packedFileName +")");
+        ADDERROR("UOPBlock::addFile: Invalid packedFileName: " + packedFileName);
         return false;
     }
     if (compression == CompressionFlag::Uninitialized)
     {
-        ADDERROR("Invalid compression flag for UOPBlock::addFile: " + std::to_string((short)compression) + " (" + packedFileName + ")");
+        ADDERROR("UOPBlock::addFile: Invalid compression flag: " + std::to_string(short(compression)) + " (" + packedFileName + ")");
         return false;
     }
     unsigned long long fileHash = hashFileName(packedFileName);
-    return addFile(fin, fileHash, compression, errorQueue);
+    return addFile(fin, fileHash, compression, addDataHash, errorQueue);
 }
 
 
 // Iterators
+
 UOPBlock::iterator UOPBlock::end()      // past-the-end iterator (obtained when incrementing an iterator to the last item)
 {
-    return {this, iterator::kInvalidIdx};
+    return {this, kInvalidIdx};
 }
 
 UOPBlock::iterator UOPBlock::begin()    // iterator to first item
@@ -138,7 +148,7 @@ UOPBlock::iterator UOPBlock::back_it()  // iterator to last item
 
 UOPBlock::const_iterator UOPBlock::cend() const      // past-the-end iterator (obtained when incrementing an iterator to the last item)
 {
-    return {this, const_iterator::kInvalidIdx};
+    return {this, kInvalidIdx};
 }
 
 UOPBlock::const_iterator UOPBlock::cbegin() const    // iterator to first item
@@ -156,4 +166,5 @@ UOPBlock::const_iterator UOPBlock::cback_it() const  // iterator to last item
     return cend();
 }
 
-}
+
+} // end of uopp namespace

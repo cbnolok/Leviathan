@@ -20,16 +20,30 @@ public:
     ~UOPBlock();
 
     void read(std::ifstream& fin, UOPError* errorQueue = nullptr);
+    bool readPackedData(std::ifstream& fin, UOPError* errorQueue = nullptr);
+    void freePackedData();
+
     unsigned int searchByHash(unsigned long long hash) const;
-    bool addFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, UOPError* errorQueue = nullptr);
-    bool addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, UOPError* errorQueue = nullptr);
+    bool addFile(std::ifstream& fin, unsigned long long fileHash,       CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
+    bool addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, bool addDataHash,  UOPError* errorQueue = nullptr);
+
+// Block structure
+private:
+    UOPPackage* m_parent;
+    unsigned int m_index;
+    unsigned int m_fileCount;
+    std::vector<UOPFile*> m_files;
+    unsigned long long m_nextBlockAddress;
+
+    // Used only when creating a package
+    unsigned int m_curFileIdx;
 
 public:
-    unsigned int getIndex() const;
-    unsigned int getFilesCount() const;
-    UOPFile* getFile(unsigned int index) const;
-    unsigned long long getNextBlockAddress() const;
-    bool isEmpty() const;
+    unsigned int getIndex() const                   { return m_index;               }
+    unsigned int getFilesCount() const              { return m_fileCount;           }
+    UOPFile* getFile(unsigned int index) const      { return m_files[index];        }
+    unsigned long long getNextBlockAddress() const  { return m_nextBlockAddress;    }
+    bool isEmpty() const                            { return m_files.empty();       }
 
     // Iterators
     template <typename PointerType> class base_iterator;
@@ -41,16 +55,6 @@ public:
     const_iterator cend() const;
     const_iterator cbegin() const;
     const_iterator cback_it() const;
-
-private:
-    UOPPackage* m_parent;
-    unsigned int m_index;
-    unsigned int m_fileCount;
-    std::vector<UOPFile*> m_files;
-    unsigned long long m_nextBlockAddress;
-
-    // Used only when creating a package
-    unsigned int m_curFileIdx;
 };
 
 
@@ -76,8 +80,6 @@ public:
     base_iterator operator--();      // pre-decrement
     base_iterator operator--(int);   // post-decrement
     PointerType operator*();
-
-    static const unsigned int kInvalidIdx = (unsigned int)-1;
 };
 
 

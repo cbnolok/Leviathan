@@ -109,7 +109,7 @@ QImage* UOArt::drawArtEnhanced(bool drawLegacy, unsigned int id, unsigned int hu
     }
 
     auto* decompressedDataVec = new std::vector<char>();
-    if (!uopFile->readData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
+    if (!uopFile->readPackedData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
     {
         LOG(QString("Error unpacking from %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
         LOG(uopError.buildErrorsString());
@@ -197,7 +197,7 @@ bool UOArt::getClassicPixelData(bool drawFromUOP, unsigned int id, std::vector<c
         }
 
         auto* decompressedDataVec = new std::vector<char>();
-        if (!uopFile->readData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
+        if (!uopFile->readPackedData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
         {
             LOG(QString("Error unpacking from %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
             LOG(uopError.buildErrorsString());

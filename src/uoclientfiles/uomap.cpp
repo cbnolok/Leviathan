@@ -208,8 +208,12 @@ const StaticsBlock* UOMap::getCacheStaticsBlock(unsigned int x, unsigned int y)
 
 const MapCell& UOMap::getCellFromBlock(const MapBlock& block, unsigned int xTile, unsigned int yTile) const
 {
-    const unsigned xCell = xTile % MapBlock::kCellsPerRow;
-    const unsigned yCell = yTile % MapBlock::kCellsPerColumn;
+    //const unsigned xCell = xTile % MapBlock::kCellsPerRow;
+    //const unsigned yCell = yTile % MapBlock::kCellsPerColumn;
+
+    // since we want the modulo for a power of 2, we can use the AND operator
+    const unsigned xCell = xTile & (MapBlock::kCellsPerRow - 1);
+    const unsigned yCell = yTile & (MapBlock::kCellsPerColumn - 1);
     return block.cells[(yCell * MapBlock::kCellsPerColumn) + xCell];
 }
 
@@ -345,13 +349,14 @@ bool UOMap::drawRectInImage(QImage *image, int xImageOffset, int yImageOffset, s
         if (scaleFactor)
         {
             ++xTileRelative;
-            if ((scaleFactor == 1) && (xTileRelative % 2))
+            // since we want the modulo for a power of 2, we can use the AND operator
+            if ((scaleFactor == 1) && (xTileRelative & 1))//(xTileRelative % 2))
                 continue;
-            if ((scaleFactor == 2) && (xTileRelative % 4))
+            if ((scaleFactor == 2) && (xTileRelative & 3))//(xTileRelative % 4))
                 continue;
-            if ((scaleFactor == 3) && (xTileRelative % 8))
+            if ((scaleFactor == 3) && (xTileRelative & 7))//(xTileRelative % 8))
                 continue;
-            if ((scaleFactor == 4) && (xTileRelative % 16))
+            if ((scaleFactor == 4) && (xTileRelative & 15))//(xTileRelative % 16))
                 continue;
             xTileRelative = 0;
         }
@@ -365,13 +370,13 @@ bool UOMap::drawRectInImage(QImage *image, int xImageOffset, int yImageOffset, s
             if (scaleFactor)
             {
                 ++yTileRelative;
-                if ((scaleFactor == 1) && (yTileRelative % 2))
+                if ((scaleFactor == 1) && (yTileRelative & 1))//(yTileRelative % 2))
                     continue;
-                if ((scaleFactor == 2) && (yTileRelative % 4))
+                if ((scaleFactor == 2) && (yTileRelative & 3))//(yTileRelative % 4))
                     continue;
-                if ((scaleFactor == 3) && (yTileRelative % 8))
+                if ((scaleFactor == 3) && (yTileRelative & 7))//(yTileRelative % 8))
                     continue;
-                if ((scaleFactor == 4) && (yTileRelative % 16))
+                if ((scaleFactor == 4) && (yTileRelative & 15))//(yTileRelative % 16))
                     continue;
                 yTileRelative = 0;
             }

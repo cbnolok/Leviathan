@@ -134,20 +134,9 @@ class CheckableProxyModelState
 public:
     //private constructors: this class is not to be copied around or anything like that.
     CheckableProxyModelState(CheckableProxyModel* proxy): m_proxy(proxy) {}
-#ifdef _MSC_VER
-    #pragma warning( push )
-    #pragma warning( disable : 4100)
-#else
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
+
     //declaration only, we don't need implementation
-    CheckableProxyModelState(const CheckableProxyModelState& other) {}
-#ifdef _MSC_VER
-    #pragma warning( pop )
-#else
-    #pragma GCC diagnostic pop
-#endif
+    CheckableProxyModelState(const CheckableProxyModelState& /*other*/) {}
 
     CheckableProxyModelState& checkedBranchIndexes(QModelIndexList& list);
     CheckableProxyModelState& checkedLeafIndexes(QModelIndexList& list);

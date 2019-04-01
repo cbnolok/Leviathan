@@ -10,7 +10,7 @@ namespace uocf
 
 struct StaticsEntry
 {
-    static const unsigned int kSize = 2 + 1 + 1 + 1 + 2;
+    static constexpr unsigned int kSize = 2 + 1 + 1 + 1 + 2;
 
     unsigned short id;
     unsigned char xOffset;
@@ -22,9 +22,9 @@ struct StaticsEntry
 struct StaticsBlock
 {
     // Each block contains 64 tiles, treated as an 8x8 matrix loaded left to right, top to bottom.
-    static const unsigned int kTilesPerRow = 8;
-    static const unsigned int kTilesPerColumn = 8;
-    static const unsigned int kTilesPerBlock = kTilesPerRow * kTilesPerColumn;
+    static constexpr unsigned int kTilesPerRow = 8;
+    static constexpr unsigned int kTilesPerColumn = 8;
+    static constexpr unsigned int kTilesPerBlock = kTilesPerRow * kTilesPerColumn;
     bool initialized;
 
     unsigned int entriesCount;

@@ -23,17 +23,17 @@ ARGB32 convert_ARGB16_to_ARGB32(const ARGB16 argb16, bool maxOpacity) noexcept
     off-colour as white 0xFFFF will convert to F8,FC,F8
     So instead you can scale by multiply and divide:
 */
-    // Conversion from (AxisII)
-    // Image slightly darker (probably though it looks more like the img shown in the uo client)
-    r *= 8;        // R
-    g *= 8;        // G
-    b *= 8;        // B
-
     // More exact conversion
     // This ensures 31/31 converts to 255/255
     //r = (uint8_t)(r * 255 / 31);        // R
     //g = (uint8_t)(g * 255 / 31);        // G
     //b = (uint8_t)(b * 255 / 31);        // B
+
+    // Conversion from (AxisII)
+    // Image slightly darker (probably though it looks more like the img shown in the uo client)
+    r *= 8;        // R
+    g *= 8;        // G
+    b *= 8;        // B
 
     // If the pixel is black, set it to be full transparent
     if (maxOpacity)

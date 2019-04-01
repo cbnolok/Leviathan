@@ -1,6 +1,5 @@
 #include "uoperror.h"
 #include <sstream>
-#include "zlib.h"
 
 
 namespace uopp
@@ -10,7 +9,7 @@ namespace uopp
 void UOPError::append(const std::string& str, UOPError* errorQueue) // static
 {
     if (errorQueue != nullptr)
-        errorQueue->m_errorQueue.push_back(str);
+        errorQueue->m_errorQueue.emplace_back(str);
 }
 
 const UOPError::errorQueue_t &UOPError::getErrorQueue() const {
@@ -23,11 +22,11 @@ void UOPError::clear() {
     m_errorQueue.clear();
 }
 
-std::string UOPError::operator[](int index) const
+std::string UOPError::operator[](unsigned int index) const
 {
-    if (index < (int)m_errorQueue.size())
+    if (index < m_errorQueue.size())
         return m_errorQueue[index];
-    return std::string();
+    return {};
 }
 
 std::string UOPError::buildErrorsString(bool emptyQueue, bool newLineFirst)
@@ -42,11 +41,11 @@ std::string UOPError::buildErrorsString(bool emptyQueue, bool newLineFirst)
         ++i;
     }
     if (i == 1)
-        return std::string("None");
+        return "None";
     if (emptyQueue)
         clear();
     return ssErrors.str();
 }
 
 
-}
+} // end of uopp namespace

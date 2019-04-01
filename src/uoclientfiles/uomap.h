@@ -17,7 +17,7 @@ class UOHues;
 
 struct MapCell
 {
-    static const unsigned int kSize = 2 + 1;
+    static constexpr unsigned int kSize = 2 + 1;
 
     unsigned short id;
     char z;
@@ -25,10 +25,10 @@ struct MapCell
 
 struct MapBlock
 {
-    static const unsigned int kCellsPerRow = 8;
-    static const unsigned int kCellsPerColumn = 8;
-    static const unsigned int kCellsPerBlock = kCellsPerRow * kCellsPerColumn;
-    static const unsigned int kSize = 4 + (kCellsPerBlock * MapCell::kSize);
+    static constexpr unsigned int kCellsPerRow = 8;
+    static constexpr unsigned int kCellsPerColumn = 8;
+    static constexpr unsigned int kCellsPerBlock = kCellsPerRow * kCellsPerColumn;
+    static constexpr unsigned int kSize = 4 + (kCellsPerBlock * MapCell::kSize);
     bool initialized;
 
     unsigned int header;
@@ -40,12 +40,12 @@ struct MapBlock
 class UOMap
 {
 public:
-    static const unsigned int kMaxSupportedMap = 5;
-    static const unsigned int kScaleFactorMin = 0;
-    static const unsigned int kScaleFactorMax = 4;
+    static constexpr unsigned int kMaxSupportedMap = 5;
+    static constexpr unsigned int kScaleFactorMin = 0;
+    static constexpr unsigned int kScaleFactorMax = 4;
 
     // better using a virtually unused color on the map, to avoid unnecessary redrawings
-    static const unsigned int kUninitializedRGB = 0x00ff70; //0xF0F0F0; // aa(ignore alpha value) rr gg bb
+    static constexpr unsigned int kUninitializedRGB = 0x00ff70; //0xF0F0F0; // aa(ignore alpha value) rr gg bb
 
 
     UOMap(const std::string& clientPath, unsigned int fileIndex);

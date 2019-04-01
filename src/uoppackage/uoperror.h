@@ -31,7 +31,7 @@ public:
     const errorQueue_t &getErrorQueue() const;
     bool errorOccurred() const;
     void clear();     // users have to manually clear the error queue between operations
-    std::string operator[](int index) const;
+    std::string operator[](unsigned int index) const;
     std::string buildErrorsString(bool emptyQueue = true, bool newLineFirst = false);
 };
 

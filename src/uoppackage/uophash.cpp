@@ -3,28 +3,35 @@
 #include <cinttypes>
 #include <cstring>
 
+#if __cplusplus >= 201703L  // is C++17 enabled?
+    #define FALLTHROUGH [[fallthrough]]
+#else
+    #define FALLTHROUGH // fall through
+    /* yep, the comment appears to silence the warning with GCC, dunno for clang */
+#endif
+
 
 namespace uopp
 {
 
 
 // HashLittle3 algorithm by Jenkins, used to get the hash for the file name
-unsigned long long hashFileName(const char * const s)
+unsigned long long hashFileName(const char * const s) noexcept
 {
     uint_fast32_t eax, ecx, edx, ebx, esi, edi;
 
-    const auto len = (uint_fast32_t)strlen(s);
+    const auto len = uint_fast32_t(strlen(s));
 
     eax = ecx = edx = 0;
-    ebx = edi = esi = (uint_fast32_t) len + 0xDEADBEEF;
+    ebx = edi = esi = uint_fast32_t(len + 0xDEADBEEF);
 
     uint_fast32_t i = 0;
 
     for ( i = 0; i + 12 < len; i += 12 )
     {
-        edi = (uint_fast32_t) ( ( s[ i + 7  ] << 24 ) | ( s[ i + 6  ] << 16 ) | ( s[ i + 5 ] << 8 ) | s[ i + 4 ] ) + edi;
-        esi = (uint_fast32_t) ( ( s[ i + 11 ] << 24 ) | ( s[ i + 10 ] << 16 ) | ( s[ i + 9 ] << 8 ) | s[ i + 8 ] ) + esi;
-        edx = (uint_fast32_t) ( ( s[ i + 3  ] << 24 ) | ( s[ i + 2  ] << 16 ) | ( s[ i + 1 ] << 8 ) | s[ i     ] ) - esi;
+        edi = uint_fast32_t( ( s[ i + 7  ] << 24 ) | ( s[ i + 6  ] << 16 ) | ( s[ i + 5 ] << 8 ) | s[ i + 4 ] ) + edi;
+        esi = uint_fast32_t( ( s[ i + 11 ] << 24 ) | ( s[ i + 10 ] << 16 ) | ( s[ i + 9 ] << 8 ) | s[ i + 8 ] ) + esi;
+        edx = uint_fast32_t( ( s[ i + 3  ] << 24 ) | ( s[ i + 2  ] << 16 ) | ( s[ i + 1 ] << 8 ) | s[ i     ] ) - esi;
 
         edx = ( edx + ebx ) ^ ( esi >> 28 ) ^ ( esi << 4 );
         esi += edi;
@@ -44,24 +51,24 @@ unsigned long long hashFileName(const char * const s)
     {
         switch ( len - i )
         {
-        #if defined(__GNUC__) && !defined(__MINGW32__)  // Warning issued only on linux
+        #if defined(__GNUC__) && (__GNUC__ >= 7)
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
         #endif
-            case 12:    esi += (uint_fast32_t) s[ i + 11 ] << 24;
-            case 11:    esi += (uint_fast32_t) s[ i + 10 ] << 16;
-            case 10:    esi += (uint_fast32_t) s[ i + 9  ] << 8;
-            case 9:     esi += (uint_fast32_t) s[ i + 8  ];
-            case 8:     edi += (uint_fast32_t) s[ i + 7  ] << 24;
-            case 7:     edi += (uint_fast32_t) s[ i + 6  ] << 16;
-            case 6:     edi += (uint_fast32_t) s[ i + 5  ] << 8;
-            case 5:     edi += (uint_fast32_t) s[ i + 4  ];
-            case 4:     ebx += (uint_fast32_t) s[ i + 3  ] << 24;
-            case 3:     ebx += (uint_fast32_t) s[ i + 2  ] << 16;
-            case 2:     ebx += (uint_fast32_t) s[ i + 1  ] << 8;
-            case 1:     ebx += (uint_fast32_t) s[ i ];
+            case 12:    esi += uint_fast32_t( s[ i + 11 ] << 24 );  FALLTHROUGH;
+            case 11:    esi += uint_fast32_t( s[ i + 10 ] << 16 );  FALLTHROUGH;
+            case 10:    esi += uint_fast32_t( s[ i + 9  ] << 8  );  FALLTHROUGH;
+            case 9:     esi += uint_fast32_t( s[ i + 8  ]       );  FALLTHROUGH;
+            case 8:     edi += uint_fast32_t( s[ i + 7  ] << 24 );  FALLTHROUGH;
+            case 7:     edi += uint_fast32_t( s[ i + 6  ] << 16 );  FALLTHROUGH;
+            case 6:     edi += uint_fast32_t( s[ i + 5  ] << 8  );  FALLTHROUGH;
+            case 5:     edi += uint_fast32_t( s[ i + 4  ]       );  FALLTHROUGH;
+            case 4:     ebx += uint_fast32_t( s[ i + 3  ] << 24 );  FALLTHROUGH;
+            case 3:     ebx += uint_fast32_t( s[ i + 2  ] << 16 );  FALLTHROUGH;
+            case 2:     ebx += uint_fast32_t( s[ i + 1  ] << 8  );  FALLTHROUGH;
+            case 1:     ebx += uint_fast32_t( s[ i ]            );  FALLTHROUGH;
             break;
-        #if defined(__GNUC__) && !defined(__MINGW32__)
+        #if defined(__GNUC__) && (__GNUC__ >= 7)
             #pragma GCC diagnostic pop
         #endif
         }
@@ -74,29 +81,29 @@ unsigned long long hashFileName(const char * const s)
         edi = ( edi ^ edx ) - ( ( edx >> 18 ) ^ ( edx << 14 ) );
         eax = ( esi ^ edi ) - ( ( edi >> 8  ) ^ ( edi << 24 ) );
 
-        return ( (unsigned long long) edi << 32 ) | eax;
+        return ( static_cast<unsigned long long>(edi) << 32 ) | eax;
     }
 
-    return ( (unsigned long long) esi << 32 ) | eax;
+    return ( static_cast<unsigned long long>(esi) << 32 ) | eax;
 }
 
 
-unsigned long long hashFileName(const std::string &s)
+unsigned long long hashFileName(const std::string &s) noexcept
 {
     uint_fast32_t eax, ecx, edx, ebx, esi, edi;
 
-    const auto len = (uint_fast32_t)s.length();
+    const auto len = uint_fast32_t(s.length());
 
     eax = ecx = edx = 0;
-    ebx = edi = esi = (uint_fast32_t) len + 0xDEADBEEF;
+    ebx = edi = esi = uint_fast32_t(len + 0xDEADBEEF);
 
     uint_fast32_t i = 0;
 
     for ( i = 0; i + 12 < len; i += 12 )
     {
-        edi = (uint_fast32_t) ( ( s[ i + 7  ] << 24 ) | ( s[ i + 6  ] << 16 ) | ( s[ i + 5 ] << 8 ) | s[ i + 4 ] ) + edi;
-        esi = (uint_fast32_t) ( ( s[ i + 11 ] << 24 ) | ( s[ i + 10 ] << 16 ) | ( s[ i + 9 ] << 8 ) | s[ i + 8 ] ) + esi;
-        edx = (uint_fast32_t) ( ( s[ i + 3  ] << 24 ) | ( s[ i + 2  ] << 16 ) | ( s[ i + 1 ] << 8 ) | s[ i     ] ) - esi;
+        edi = uint_fast32_t( ( s[ i + 7  ] << 24 ) | ( s[ i + 6  ] << 16 ) | ( s[ i + 5 ] << 8 ) | s[ i + 4 ] ) + edi;
+        esi = uint_fast32_t( ( s[ i + 11 ] << 24 ) | ( s[ i + 10 ] << 16 ) | ( s[ i + 9 ] << 8 ) | s[ i + 8 ] ) + esi;
+        edx = uint_fast32_t( ( s[ i + 3  ] << 24 ) | ( s[ i + 2  ] << 16 ) | ( s[ i + 1 ] << 8 ) | s[ i     ] ) - esi;
 
         edx = ( edx + ebx ) ^ ( esi >> 28 ) ^ ( esi << 4 );
         esi += edi;
@@ -116,24 +123,24 @@ unsigned long long hashFileName(const std::string &s)
     {
         switch ( len - i )
         {
-        #if defined(__GNUC__) && !defined(__MINGW32__)  // Warning issued only on linux
+        #if defined(__GNUC__) && (__GNUC__ >= 7)
             #pragma GCC diagnostic push
             #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
         #endif
-            case 12:    esi += (uint_fast32_t) s[ i + 11 ] << 24;
-            case 11:    esi += (uint_fast32_t) s[ i + 10 ] << 16;
-            case 10:    esi += (uint_fast32_t) s[ i + 9  ] << 8;
-            case 9:     esi += (uint_fast32_t) s[ i + 8  ];
-            case 8:     edi += (uint_fast32_t) s[ i + 7  ] << 24;
-            case 7:     edi += (uint_fast32_t) s[ i + 6  ] << 16;
-            case 6:     edi += (uint_fast32_t) s[ i + 5  ] << 8;
-            case 5:     edi += (uint_fast32_t) s[ i + 4  ];
-            case 4:     ebx += (uint_fast32_t) s[ i + 3  ] << 24;
-            case 3:     ebx += (uint_fast32_t) s[ i + 2  ] << 16;
-            case 2:     ebx += (uint_fast32_t) s[ i + 1  ] << 8;
-            case 1:     ebx += (uint_fast32_t) s[ i ];
+            case 12:    esi += uint_fast32_t( s[ i + 11 ] << 24 );  FALLTHROUGH;
+            case 11:    esi += uint_fast32_t( s[ i + 10 ] << 16 );  FALLTHROUGH;
+            case 10:    esi += uint_fast32_t( s[ i + 9  ] << 8  );  FALLTHROUGH;
+            case 9:     esi += uint_fast32_t( s[ i + 8  ]       );  FALLTHROUGH;
+            case 8:     edi += uint_fast32_t( s[ i + 7  ] << 24 );  FALLTHROUGH;
+            case 7:     edi += uint_fast32_t( s[ i + 6  ] << 16 );  FALLTHROUGH;
+            case 6:     edi += uint_fast32_t( s[ i + 5  ] << 8  );  FALLTHROUGH;
+            case 5:     edi += uint_fast32_t( s[ i + 4  ]       );  FALLTHROUGH;
+            case 4:     ebx += uint_fast32_t( s[ i + 3  ] << 24 );  FALLTHROUGH;
+            case 3:     ebx += uint_fast32_t( s[ i + 2  ] << 16 );  FALLTHROUGH;
+            case 2:     ebx += uint_fast32_t( s[ i + 1  ] << 8  );  FALLTHROUGH;
+            case 1:     ebx += uint_fast32_t( s[ i ]            );  FALLTHROUGH;
             break;
-        #if defined(__GNUC__) && !defined(__MINGW32__)
+        #if defined(__GNUC__) && (__GNUC__ >= 7)
             #pragma GCC diagnostic pop
         #endif
         }
@@ -146,27 +153,28 @@ unsigned long long hashFileName(const std::string &s)
         edi = ( edi ^ edx ) - ( ( edx >> 18 ) ^ ( edx << 14 ) );
         eax = ( esi ^ edi ) - ( ( edi >> 8  ) ^ ( edi << 24 ) );
 
-        return ( (unsigned long long) edi << 32 ) | eax;
+        return ( static_cast<unsigned long long>(edi) << 32 ) | eax;
     }
 
-    return ( (unsigned long long) esi << 32 ) | eax;
+    return ( static_cast<unsigned long long>(esi) << 32 ) | eax;
 
 }
 
 
 // Adler32 hash for the data block
-unsigned int hashDataBlock(const char * const data, size_t dataLength)
+unsigned int hashDataBlock(const char * const data, size_t dataLength) noexcept
 {
     unsigned int a = 1;
     unsigned int b = 0;
 
     for ( size_t i = 0; i < dataLength; ++i )
     {
-        a = ( a + data[ i ] ) % 0xFFF1;
+        a = ( a + static_cast<unsigned int>(data[i]) ) % 0xFFF1;
         b = ( b + a ) % 0xFFF1;
     }
 
     return ( b << 16 ) | a;
 }
 
-}
+
+} // end of uopp namespace

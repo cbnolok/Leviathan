@@ -1,12 +1,18 @@
 #include "uoppackage.h"
 
-#include <fstream>
 #include <sstream>
 #include <iostream>
+#include <exception>
+
+// Headers needed to get the absolute path of a file
+#ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+#else
+    #include <cstdlib>
+#endif
 
 #include "uophash.h"
-#include "uopblock.h"
-#include "uopfile.h"
 
 #define ADDERROR(str) UOPError::append((str), errorQueue)
 
@@ -15,51 +21,64 @@ namespace uopp
 {
 
 
-UOPPackage::UOPPackage(unsigned int maxFilesPerBlock) :
-    m_version(kSupportedVersion),
+UOPPackage::UOPPackage(unsigned int version, unsigned int maxFilesPerBlock) :
+    m_version(version),
     m_misc(0xFD23EC43), m_startAddress(0),
     m_blockSize(maxFilesPerBlock), m_fileCount(0),
     m_curBlockIdx(0)
 {
+    if ((m_version < kMinSupportedVersion) || (m_version > kMaxSupportedVersion))
+        throw std::logic_error("Trying to construct UOPPackage with unsupported version=" + std::to_string(m_version));
 }
 
 UOPPackage::~UOPPackage()
 {
-    for (const auto& block : m_blocks)
+    for (UOPBlock *block : m_blocks)
         delete block;
 }
 
-const std::string& UOPPackage::getPackageName() const {
-    return m_packageName;
-}
-int UOPPackage::getVersion() const {
-    return m_version;
-}
-unsigned int UOPPackage::getMisc() const {
-    return m_misc;
-}
-unsigned long long UOPPackage::getStartAddress() const {
-    return m_startAddress;
-}
-unsigned int UOPPackage::getBlockSize() const {
-    return m_blockSize;
-}
-unsigned int UOPPackage::getFileCount() const {
-    return m_fileCount;
-}
-unsigned int UOPPackage::getBlocksCount() const {
-    return (unsigned int)m_blocks.size();
-}
-std::vector<UOPBlock*> UOPPackage::getBlocks() {
-    return m_blocks;
-}
-UOPBlock* UOPPackage::getBlock(unsigned int index) {
-    return m_blocks[index];
-}
-const UOPBlock* UOPPackage::getBlock(unsigned int index) const {
-    return m_blocks[index];
+
+UOPFile* UOPPackage::getFileByIndex(unsigned int block, unsigned int index) const
+{
+    if ((m_blocks.size() < block) || (m_blocks[block]->getFilesCount() < index) )
+        return nullptr;
+    return m_blocks[block]->m_files[index];
 }
 
+UOPFile* UOPPackage::getFileByName(const std::string &filename)
+{
+    unsigned long long hash = hashFileName(filename);
+    unsigned int block = kInvalidIdx, index = kInvalidIdx;
+    if ( searchByHash(hash, &block, &index) )
+        return getFileByIndex(block, index);
+    return nullptr;
+}
+
+bool UOPPackage::searchByHash(unsigned long long hash, unsigned int *block, unsigned int *index) const
+{
+    unsigned int idx;
+    for (unsigned int bl = 0, sz = unsigned(m_blocks.size()); bl < sz; ++bl)
+    {
+        idx = m_blocks[bl]->searchByHash(hash);
+        if( idx != kInvalidIdx )
+        {
+            *block = bl;
+            *index = idx;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+//--
+
+std::ifstream UOPPackage::getOpenedStream()
+{
+    std::ifstream fin;
+    fin.open(m_packageName, std::ios::in | std::ios::binary );
+    return fin;
+}
 
 bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
 {
@@ -67,7 +86,7 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
     fin.open(fileName, std::ios::in | std::ios::binary );
     if ( !fin.is_open() )
     {
-        ADDERROR("Cannot open (read) ( " + fileName + ")");
+        ADDERROR("UOPPackage::load: Cannot open (read) ( " + fileName + ")");
         return false;
     }
 
@@ -77,14 +96,14 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
     fin.read(MYP0, 4);
     if ( MYP0[0] != 'M' || MYP0[1] != 'Y' || MYP0[2] != 'P' || MYP0[3] != 0 )
     {
-        ADDERROR("Invalid Mythic Package file ( " + fileName + ")");
+        ADDERROR("UOPPackage::load: Invalid Mythic Package file ( " + fileName + ")");
         return false;
     }
 
     fin.read(reinterpret_cast<char*>(&m_version), 4);
-    if ( m_version > kSupportedVersion )
+    if ((m_version < kMinSupportedVersion) || (m_version > kMaxSupportedVersion))
     {
-        ADDERROR("Unsupported Mythic Package version ( " + fileName + ")");
+        ADDERROR("UOPPackage::load: Unsupported Mythic Package version ( " + fileName + ")");
         return false;
     }
 
@@ -95,10 +114,10 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
     fin.read(reinterpret_cast<char*>(&m_blockSize), 4);
     fin.read(reinterpret_cast<char*>(&m_fileCount), 4);
 
-    fin.seekg(m_startAddress, std::ios::beg);
+    fin.seekg(std::streamoff(m_startAddress), std::ios::beg);
 
     // Read the blocks data inside the UOP file
-    int index = 0;
+    unsigned int index = 0;
     bool iseof = false;
     do
     {
@@ -111,7 +130,7 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
         if (nextbl == 0)
             iseof = true;
 
-        fin.seekg(nextbl, std::ios::beg);
+        fin.seekg(std::streamoff(nextbl), std::ios::beg);
         ++index;
     }
     while ( !iseof );
@@ -121,148 +140,190 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
     return true;
 }
 
-std::ifstream UOPPackage::getOpenedStream()
+bool UOPPackage::readPackedData(UOPError* errorQueue)
 {
-    std::ifstream fin;
-    fin.open(m_packageName, std::ios::in | std::ios::binary );
-    return fin;
-}
-
-UOPFile* UOPPackage::getFileByIndex(unsigned int block, unsigned int idx) const
-{
-    if (((unsigned int)m_blocks.size() < block) || (m_blocks[block]->getFilesCount() < idx) )
-        return nullptr;
-    return m_blocks[block]->m_files[idx];
-}
-
-bool UOPPackage::searchByHash(unsigned long long hash, unsigned int& block, unsigned int& index) const
-{
-    unsigned int idx;
-    for (unsigned int bl = 0, sz = (unsigned int)m_blocks.size(); bl < sz; ++bl)
+    std::ifstream fin = getOpenedStream();
+    if (!fin.is_open())
     {
-        idx = m_blocks[bl]->searchByHash(hash);
-        if( idx != (unsigned int)-1 )
-        {
-            block = bl;
-            index = idx;
-            return true;
-        }
+        ADDERROR("UOPPackage::readPackedData: Can't open source package " + m_filePath);
+        return false;
     }
-    return false;
+
+    for (UOPBlock *block : m_blocks)
+    {
+        if (!block->readPackedData(fin, errorQueue))
+            return false;
+    }
+
+    return true;
 }
 
-UOPFile* UOPPackage::getFileByName(const std::string &filename)
+void UOPPackage::freePackedData()
 {
-    unsigned long long hash = hashFileName(filename);
-    unsigned int block = (unsigned int)-1, index = (unsigned int)-1;
-    if ( searchByHash(hash, block, index) )
-        return getFileByIndex(block, index);
-    return nullptr;
+    for (UOPBlock *block : m_blocks)
+    {
+        block->freePackedData();
+    }
 }
-
 
 //--
 
-bool UOPPackage::addFile(const std::string& filePath, unsigned long long fileHash, CompressionFlag compression, UOPError *errorQueue)
+bool UOPPackage::addFile(const std::string& filePath, unsigned long long fileHash, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)
 {
     std::stringstream ssHash; ssHash << std::hex << fileHash;
     std::string strHash("0x" + ssHash.str());
     if (fileHash == 0)
     {
-        ADDERROR("Invalid fileHash for UOPPackage::addFile (" + strHash + ")");
+        ADDERROR("UOPPackage::addFile: Invalid fileHash: " + strHash);
         return false;
     }
     if (compression == CompressionFlag::Uninitialized)
     {
-        ADDERROR("Invalid compression flag for UOPPackage::addFile: " + std::to_string((short)compression) + " (" + strHash + ")");
+        ADDERROR("UOPPackage::addFile: Invalid compression flag: " + std::to_string(short(compression)) + " (fileHash: " + strHash + ")");
         return false;
     }
+
     std::ifstream fin;
     fin.open(filePath, std::ios::in | std::ios::binary );
     if ( !fin.is_open() )
     {
-        ADDERROR("Cannot open (read) " + filePath);
+        ADDERROR("UOPPackage::addFile: Cannot open (read) " + filePath);
         return false;
     }
 
     UOPBlock* curBlock;
     if ( !m_blocks.empty() && (m_blocks[m_curBlockIdx]->getFilesCount() < m_blockSize))
+    {
         curBlock = m_blocks[m_curBlockIdx];
+    }
     else
-    {         
+    {
         curBlock = new UOPBlock(this, m_curBlockIdx);
         m_blocks.push_back(curBlock);
-        m_curBlockIdx = (int)m_blocks.size() - 1;
+        m_curBlockIdx = unsigned(m_blocks.size()) - 1;
     }
-    if (!curBlock->addFile(fin, fileHash, compression, errorQueue))
+
+    if (!curBlock->addFile(fin, fileHash, compression, addDataHash, errorQueue))
         return false;
+
     fin.close();
     return true;
 }
 
-bool UOPPackage::addFile(const std::string& filePath, const std::string& packedFileName, CompressionFlag compression, UOPError *errorQueue)
+bool UOPPackage::addFile(const std::string& filePath, const std::string& packedFileName, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)
 {
     if (packedFileName.empty())
     {
-        ADDERROR("Invalid packedFileName for UOPPackage::addFile (" + packedFileName + ")");
+        ADDERROR("UOPPackage::addFile: Invalid packedFileName: " + packedFileName);
         return false;
     }
     if (compression == CompressionFlag::Uninitialized)
     {
-        ADDERROR("Invalid compression flag for UOPPackage::addFile: " + std::to_string((short)compression) + " (" + packedFileName + ")");
+        ADDERROR("UOPPackage::addFile: Invalid compression flag: " + std::to_string(short(compression)) + " (" + packedFileName + ")");
         return false;
     }
+
     unsigned long long fileHash = hashFileName(packedFileName);
-    return addFile(filePath, fileHash, compression, errorQueue);
+    return addFile(filePath, fileHash, compression, addDataHash, errorQueue);
 }
 
 bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueue)
 {
     if (uopPath.empty())
     {
-        ADDERROR("Invalid path for UOPPackage::save " + uopPath);
+        ADDERROR("UOPPackage::save: Invalid path: " + uopPath);
         return false;
     }
+
+    if (!m_filePath.empty())
+    {
+        // This isn't a new file. Ensure that we aren't overwriting the source file.
+        bool sameSrcDest = false;
+
+        // We could also use C++17 filesystem library to get the absolute paths
+    #ifdef _WIN32
+        char srcPathBuf[256];
+        char destPathBuf[256];
+        GetFullPathNameA(m_filePath.c_str(), sizeof(srcPathBuf),  srcPathBuf, nullptr);
+        GetFullPathNameA(uopPath.c_str(),    sizeof(destPathBuf), destPathBuf, nullptr);
+        if (strcmp(srcPathBuf, destPathBuf) == 0)
+            sameSrcDest = true;
+    #else
+        char *srcPathBuf  = realpath(m_filePath.c_str(), nullptr);
+        char *destPathBuf = realpath(uopPath.c_str(),    nullptr);
+        if (strcmp(srcPathBuf, destPathBuf) == 0)
+            sameSrcDest = true;
+        if (srcPathBuf)  free(srcPathBuf);
+        if (destPathBuf) free(destPathBuf);
+    #endif
+
+        if (sameSrcDest)
+        {
+            ADDERROR("UOPPackage::save: Overwriting the source file is not allowed");
+            return false;
+        }
+    }
+
+
     std::ofstream fout;
     fout.open(uopPath, std::ios::out | std::ios::binary );
     if ( !fout.is_open() )
     {
-        ADDERROR("Cannot open (write) " + m_packageName);
+        ADDERROR("UOPPackage::save: Cannot open (write) " + m_packageName);
         return false;
     }
 
     // How many files do we have in the package?
     m_fileCount = 0;
-    for (const auto& curFile : m_blocks)
+    for (const UOPBlock* block : m_blocks)
     {
-        m_fileCount += curFile->getFilesCount();
+        m_fileCount += block->getFilesCount();
     }
+
 
     /* Start of the Header Data */
 
     // Write UOP file header
-    // Size of the header in bytes = 4+4+4+8+4+4=32
-    char MYP0[4] = {'M', 'Y', 'P', 0};
+    static const unsigned int kPackageHeaderSize = 32;  // Size of the header in bytes = 4+4+4+8+4+4=32
+    static const unsigned int kV5FirstBlockHeaderOffset = 0x200;
+
+    const char MYP0[4] = {'M', 'Y', 'P', 0};
     fout.write(MYP0, 4);
     fout.write(reinterpret_cast<char*>(&m_version), 4);
     fout.write(reinterpret_cast<char*>(&m_misc), 4);
-    m_startAddress = (unsigned long long)fout.tellp() + 8 + 4 + 4;
+
+    if (m_version == 5)
+    {
+        // Add a zero-padding before the start of the header data
+        //static const long long firstTableAddress = 0x200;
+        m_startAddress = kV5FirstBlockHeaderOffset;
+    }
+    else
+    {
+        // No zero-padding (at least, version 4 doesn't have it, dunno for prior versions?)
+        //m_startAddress = static_cast<unsigned long long>(fout.tellp()) + 8 + 4 + 4;
+        m_startAddress = kPackageHeaderSize; // size of this header section: 4 + 4 + 8 + 4 + 4
+    }
     fout.write(reinterpret_cast<char*>(&m_startAddress), 8);
+
     fout.write(reinterpret_cast<char*>(&m_blockSize), 4);
     fout.write(reinterpret_cast<char*>(&m_fileCount), 4);
 
-    // Add the zero-padding? (even without it the package is still considered valid)
-    //static const long long firstTableAddress = 0x200;
-    // Eventually, write this address this address to m_startAddress and to the file
+    if (m_version == 5)
+    {
+        char paddingData[kV5FirstBlockHeaderOffset - kPackageHeaderSize] = {0};
+        fout.write(paddingData, sizeof(paddingData));
+    }
 
     // We'll need these addresses later
-    std::vector<std::streampos> blockInfoStartAddresses;
+    std::vector<std::streamoff> blockInfoStartAddresses;
     blockInfoStartAddresses.reserve(m_blocks.size());
-    std::vector<std::streampos> fileInfoStartAddresses;
-    fileInfoStartAddresses.reserve(m_blocks.size()*m_blockSize);
+    std::vector<std::streamoff> fileInfoStartAddresses;
+    fileInfoStartAddresses.reserve(m_blocks.size() * m_blockSize);
 
     // Loop through the blocks
-    for (const auto& curBlock : m_blocks)
+    fout.seekp(std::streamoff(m_startAddress));
+    for (UOPBlock *curBlock : m_blocks)
     {
         blockInfoStartAddresses.push_back(fout.tellp());
 
@@ -272,7 +333,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
                                                                                 // also 0 is the legit value if it's the last block
         unsigned int iFile = 0;
         // Loop through all the files of this block
-        for (const auto& curFile : curBlock->m_files)
+        for (UOPFile *curFile : curBlock->m_files)
         {
             fileInfoStartAddresses.push_back(fout.tellp());
 
@@ -293,8 +354,8 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
         //  Each block must have a number of headers equal to blockSize.
         while (iFile < m_blockSize)
         {
-            static const char zero[34] = {0};
-            fout.write(zero, sizeof(zero));
+            static const char emptyFileHeader[34] = {0};
+            fout.write(emptyFileHeader, sizeof(emptyFileHeader));
             ++iFile;
         }
     }
@@ -305,7 +366,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     {
         for (size_t i = 0, sz = blockInfoStartAddresses.size() - 1; i < sz; ++i)
         {
-            fout.seekp((size_t)blockInfoStartAddresses[i] + 4);
+            fout.seekp(std::streamoff(blockInfoStartAddresses[i]) + 4);
             fout.write(reinterpret_cast<char*>(&blockInfoStartAddresses[i + 1]), 8);
         }
     }
@@ -315,15 +376,44 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
 
 
     // Now write the actual file data separately from the info zone, and write back the m_dataBlockAddress in the file header
+    std::ifstream finSourceUOP;
     unsigned int iFile = 0;
-    for (const auto& curBlock : m_blocks)
+    for (UOPBlock* curBlock : m_blocks)
     {
-        for (const auto& curFile : curBlock->m_files)
+        for (UOPFile* curFile : curBlock->m_files)
         {
+            bool freeFileData = false;
+            if ((curFile->getDecompressedSize() != 0) && curFile->m_data.empty() && !m_filePath.empty())
+            {
+                // If the data size is != 0 but the data vector is empty, then i have read only the header of this file but not the packed data: let's fix that.
+                if (!finSourceUOP.is_open())
+                {
+                    finSourceUOP = getOpenedStream();
+                    if (!finSourceUOP.is_open() || finSourceUOP.bad())
+                    {
+                        ADDERROR("UOPPackage::save: Error opening source package " + m_filePath);
+                        return false;
+                    }
+                }
+
+                if (!curFile->readPackedData(finSourceUOP, errorQueue))
+                {
+                    ADDERROR("UOPPackage::save: Error reading source package " + m_filePath);
+                    return false;
+                }
+                freeFileData = true;
+            }
+
             // Write UOP file raw data
-            unsigned long long beforeDataPos = (unsigned long long)fout.tellp();
-            fout.write( curFile->m_data.data(), curFile->m_data.size());
+            unsigned long long beforeDataPos = static_cast<unsigned long long>(fout.tellp());
+            fout.write( curFile->m_data.data(), std::streamsize(curFile->m_data.size()) );
             std::streampos afterDataPos = fout.tellp();
+
+            if (freeFileData)
+            {
+                // If we don't do this, at the end of the saving process we'll have the whole content of the package loaded into memory
+                curFile->freePackedData();
+            }
 
             // Write back m_dataBlockAddress
             fout.seekp(fileInfoStartAddresses[iFile]);
@@ -338,17 +428,20 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     bool ret = !fout.bad();
     if (ret)
     {
-        ADDERROR("Bad ofstream");
+        ADDERROR("UOPPackage::save: Bad ofstream");
     }
-    fout.close();
+    //fout.close();
+    //if (finSourceUOP.is_open())
+    //    finSourceUOP.close();
     return ret;
 }
 
 
 // Iterators
+
 UOPPackage::iterator UOPPackage::end()       // past-the-end iterator (obtained when incrementing an iterator to the last item)
 {
-    return {this, iterator::kInvalidIdx, iterator::kInvalidIdx};
+    return {this, kInvalidIdx, kInvalidIdx};
 }
 
 UOPPackage::iterator UOPPackage::begin()     // iterator to first item
@@ -375,7 +468,7 @@ UOPPackage::iterator UOPPackage::back_it()     // iterator to last item
 
 UOPPackage::const_iterator UOPPackage::cend() const     // past-the-end iterator (obtained when incrementing an iterator to the last item)
 {
-    return {this, const_iterator::kInvalidIdx, const_iterator::kInvalidIdx};
+    return {this, kInvalidIdx, kInvalidIdx};
 }
 
 UOPPackage::const_iterator UOPPackage::cbegin() const   // iterator to first item
@@ -400,4 +493,5 @@ UOPPackage::const_iterator UOPPackage::cback_it() const // iterator to last item
     return cend();
 }
 
-}
+
+} // end of uopp namespace

@@ -68,8 +68,7 @@ public:
         return *this;
     }
     template<typename castT> operator castT() const noexcept {
-        if (sizeof(castT) < sizeof(m_color))    // casting to a data type too small?
-            return 0;
+        static_assert (sizeof(castT) >= sizeof(uint16_t), "Casting to a data type too small");
         return this->getVal();
     }
 };
@@ -141,8 +140,7 @@ public:
         return *this;
     }
     template<typename castT> operator castT() const noexcept {
-        if (sizeof(castT) < sizeof(uint32_t))    // casting to a data type too small?
-            return 0;
+        static_assert (sizeof(castT) >= sizeof(uint32_t), "Casting to a data type too small");
         return this->getVal();
     }
 

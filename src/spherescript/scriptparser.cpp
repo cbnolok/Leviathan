@@ -1,7 +1,5 @@
 #include "scriptparser.h"
 
-#include <QCoreApplication> // for QCoreApplication::processEvents();
-
 #include "../globals.h"
 #include "../cpputils/strings.h"
 #include "../cpputils/sysio.h"
@@ -51,19 +49,25 @@ void ScriptParser::run()
     g_scriptFileList = g_scriptsProfiles[m_profileIndex].m_scriptsToLoad;
     //getFilesInDirectorySub(&g_scriptFileList, g_scriptsProfiles[m_profileIndex].m_scriptsPath);
 
+    int progressVal = 0;
 
     /*  Store in memory scripts data    */
 
     appendToLog(std::string("Loading Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\"..."));
     int filesNumber = (int)g_scriptFileList.size();
-    emit notifyTPProgressMax(filesNumber);
+    emit notifyTPProgressMax(150);
     //QString msg("Parsing ");
     emit notifyTPMessage("Parsing scripts");
     for (int i = 0; i < filesNumber; ++i)
     {
         //emit notifyTPMessage(msg + g_scriptFileList[i].c_str());
         loadFile(i, false);
-        emit notifyTPProgressVal(i);
+        int progressValNow = (int)( (i*150)/filesNumber );
+        if (progressValNow > progressVal)
+        {
+            progressVal = progressValNow;
+            emit notifyTPProgressVal(progressVal);
+        }
     }
 
 
@@ -74,7 +78,6 @@ void ScriptParser::run()
     emit notifyTPProgressMax(150);
 
     size_t dupeObjs_num = m_scriptsDupeItems.size();
-    int progressVal = 0;
     for (size_t dupeObj_i = 0; dupeObj_i < dupeObjs_num; ++dupeObj_i)
     {
         bool found = false;
@@ -83,7 +86,7 @@ void ScriptParser::run()
             continue;   // error?
 
         bool isDUPEITEMnumerical = isStringNumericHex(dupeObj->m_dupeItem);
-        for (ScriptObj* parentObj : m_scriptsDupeParents)
+        for (const ScriptObj* parentObj : m_scriptsDupeParents)
         {
             //if (!parentObj->m_dupeItem.empty())   // if it's a dupe item
             //    continue; // dupe item having as parent another dupe item? error in scripts?
@@ -180,7 +183,6 @@ void ScriptParser::run()
             {
                 progressVal = progressValNow;
                 emit notifyTPProgressVal(progressVal);
-                QCoreApplication::processEvents();  // Process received events to avoid the GUI freezing.
             }
 
         }   // end of child iterating for loop

@@ -19,7 +19,7 @@ public:
     ARGB32 getItemColor32(unsigned int index) const;
 
 private:
-    static const unsigned int kEntriesCount = 0x8000;
+    static constexpr unsigned int kEntriesCount = 0x8000;
     ARGB16 m_colors16[kEntriesCount];
     ARGB32 m_colors32[kEntriesCount];
 };

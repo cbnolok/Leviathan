@@ -44,7 +44,7 @@ UOHues::UOHues(const std::string& huesPath) : m_hues{}
 
             // Fill the ColorTable
             uint16_t colorTableRaw[UOHueEntry::kTableColorsCount] = {};
-            fin.read(reinterpret_cast<char*>(&colorTableRaw), 2 * UOHueEntry::kTableColorsCount);
+            fin.read(reinterpret_cast<char*>(colorTableRaw), 2 * UOHueEntry::kTableColorsCount);
             for (unsigned int k = 0; k < UOHueEntry::kTableColorsCount; ++k)
             {
                 m_hues[hue_num].colorTable16[k] = ARGB16(colorTableRaw[k]);
@@ -80,7 +80,7 @@ const UOHueEntry& UOHues::getHueEntry(unsigned int index) const
     // for the client: 0 is no hue
     // for hues.mul: 0 is the first entry
     // so the client starts to count from 1
-    if (index < 3000)
+    if (index < kHuesCount)
         return m_hues[index];
 
     return m_hues[0];

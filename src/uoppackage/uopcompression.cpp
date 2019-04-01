@@ -5,28 +5,30 @@
 namespace uopp
 {
 
+
 std::string translateZlibError(int z_result)
 {
     switch (z_result)
     {
     case Z_OK:
-        return "ZLib: ok!";
+        return "Ok!";
     case Z_STREAM_END:
-        return "ZLib: Stream end!";
+        return "Stream end!";
     case Z_NEED_DICT:
-        return "ZLib: Need dict!";
+        return "Need dict!";
     case Z_ERRNO:
-        return "ZLib: errno!";
+        return "Errno!";
     case Z_STREAM_ERROR:
-        return "ZLib: Stream Error!";
+        return "Stream Error!";
     case Z_DATA_ERROR:
-        return "ZLib: Data error!";
+        return "Data error!";
     case Z_MEM_ERROR:
-        return "ZLib: Memory error!";
+        return "Memory error!";
     case Z_BUF_ERROR:
-        return "ZLib: Buffer error!";
+        return "Buffer error!";
     }
-    return std::string();
+    return {};
 }
 
-}
+
+} // end of uopp namespace

@@ -31,7 +31,7 @@ Base_MapView::Base_MapView() :
     m_mapPlane = 0;
     m_selectedMapData = nullptr;
     m_drawFull = false;
-    m_scaleFactor = 0;
+    m_scaleFactor = 1;
     m_zoom = 1.0;
     m_selectedMapZ = 0;
 
@@ -110,7 +110,7 @@ bool Base_MapView::eventFilter(QObject* watched, QEvent* event)
                 const QRect viewGeometry = m_graphicsView->geometry();
                 const QPoint mapSizeScaled = coordsFromMapToView( QPoint(int(m_selectedMapData->getWidth()), int(m_selectedMapData->getHeight())) );
                 if ((viewGeometry.width() < mapSizeScaled.x()) || (viewGeometry.height() < mapSizeScaled.y()))
-                    redrawMap(); // drawMap(); // TODO: make it work with drawmap, without resetting the graphicsview position
+                    drawMap();
             }
         }
     }
@@ -258,10 +258,15 @@ void Base_MapView::drawMap()
         drawMapFull();
     else
     {
+        const QScrollBar *hScroll = m_graphicsView->horizontalScrollBar();
+        const QScrollBar *vScroll = m_graphicsView->verticalScrollBar();
+        const QPoint imageOffset(hScroll->value(), vScroll->value());
+        const QPoint imageOffsetScaledToMap = coordsFromViewToMap(imageOffset);
+
         const QRect& viewGeometry = m_graphicsView->geometry();
         const QPoint& viewSizeScaled = coordsFromViewToMap({viewGeometry.width(), viewGeometry.height()});
-        const QRect rectToDraw(0, 0, viewSizeScaled.x(), viewSizeScaled.y());
-        drawMapPart(QPoint(0,0), rectToDraw);
+        const QRect rectToDraw(imageOffsetScaledToMap.x(), imageOffsetScaledToMap.y(), viewSizeScaled.x(), viewSizeScaled.y());
+        drawMapPart(imageOffset, rectToDraw);
     }
 }
 

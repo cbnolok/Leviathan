@@ -32,8 +32,8 @@ public:
     UOArt(const std::string& clientPath, UOHues* hues = nullptr);
     ~UOArt();
 
-    static const int kLandtilesOffset   = 0;
-    static const int kItemsOffset       = 0x4000;   // the (world)items are stored after this id
+    static constexpr int kLandtilesOffset   = 0;
+    static constexpr int kItemsOffset       = 0x4000;   // the (world)items are stored after this id
     enum class ClientFileType
     {
         Uninitialized,

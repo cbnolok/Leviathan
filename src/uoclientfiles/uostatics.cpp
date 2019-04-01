@@ -168,28 +168,23 @@ StaticsBlock UOStatics::readBlock(const UOIdx::Entry &idxEntry)
 }
 
 
-auto getBlockOffsetsFromCoords = [](unsigned int &x, unsigned int &y) noexcept
-{
-    x = x % StaticsBlock::kTilesPerRow;
-    y = y % StaticsBlock::kTilesPerColumn;
-};
+// since we want the modulo for a power of 2 (8, in this case), we can use the AND operator for 8 - 1
+#define BLOCK_OFFSET_X(x)   static_cast<unsigned char>(x & (StaticsBlock::kTilesPerRow - 1))
+#define BLOCK_OFFSET_Y(y)   static_cast<unsigned char>(y & (StaticsBlock::kTilesPerColumn - 1))
 
 std::vector<StaticsEntry> UOStatics::getItemsAtCoordsFromBlock(const StaticsBlock& block, unsigned int x, unsigned int y) const
 {
-    getBlockOffsetsFromCoords(x, y);
-    return block.getItemsAtOffsets(static_cast<unsigned char>(x), static_cast<unsigned char>(y));
+    return block.getItemsAtOffsets(BLOCK_OFFSET_X(x), BLOCK_OFFSET_Y(y));
 }
 
 std::vector<StaticsEntry> UOStatics::getItemsAtCoordsFromBlock(const StaticsBlock& block, unsigned int x, unsigned int y, char z) const
 {
-    getBlockOffsetsFromCoords(x, y);
-    return block.getItemsAtOffsets(static_cast<unsigned char>(x), static_cast<unsigned char>(y), z);
+    return block.getItemsAtOffsets(BLOCK_OFFSET_X(x), BLOCK_OFFSET_Y(y), z);
 }
 
 bool UOStatics::getTopItemFromBlock(StaticsEntry *entry, const StaticsBlock& block, unsigned int x, unsigned int y) const
 {
-    getBlockOffsetsFromCoords(x, y);
-    return block.getTopItem(entry, static_cast<unsigned char>(x), static_cast<unsigned char>(y));
+    return block.getTopItem(entry, BLOCK_OFFSET_X(x), BLOCK_OFFSET_Y(y));
 }
 
 

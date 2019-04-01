@@ -14,8 +14,8 @@ struct UOIdx
 {
     struct Entry
     {
-        static const unsigned int kInvalid = 0xFFFFFFFF;
-        static const unsigned int kSize = 4 + 4 + 4;
+        static constexpr unsigned int kInvalid = 0xFFFFFFFF;
+        static constexpr unsigned int kSize = 4 + 4 + 4;
 
         unsigned int lookup;
         unsigned int size;

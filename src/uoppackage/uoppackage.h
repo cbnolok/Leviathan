@@ -1,6 +1,19 @@
 /**
-*	Ultima Online Package (UOP) Library v3.2 by Nolok
+*	Ultima Online Package (UOP) Library v4.0 by Nolok
 *   cbnolok  a t  gmail.com
+*
+*   This program is free software: you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License as published by
+*   the Free Software Foundation, either version 3 of the License, or
+*   (at your option) any later version.
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef UOPACKAGE_H
@@ -16,43 +29,58 @@ class UOPPackage
 {
     friend class UOPFile;
     friend class UOPBlock;
+    static constexpr unsigned int kMinSupportedVersion = 4;
+    static constexpr unsigned int kMaxSupportedVersion = 5;
 
 public:
-    UOPPackage(unsigned int maxFilesPerBlock = 100);
+    UOPPackage(unsigned int version = kMaxSupportedVersion, unsigned int maxFilesPerBlock = 100);
     ~UOPPackage();
 
-    bool load(const std::string &fileName, UOPError* errorQueue = nullptr);
-    std::ifstream getOpenedStream();
+    UOPFile* getFileByIndex(unsigned int block, unsigned int index) const;
     UOPFile* getFileByName(const std::string &filename);
-    UOPFile* getFileByIndex(unsigned int block, unsigned int idx) const;
-    bool searchByHash(unsigned long long hash, unsigned int &block, unsigned int &index) const;
-    bool addFile(const std::string &filePath, unsigned long long fileHash, CompressionFlag compression, UOPError* errorQueue = nullptr);
-    bool addFile(const std::string &filePath, const std::string &packedFileName, CompressionFlag compression, UOPError* errorQueue = nullptr);
+    bool searchByHash(unsigned long long hash, unsigned int *block, unsigned int *index) const;
+
+    std::ifstream getOpenedStream();
+    bool load(const std::string &fileName, UOPError* errorQueue = nullptr);
+    bool readPackedData(UOPError* errorQueue = nullptr);
+    void freePackedData();
+
+    bool addFile(const std::string &filePath, unsigned long long fileHash,          CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
+    bool addFile(const std::string &filePath, const std::string &packedFileName,    CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
     bool finalizeAndSave(const std::string& uopPath, UOPError* errorQueue = nullptr);
 
 // Package header data
-public:
-    const std::string& getPackageName() const;
-    int getVersion() const;
-    unsigned int getMisc() const;
-    unsigned long long getStartAddress() const;
-    unsigned int getBlockSize() const;
-    unsigned int getFileCount() const;
-
 private:
     std::string m_filePath;
-    int m_version;
+    unsigned int m_version;
     unsigned int m_misc;
     unsigned long long m_startAddress;
     unsigned int m_blockSize;
     unsigned int m_fileCount;
 
 public:
+    unsigned int getVersion() const             { return m_version;     }
+    unsigned int getMisc() const                { return m_misc;        }
+    unsigned long long getStartAddress() const  { return m_startAddress;}
+    unsigned int getBlockSize() const           { return m_blockSize;   }
+    unsigned int getFileCount() const           { return m_fileCount;   }
+
+// Package structure
+private:
+    std::string m_packageName;
+    std::vector<UOPBlock*> m_blocks;
+
+    // Used only when creating a package
+    unsigned int m_curBlockIdx;
+
+public:
+    const std::string& getPackageName() const           { return m_packageName; }
+
     // Blocks
-    unsigned int getBlocksCount() const;
-    std::vector<UOPBlock*> getBlocks();
-    UOPBlock* getBlock(unsigned int index);
-    const UOPBlock* getBlock(unsigned int index) const;
+    unsigned int getBlocksCount() const                 { return unsigned(m_blocks.size()); }
+    std::vector<UOPBlock*> getBlocks()                  { return m_blocks;                  }
+    UOPBlock* getBlock(unsigned int index)              { return m_blocks[index];           }
+    const UOPBlock* getBlock(unsigned int index) const  { return m_blocks[index];           }
 
     // Iterators
     template <typename PointerType> class base_iterator;
@@ -64,15 +92,6 @@ public:
     const_iterator cend() const;
     const_iterator cbegin() const;
     const_iterator cback_it() const;
-
-private:
-    std::string m_packageName;
-    std::vector<UOPBlock*> m_blocks;
-
-    // Used only when creating a package
-    static const int kSupportedVersion = 5;
-    unsigned int m_curBlockIdx;
-
 };
 
 template <typename PointerType>
@@ -98,8 +117,6 @@ public:
     base_iterator operator--();      // pre-decrement
     base_iterator operator--(int);   // post-decrement
     PointerType operator*();
-
-    static const unsigned int kInvalidIdx = (unsigned int)-1;
 };
 
 
@@ -180,6 +197,7 @@ PointerType UOPPackage::base_iterator<PointerType>::operator*()
     return m_package->getBlock(m_currentBlockIdx)->getFile(m_currentFileIdx);
 }
 
-}
+
+} // end of uopp namespace
 
 #endif // UOPACKAGE_H
