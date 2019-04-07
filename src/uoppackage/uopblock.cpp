@@ -1,3 +1,7 @@
+/**
+* This Source Code Form is part of UOP Package library by Nolok and subject to the terms of the
+* GNU General Public License version 3. More info in the file "uoppackage.h", which is part of this source code package.
+*/
 #include "uopblock.h"
 #include <sstream>
 #include "uophash.h"
@@ -46,7 +50,10 @@ void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
     for (unsigned int index = 0; index < m_fileCount; ++index)
     {
         UOPFile* f = new UOPFile(this, index);
-        f->read( fin, errorQueue );
+        //if (!f->read(fin, errorQueue))
+        //    continue;  // better to load the file even if it has some weirdness
+        f->read(fin, errorQueue);
+        f->m_parent = this;
         m_files.push_back(f);
     }
 
@@ -102,6 +109,7 @@ bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, Compress
         return false;
     }
 
+    file->m_parent = this;
     m_files.push_back(file);
     ++m_fileCount;
     return true;

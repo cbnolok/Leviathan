@@ -1,3 +1,7 @@
+/**
+* This Source Code Form is part of UOP Package library by Nolok and subject to the terms of the
+* GNU General Public License version 3. More info in the file "uoppackage.h", which is part of this source code package.
+*/
 #ifndef UOPBLOCK_H
 #define UOPBLOCK_H
 
@@ -25,7 +29,7 @@ public:
 
     unsigned int searchByHash(unsigned long long hash) const;
     bool addFile(std::ifstream& fin, unsigned long long fileHash,       CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
-    bool addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, bool addDataHash,  UOPError* errorQueue = nullptr);
+    bool addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
 
 // Block structure
 private:
@@ -39,6 +43,7 @@ private:
     unsigned int m_curFileIdx;
 
 public:
+    UOPPackage* getParent() const                   { return m_parent;              }
     unsigned int getIndex() const                   { return m_index;               }
     unsigned int getFilesCount() const              { return m_fileCount;           }
     UOPFile* getFile(unsigned int index) const      { return m_files[index];        }

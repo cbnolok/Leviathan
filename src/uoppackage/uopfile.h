@@ -1,3 +1,7 @@
+/**
+* This Source Code Form is part of UOP Package library by Nolok and subject to the terms of the
+* GNU General Public License version 3. More info in the file "uoppackage.h", which is part of this source code package.
+*/
 #ifndef UOPFILE_H
 #define UOPFILE_H
 
@@ -56,6 +60,7 @@ private:
     bool m_added;
 
 public:
+    UOPBlock* getParent() const                     { return m_parent;              }
     unsigned int getIndex() const                   { return m_index;               }
     unsigned long long getDataBlockAddress() const  { return m_dataBlockAddress;    }
     unsigned int getDataBlockLength() const         { return m_dataBlockLength;     }

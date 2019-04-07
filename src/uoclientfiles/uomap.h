@@ -77,9 +77,13 @@ public:
 
     char getTopZAtXY(unsigned int x, unsigned int y);
 
+    // convert real (in-game) map coordinates to image coordinates (applying the scaleFactor)
     static void scaleCoordsMapToImage(unsigned int scaleFactor, unsigned int *x, unsigned int *y);
+    // convert image coordinates (applying the scaleFactor) to real (in-game)map coordinates
     static void scaleCoordsImageToMap(unsigned int scaleFactor, unsigned int *x, unsigned int *y);
+    // limit the coordinates to the map size (min/max x and y)
     void clipCoordsToMapSize(unsigned int *xMapStart, unsigned int *yMapStart, unsigned int *width, unsigned int *height);
+
     bool drawRectInImage(QImage *image, int xImageOffset, int yImageOffset,
                          std::function<void (int)> reportProgress,
                          unsigned int xMapStart, unsigned int yMapStart, unsigned int width, unsigned int height,

@@ -1,8 +1,13 @@
+/**
+* This Source Code Form is part of UOP Package library by Nolok and subject to the terms of the
+* GNU General Public License version 3. More info in the file "uoppackage.h", which is part of this source code package.
+*/
 #include "uoppackage.h"
 
-#include <sstream>
+#include <cstring>      // for strcmp
+#include <exception>    // for std::logic_error
 #include <iostream>
-#include <exception>
+#include <sstream>
 
 // Headers needed to get the absolute path of a file
 #ifdef _WIN32
@@ -123,6 +128,7 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
     {
         UOPBlock* b = new UOPBlock(this, index);
         b->read(fin, errorQueue);
+        b->m_parent = this;
         m_blocks.push_back(b);
 
         unsigned long long nextbl = b->getNextBlockAddress();
@@ -199,6 +205,7 @@ bool UOPPackage::addFile(const std::string& filePath, unsigned long long fileHas
     else
     {
         curBlock = new UOPBlock(this, m_curBlockIdx);
+        curBlock->m_parent = this;
         m_blocks.push_back(curBlock);
         m_curBlockIdx = unsigned(m_blocks.size()) - 1;
     }
@@ -284,8 +291,8 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     /* Start of the Header Data */
 
     // Write UOP file header
-    static const unsigned int kPackageHeaderSize = 32;  // Size of the header in bytes = 4+4+4+8+4+4=32
-    static const unsigned int kV5FirstBlockHeaderOffset = 0x200;
+    static constexpr unsigned int kPackageHeaderSize = 32;  // Size of the header in bytes = 4+4+4+8+4+4=32
+    static constexpr unsigned int kV5FirstBlockHeaderOffset = 0x200;
 
     const char MYP0[4] = {'M', 'Y', 'P', 0};
     fout.write(MYP0, 4);
@@ -295,7 +302,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     if (m_version == 5)
     {
         // Add a zero-padding before the start of the header data
-        //static const long long firstTableAddress = 0x200;
+        //static constexpr long long firstTableAddress = 0x200;
         m_startAddress = kV5FirstBlockHeaderOffset;
     }
     else
@@ -311,7 +318,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
 
     if (m_version == 5)
     {
-        char paddingData[kV5FirstBlockHeaderOffset - kPackageHeaderSize] = {0};
+        static constexpr char paddingData[kV5FirstBlockHeaderOffset - kPackageHeaderSize] = {0};
         fout.write(paddingData, sizeof(paddingData));
     }
 
@@ -354,7 +361,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
         //  Each block must have a number of headers equal to blockSize.
         while (iFile < m_blockSize)
         {
-            static const char emptyFileHeader[34] = {0};
+            static constexpr char emptyFileHeader[34] = {0};
             fout.write(emptyFileHeader, sizeof(emptyFileHeader));
             ++iFile;
         }
