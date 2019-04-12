@@ -1,23 +1,17 @@
-#ifndef KEYSTROKESENDER_WINDOWS_H
-#define KEYSTROKESENDER_WINDOWS_H
+#ifndef KEYSTROKESENDER_MAC_H
+#define KEYSTROKESENDER_MAC_H
 
-#ifdef _WIN32
+#if defined(__unix__) && defined(__APPLE__)
 
 #include "keystrokesender_common.h"
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
 
 namespace ks
 {
 
-
-class KeystrokeSender_Windows
+class KeystrokeSender_Mac
 {
-    friend BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam);
-
 protected:
-    KeystrokeSender_Windows(bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
+    KeystrokeSender_Mac(bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
 
 public:
     bool canSend();
@@ -43,16 +37,11 @@ protected:
     bool m_setFocusToWindow;
     KSError m_error = KSError::Ok;
     UOClientType m_clientType = UOClientType::Unknown;
-
-private:
-    HWND m_UOHandle = nullptr;
-
-    bool findUOWindow();
 };
 
 
 }
 
-#endif // _WIN32
+#endif // defined(__unix__) && defined(__APPLE__)
 
-#endif // KEYSTROKESENDER_WINDOWS_H
+#endif // KEYSTROKESENDER_MAC_H

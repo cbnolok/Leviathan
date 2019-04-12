@@ -1,7 +1,7 @@
 #ifndef KEYSTROKESENDER_LINUX_H
 #define KEYSTROKESENDER_LINUX_H
 
-#ifndef _WIN32
+#if defined(__unix__) && !defined(__APPLE__)
 
 #include "keystrokesender_common.h"
 
@@ -63,6 +63,6 @@ private:
 
 }
 
-#endif // !_WIN32
+#endif // defined(__unix__) && !defined(__APPLE__)
 
 #endif // KEYSTROKESENDER_LINUX_H

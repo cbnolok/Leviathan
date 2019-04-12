@@ -2,28 +2,31 @@
 #define KEYSTROKESENDER_H
 
 #include "keystrokesender_windows.h"
+#include "keystrokesender_mac.h"
 #include "keystrokesender_linux.h"
-#include <string>
 
 
 namespace ks
 {
 
+// Namespace functions
 const char * getErrorStringStatic(KSError err);
 
-
-#ifdef _WIN32
-class KeystrokeSender : public KeystrokeSender_Windows
-#else
-class KeystrokeSender : public KeystrokeSender_Linux
+// Class
+#if defined(_WIN32)
+    #define KS_BASE_CLASS KeystrokeSender_Windows
+#elif defined(__unix__)
+    #if defined(__APPLE__)
+        #define KS_BASE_CLASS KeystrokeSender_Mac
+    #else
+        #define KS_BASE_CLASS KeystrokeSender_Linux
+    #endif
 #endif
+
+class KeystrokeSender : public KS_BASE_CLASS
 {
 public:
-    #ifdef _WIN32
-    KeystrokeSender(bool setFocusToWindow = false) : KeystrokeSender_Windows(setFocusToWindow) {}
-    #else
-    KeystrokeSender(bool setFocusToWindow = false) : KeystrokeSender_Linux(setFocusToWindow) {}
-    #endif
+    KeystrokeSender(bool setFocusToWindow = false) : KS_BASE_CLASS(setFocusToWindow) {}
 
     void setSetFocusToWindow(bool value);
 
@@ -31,18 +34,25 @@ public:
     std::string getErrorString() const;
     UOClientType getClientType() const;
 
-    // Public methods inherited from KeystrokeSender_Windows and KeystrokeSender_Linux:
+    // Public methods inherited from KS_BASE_CLASS:
+    // sendChar();
+    // sendEnter();
+    // sendString();
+    // sendStrings();
+
+    // Public static methods inherited from KS_BASE_CLASS:
     // sendCharFast();
     // sendEnterFast();
     // sendStringFast();
     // sendStringsFast();
-
-    // Public static methods inherited from KeystrokeSender_Windows and KeystrokeSender_Linux:
+    //-- Async methods
     // sendCharFastAsync();
     // sendEnterFastAsync();
     // sendStringFastAsync();
     // sendStringsFastAsync();
 };
+
+#undef KS_BASE_CLASS
 
 
 }

@@ -4,6 +4,12 @@ Non-windows versions lack, for now, the "send text to client" feature.<br>
 Consider it at an embryonal stage, since it lacks lots of features, and a slow-progressing project.<br>
 Some things could have be done more easily using Qt classes, but i'd rather write code that can be recycled for other projects (which aren't necessarily using Qt).<br>
 
+# Compilation
+* Windows: The preferred way is to use Qt Creator to open the .pro file and compile it.
+* Linux: Use Qt Creator, or you can compile it under command line using qmake and make.
+* Mac: Same as Linux, but you may need to manually install zlib (libz.dylib) via `brew install zlib`.
+   If you don't have that, you'll get linker errors.
+
 # Credits
 Uses Qt Toolkit 5.<br>
 Uses CheckableProxyModel (GPLv3 or later versions, as of 2011) by Andre Somers.<br>

@@ -83,7 +83,7 @@ void UOPBlock::freePackedData()
 bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)
 {
     std::stringstream ssHash; ssHash << std::hex << fileHash;
-    std::string strHash("0x" + ssHash.str());
+    const std::string strHash("0x" + ssHash.str());
     if (fileHash == 0)
     {
         ADDERROR("UOPBlock::addFile: Invalid fileHash: " + strHash);
@@ -127,7 +127,7 @@ bool UOPBlock::addFile(std::ifstream& fin, const std::string& packedFileName, Co
         ADDERROR("UOPBlock::addFile: Invalid compression flag: " + std::to_string(short(compression)) + " (" + packedFileName + ")");
         return false;
     }
-    unsigned long long fileHash = hashFileName(packedFileName);
+    const unsigned long long fileHash = hashFileName(packedFileName);
     return addFile(fin, fileHash, compression, addDataHash, errorQueue);
 }
 

@@ -1,4 +1,4 @@
-#ifndef _WIN32
+#if defined(__unix__) && !defined(__APPLE__)
 
 #include "keystrokesender_linux.h"
 #include <string>
@@ -239,9 +239,9 @@ bool KeystrokeSender_Linux::sendEnter()
 
 bool KeystrokeSender_Linux::_sendString(const std::string& str, bool enterTerminated)
 {
-    int len = (str.length() > 255) ? 255 : str.length();
+    unsigned len = (str.length() > 255) ? 255 : unsigned(str.length());
 
-    for (int i = 0; i < len; ++i)
+    for (unsigned i = 0; i < len; ++i)
     {
         if ( !_sendChar(str[i]) )
             return false;
@@ -500,78 +500,4 @@ bool KeystrokeSender_Linux::sendChar(const char ch)
 #undef False
 #undef None
 
-#endif // !_WIN32
-
-
-/* Mac OSX */   // Snippets taken here and there from the web
-/*
-
-#include <ApplicationServices/ApplicationServices.h>
-
-void Press(int key);
-void Release(int key);
-void Click(int key);
-
-int main() {
-    Press(56);
-    Click(6);
-    Release(56);
-}
-
-void Press(int key) {
-    // Create an HID hardware event source
-    CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
-
-    // Create a new keyboard key press event
-    CGEventRef evt = CGEventCreateKeyboardEvent(src, (CGKeyCode) key, true);
-
-    // Post keyboard event and release
-    CGEventPost (kCGHIDEventTap, evt);
-    CFRelease (evt); CFRelease (src);
-
-    usleep(60);
-}
-
-void Release(int key) {
-    // Create an HID hardware event source
-    CGEventSourceRef src = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
-
-    // Create a new keyboard key release event
-    CGEventRef evt = CGEventCreateKeyboardEvent(src, (CGKeyCode) key, false);
-
-    // Post keyboard event and release
-    CGEventPost (kCGHIDEventTap, evt);
-    CFRelease (evt); CFRelease (src);
-
-    usleep(60);
-}
-
-void Click(int key) {
-    Press(key);
-    Release(key);
-}
-
-
-------------------------------------
-
-// From https://stackoverflow.com/questions/2379867/simulating-key-press-events-in-mac-os-x, by Dave DeLong
-Here's code to simulate a Cmd-S action:
-
-CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateCombinedSessionState);
-CGEventRef saveCommandDown = CGEventCreateKeyboardEvent(source, (CGKeyCode)1, YES);
-CGEventSetFlags(saveCommandDown, kCGEventFlagMaskCommand);
-CGEventRef saveCommandUp = CGEventCreateKeyboardEvent(source, (CGKeyCode)1, NO);
-
-CGEventPost(kCGAnnotatedSessionEventTap, saveCommandDown);
-CGEventPost(kCGAnnotatedSessionEventTap, saveCommandUp);
-
-CFRelease(saveCommandUp);
-CFRelease(saveCommandDown);
-CFRelease(source);
-
-A CGKeyCode is nothing more than an unsigned integer:
-
-typedef uint16_t CGKeyCode;  //From CGRemoteOperation.h
-
-Your real issue will be turning a character (probably an NSString) into a keycode.
-*/
+#endif // defined(__unix__) && !defined(__APPLE__)

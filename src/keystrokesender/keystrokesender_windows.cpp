@@ -122,9 +122,9 @@ bool KeystrokeSender_Windows::sendString(const std::string &str, bool enterTermi
     if (m_setFocusToWindow)
         SetForegroundWindow(m_UOHandle);
 
-    int len = (str.length() > 255) ? 255 : (int)str.length();
+    unsigned len = (str.length() > 255) ? 255 : unsigned(str.length());
 
-    for (int i = 0; i < len; ++i)
+    for (unsigned i = 0; i < len; ++i)
     {
         if (!sendChar(str[i]))
             return false;

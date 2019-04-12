@@ -17,21 +17,26 @@ RESOURCES = leviathan_resources.qrc
 SOURCES += \
     globals.cpp \
     main.cpp \
+    cpputils/strings.cpp \
+    cpputils/sysio.cpp \
+    qtutils/checkableproxymodel.cpp \
+    qtutils/delayedexecutiontimer.cpp \
+    qtutils/modelutils.cpp \
+    forms/base_mapview.cpp \
     forms/mainwindow.cpp \
     forms/maintab_chars.cpp \
     forms/maintab_items.cpp \
     forms/maintab_log.cpp \
+    forms/maintab_travel.cpp \
     forms/dlg_huepicker.cpp \
     forms/dlg_profileclient_options.cpp \
     forms/dlg_profilescripts_options.cpp \
     forms/dlg_settings.cpp \
+    forms/dlg_worldmap.cpp \
     forms/subdlg_searchobj.cpp \
     forms/subdlg_spawn.cpp \
     forms/subdlg_taskprogress.cpp \
     forms/maintab_tools.cpp \
-    qtutils/checkableproxymodel.cpp \
-    qtutils/delayedexecutiontimer.cpp \
-    qtutils/modelutils.cpp \
     settings/appsettings.cpp \
     settings/clientprofile.cpp \
     settings/scriptsprofile.cpp \
@@ -39,6 +44,12 @@ SOURCES += \
     spherescript/scriptparser.cpp \
     spherescript/scriptsearch.cpp \
     spherescript/scriptutils.cpp \
+    uoppackage/uopblock.cpp \
+    uoppackage/uopcompression.cpp \
+    uoppackage/uoperror.cpp \
+    uoppackage/uopfile.cpp \
+    uoppackage/uophash.cpp \
+    uoppackage/uoppackage.cpp \
     uoclientfiles/libsquish/alpha.cpp \
     uoclientfiles/libsquish/clusterfit.cpp \
     uoclientfiles/libsquish/colourblock.cpp \
@@ -50,7 +61,12 @@ SOURCES += \
     uoclientfiles/libsquish/singlecolourlookup.inl \
     uoclientfiles/libsquish/squish.cpp \
     uoclientfiles/ddsinfo.cpp \
+    uoclientfiles/exceptions.cpp \
     uoclientfiles/helpers.cpp \
+    uoclientfiles/uoradarcol.cpp \
+    uoclientfiles/uomap.cpp \
+    uoclientfiles/uostatics.cpp \
+    uoclientfiles/colors.cpp \
     uoclientfiles/uonimmul.cpp \
     uoclientfiles/uoanim.cpp \
     uoclientfiles/uoart.cpp \
@@ -61,41 +77,33 @@ SOURCES += \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
     keystrokesender/keystrokesender.cpp \
-    uoppackage/uopblock.cpp \
-    uoppackage/uopcompression.cpp \
-    uoppackage/uoperror.cpp \
-    uoppackage/uopfile.cpp \
-    uoppackage/uophash.cpp \
-    uoppackage/uoppackage.cpp \
-    cpputils/strings.cpp \
-    cpputils/sysio.cpp \
-    forms/dlg_worldmap.cpp \
-    uoclientfiles/uoradarcol.cpp \
-    uoclientfiles/uomap.cpp \
-    uoclientfiles/uostatics.cpp \
-    uoclientfiles/exceptions.cpp \
-    forms/maintab_travel.cpp \
-    uoclientfiles/colors.cpp \
-    forms/base_mapview.cpp
+    keystrokesender/keystrokesender_mac.cpp
 
 HEADERS  += \
     globals.h \
+    logging.h \
     version.h \
+    cpputils/maps.h \
+    cpputils/strings.h \
+    cpputils/sysio.h \
+    qtutils/checkableproxymodel.h \
+    qtutils/delayedexecutiontimer.h \
+    qtutils/modelutils.h \
+    forms/base_mapview.h \
     forms/mainwindow.h \
     forms/maintab_chars.h \
     forms/maintab_items.h \
     forms/maintab_log.h \
     forms/maintab_tools.h \
+    forms/maintab_travel.h \
     forms/dlg_huepicker.h \
     forms/dlg_profileclient_options.h \
     forms/dlg_profilescripts_options.h \
     forms/dlg_settings.h \
+    forms/dlg_worldmap.h \
     forms/subdlg_searchobj.h \
     forms/subdlg_spawn.h \
     forms/subdlg_taskprogress.h \
-    qtutils/checkableproxymodel.h \
-    qtutils/delayedexecutiontimer.h \
-    qtutils/modelutils.h \
     settings/appsettings.h \
     settings/clientprofile.h \
     settings/scriptsprofile.h \
@@ -103,6 +111,12 @@ HEADERS  += \
     spherescript/scriptparser.h \
     spherescript/scriptsearch.h \
     spherescript/scriptutils.h \
+    uoppackage/uopblock.h \
+    uoppackage/uopcompression.h \
+    uoppackage/uoperror.h \
+    uoppackage/uopfile.h \
+    uoppackage/uophash.h \
+    uoppackage/uoppackage.h \
     uoppackage/zconf.h \
     uoppackage/zlib.h \
     uoclientfiles/libsquish/alpha.h \
@@ -118,8 +132,13 @@ HEADERS  += \
     uoclientfiles/libsquish/simd_ve.h \
     uoclientfiles/libsquish/singlecolourfit.h \
     uoclientfiles/libsquish/squish.h \
+    uoclientfiles/colors.h \
     uoclientfiles/ddsinfo.h \
+    uoclientfiles/exceptions.h \
     uoclientfiles/helpers.h \
+    uoclientfiles/uoradarcol.h \
+    uoclientfiles/uomap.h \
+    uoclientfiles/uostatics.h \
     uoclientfiles/uoanim.h \
     uoclientfiles/uoanimmul.h \
     uoclientfiles/uoanimuop.h \
@@ -130,24 +149,7 @@ HEADERS  += \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \
-    cpputils/strings.h \
-    cpputils/sysio.h \
-    uoppackage/uopblock.h \
-    uoppackage/uopcompression.h \
-    uoppackage/uoperror.h \
-    uoppackage/uopfile.h \
-    uoppackage/uophash.h \
-    uoppackage/uoppackage.h \
-    cpputils/maps.h \
-    forms/dlg_worldmap.h \
-    uoclientfiles/uoradarcol.h \
-    uoclientfiles/uomap.h \
-    uoclientfiles/uostatics.h \
-    uoclientfiles/exceptions.h \
-    forms/maintab_travel.h \
-    uoclientfiles/colors.h \
-    forms/base_mapview.h \
-    logging.h
+    keystrokesender/keystrokesender_mac.h
 
 FORMS    += \
     forms/mainwindow.ui \
@@ -165,6 +167,8 @@ FORMS    += \
     forms/dlg_worldmap.ui \
     forms/maintab_travel.ui
 
+SUBDIRS += \
+    uoclientfiles/libsquish/libSquish.pro
 
 Release:DESTDIR     = release
 Release:OBJECTS_DIR = release/obj
@@ -233,32 +237,31 @@ win32:!unix {
 
 # linux and mac
 unix:!win32 {
-    LIBS += -lz -L/usr/X11R6/lib -lX11      # dynamically link zlib and xlib (the latter for KeystrokeSender)
+    !mac {
+        LIBS += -lz                             # dynamically link zlib...
+        LIBS += -L/usr/X11R6/lib -lX11          # ...and xlib (for KeystrokeSender)
 
-    # MAC section commented because it's UNTESTED
-    #mac {
+        QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas as default flag for Linux
+        LIBS += -fopenmp                        # link against OpenMP library
+    } else {
+        LIBS += -L/usr/lib -lz                  # dynamically link zlib
+
+        # UNTESTED
         # looks like OpenMP support here began only with recent LLVM versions?
         #  (Apple's LLVM versions have a different numeration from the official LLVM branch)
         #LLVMVER = system(g++ -x c++ -dM -E - < /dev/null | grep -Eo "__apple_build_version__  [0-9]{1,7}" | grep -Eo "[0-9]{1,7}")
         # OpenMP support began with "standard" version 3.8.0, which may be Apple 703.0.29 or 703.0.31. To be sure, check for 3.9.0 (>= Apple 800.0.38 ?)
         #greaterThan(LLVMVER, 80000037) {
-        #    QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas
+        #    QMAKE_CXXFLAGS += -fopenmp             # enable OpenMP pragmas
         #    # or should we use -fopenmp=libomp ?
         #    #LIBS += -fopenmp
         #} else {
-            ##QMAKE_CXXFLAGS += -fopenmp     # no openmp for you
+            ##QMAKE_CXXFLAGS += -fopenmp            # no openmp for you
             ##LIBS += -fopenmp
         #}
-    #}
-    !mac {
-        QMAKE_CXXFLAGS += -fopenmp              # enable OpenMP pragmas as default flag for Linux
-        LIBS += -fopenmp    # link against OpenMP library
     }
 
     # disable some specific warnings
     QMAKE_CXXFLAGS += -Wno-implicit-fallthrough
     QMAKE_CXXFLAGS += -Wmisleading-indentation #-Wno-unknown-pragmas
 }
-
-SUBDIRS += \
-    uoclientfiles/libsquish/libSquish.pro

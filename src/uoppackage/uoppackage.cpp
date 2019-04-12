@@ -14,7 +14,7 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 #else
-    #include <cstdlib>
+    #include <cstdlib>  // for realpath
 #endif
 
 #include "uophash.h"
@@ -52,7 +52,7 @@ UOPFile* UOPPackage::getFileByIndex(unsigned int block, unsigned int index) cons
 
 UOPFile* UOPPackage::getFileByName(const std::string &filename)
 {
-    unsigned long long hash = hashFileName(filename);
+    const unsigned long long hash = hashFileName(filename);
     unsigned int block = kInvalidIdx, index = kInvalidIdx;
     if ( searchByHash(hash, &block, &index) )
         return getFileByIndex(block, index);
@@ -131,7 +131,7 @@ bool UOPPackage::load(const std::string& fileName, UOPError* errorQueue)
         b->m_parent = this;
         m_blocks.push_back(b);
 
-        unsigned long long nextbl = b->getNextBlockAddress();
+        const unsigned long long nextbl = b->getNextBlockAddress();
 
         if (nextbl == 0)
             iseof = true;
@@ -368,7 +368,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
     }
 
     // Now update UOPBlock::m_nextBlockAddress for each block
-    std::streampos endPackageHeader = fout.tellp();
+    const std::streampos endPackageHeader = fout.tellp();
     if (blockInfoStartAddresses.size() > 1)
     {
         for (size_t i = 0, sz = blockInfoStartAddresses.size() - 1; i < sz; ++i)
@@ -414,7 +414,7 @@ bool UOPPackage::finalizeAndSave(const std::string& uopPath, UOPError* errorQueu
             // Write UOP file raw data
             unsigned long long beforeDataPos = static_cast<unsigned long long>(fout.tellp());
             fout.write( curFile->m_data.data(), std::streamsize(curFile->m_data.size()) );
-            std::streampos afterDataPos = fout.tellp();
+            const std::streampos afterDataPos = fout.tellp();
 
             if (freeFileData)
             {

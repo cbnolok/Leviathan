@@ -176,7 +176,7 @@ bool UOPFile::compressAndReplaceData(const std::vector<char>* sourceDecompressed
 bool UOPFile::createFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)    // create file in memory
 {
     std::stringstream ssHash; ssHash << std::hex << fileHash;
-    std::string strHash("0x" + ssHash.str());
+    const std::string strHash("0x" + ssHash.str());
     if (fileHash == 0)
     {
         ADDERROR("UOPFile::createFile: Invalid fileHash: " + strHash);
@@ -199,11 +199,11 @@ bool UOPFile::createFile(std::ifstream& fin, unsigned long long fileHash, Compre
     m_fileHash = fileHash;      // Hashed file name
 
     // Get the input file size
-    std::ifstream::pos_type curPos = fin.tellg();
+    const std::ifstream::pos_type curPos = fin.tellg();
     fin.seekg(0, std::ios::end);
-    std::ifstream::pos_type endPos = fin.tellg();
+    const std::ifstream::pos_type endPos = fin.tellg();
     fin.seekg(curPos, std::ios::beg);
-    std::streamsize finSizeToRead = endPos - curPos;
+    const std::streamsize finSizeToRead = endPos - curPos;
 
     // Write the raw file data in internal buffer
     std::vector<char> finData;
@@ -227,7 +227,7 @@ bool UOPFile::createFile(std::ifstream& fin, const std::string& packedFileName, 
         return false;
     }
 
-    unsigned long long fileHash = hashFileName(packedFileName);
+    const unsigned long long fileHash = hashFileName(packedFileName);
     return createFile(fin, fileHash, compression, addDataHash, errorQueue);
 }
 
