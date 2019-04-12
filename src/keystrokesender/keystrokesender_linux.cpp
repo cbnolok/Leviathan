@@ -1,8 +1,8 @@
 #if defined(__unix__) && !defined(__APPLE__)
 
 #include "keystrokesender_linux.h"
-#include <string>
 #include <cstring>
+#include <string>
 #include <thread>
 #include <chrono>
 

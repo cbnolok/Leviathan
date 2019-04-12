@@ -10,8 +10,9 @@ namespace uocf
 {
 
 
-struct UOIdx
+class UOIdx
 {
+public:
     struct Entry
     {
         static constexpr unsigned int kInvalid = 0xFFFFFFFF;

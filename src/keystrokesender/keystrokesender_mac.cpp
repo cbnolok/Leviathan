@@ -1,4 +1,4 @@
-#if defined(__unix__) && defined(__APPLE__)
+#if defined(__APPLE__)
 
 #include "keystrokesender_mac.h"
 
@@ -101,7 +101,7 @@ KSError KeystrokeSender_Mac::sendStringsFastAsync(const std::vector<std::string>
 
 }
 
-#endif
+#endif // defined (__APPLE__)
 
 
 // Snippets taken here and there from the web

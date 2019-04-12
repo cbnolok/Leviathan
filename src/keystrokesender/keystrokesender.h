@@ -15,12 +15,10 @@ const char * getErrorStringStatic(KSError err);
 // Class
 #if defined(_WIN32)
     #define KS_BASE_CLASS KeystrokeSender_Windows
+#elif defined(__APPLE__)
+    #define KS_BASE_CLASS KeystrokeSender_Mac
 #elif defined(__unix__)
-    #if defined(__APPLE__)
-        #define KS_BASE_CLASS KeystrokeSender_Mac
-    #else
-        #define KS_BASE_CLASS KeystrokeSender_Linux
-    #endif
+    #define KS_BASE_CLASS KeystrokeSender_Linux
 #endif
 
 class KeystrokeSender : public KS_BASE_CLASS

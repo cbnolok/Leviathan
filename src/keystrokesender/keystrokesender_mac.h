@@ -1,7 +1,7 @@
 #ifndef KEYSTROKESENDER_MAC_H
 #define KEYSTROKESENDER_MAC_H
 
-#if defined(__unix__) && defined(__APPLE__)
+#if defined(__APPLE__)
 
 #include "keystrokesender_common.h"
 
@@ -42,6 +42,6 @@ protected:
 
 }
 
-#endif // defined(__unix__) && defined(__APPLE__)
+#endif // defined(__APPLE__)
 
 #endif // KEYSTROKESENDER_MAC_H

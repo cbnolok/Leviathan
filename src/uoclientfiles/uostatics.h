@@ -31,12 +31,13 @@ struct StaticsBlock
     std::unique_ptr<StaticsEntry[]> entries;
 
     std::vector<StaticsEntry> getItemsAtOffsets(unsigned char xOffset, unsigned char yOffset) const;
-    std::vector<StaticsEntry> getItemsAtOffsets(unsigned char xOffset, unsigned char yOffset, char z)  const;
+    std::vector<StaticsEntry> getItemsAtOffsets(unsigned char xOffset, unsigned char yOffset, char z) const;
     bool getTopItem(StaticsEntry *entry, unsigned char xOffset, unsigned char yOffset) const;
 };
 
-struct UOStatics
+class UOStatics
 {
+public:
     UOStatics(const std::string& clientPath, unsigned int fileIndex, unsigned int width, unsigned int height);
 
     void openStream();
