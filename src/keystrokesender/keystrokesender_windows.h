@@ -1,7 +1,7 @@
 #ifndef KEYSTROKESENDER_WINDOWS_H
 #define KEYSTROKESENDER_WINDOWS_H
 
-#ifdef _WIN32
+#if BUILD_WINDOWS
 
 #include "keystrokesender_common.h"
 #define WIN32_LEAN_AND_MEAN

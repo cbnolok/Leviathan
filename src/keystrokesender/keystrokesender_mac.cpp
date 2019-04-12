@@ -1,4 +1,4 @@
-#if defined(__unix__) && defined(__APPLE__)
+#if BUILD_MACOS
 
 #include "keystrokesender_mac.h"
 

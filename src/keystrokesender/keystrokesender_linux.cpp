@@ -1,4 +1,4 @@
-#if defined(__unix__) && !defined(__APPLE__)
+#if BUILD_LINUX
 
 #include "keystrokesender_linux.h"
 #include <string>

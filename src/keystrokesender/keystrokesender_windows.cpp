@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if BUILD_WINDOWS
 
 #include "keystrokesender_windows.h"
 #include <thread>

@@ -1,7 +1,7 @@
 #ifndef KEYSTROKESENDER_LINUX_H
 #define KEYSTROKESENDER_LINUX_H
 
-#if defined(__unix__) && !defined(__APPLE__)
+#if BUILD_LINUX
 
 #include "keystrokesender_common.h"
 

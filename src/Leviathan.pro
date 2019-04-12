@@ -12,6 +12,16 @@ TEMPLATE = app
 
 CONFIG += c++14
 
+unix:!macx {
+    DEFINES += BUILD_LINUX=1 BUILD_MACOS=0 BUILD_WINDOWS=0
+}
+win32|win64 {
+    DEFINES += BUILD_WINDOWS=1 BUILD_LINUX=0 BUILD_MACOS=0
+}
+macx {
+    DEFINES += BUILD_MACOS=1 BUILD_LINUX=0 BUILD_WINDOWS=0
+}
+
 RESOURCES = leviathan_resources.qrc
 
 SOURCES += \
@@ -185,7 +195,6 @@ Debug:UI_DIR        = debug/ui
 
 # Add the application icon
 win32:RC_ICONS += icons/leviathan.ico
-
 
 ###### Compiler/Linker settings
 
