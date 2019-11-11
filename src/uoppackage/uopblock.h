@@ -6,6 +6,7 @@
 #define UOPBLOCK_H
 
 #include "uopfile.h"
+#include <vector>
 
 
 namespace uopp
@@ -28,19 +29,17 @@ public:
     void freePackedData();
 
     unsigned int searchByHash(unsigned long long hash) const;
-    bool addFile(std::ifstream& fin, unsigned long long fileHash,       CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
-    bool addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
+    bool addFile(std::ifstream& fin, unsigned long long fileHash,       ZLibQuality compression, bool addDataHash, UOPError* errorQueue = nullptr);
+    bool addFile(std::ifstream& fin, const std::string& packedFileName, ZLibQuality compression, bool addDataHash, UOPError* errorQueue = nullptr);
 
 // Block structure
 private:
     UOPPackage* m_parent;
+
     unsigned int m_index;
     unsigned int m_fileCount;
-    std::vector<UOPFile*> m_files;
     unsigned long long m_nextBlockAddress;
-
-    // Used only when creating a package
-    unsigned int m_curFileIdx;
+    std::vector<UOPFile*> m_files;
 
 public:
     UOPPackage* getParent() const                   { return m_parent;              }

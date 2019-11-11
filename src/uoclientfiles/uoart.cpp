@@ -1,5 +1,6 @@
 #include "uoart.h"
 
+#include <cstring> // for memcpy
 #include <fstream>
 #include <QFileInfo>
 #include <QImage>
@@ -108,15 +109,15 @@ QImage* UOArt::drawArtEnhanced(bool drawLegacy, unsigned int id, unsigned int hu
         return nullptr;
     }
 
-    auto* decompressedDataVec = new std::vector<char>();
-    if (!uopFile->readPackedData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
+    std::shared_ptr<char[]> decompressedData;
+    if (!uopFile->readPackedData(fin, &uopError) || !uopFile->unpack(&decompressedData, &uopError))
     {
         LOG(QString("Error unpacking from %1 (requested id %2).").arg( (m_lastFileType == ClientFileType::TextureUOP ? kEC_UOPFile : kCC_UOPFile), id ).toStdString());
         LOG(uopError.buildErrorsString());
         return nullptr;
     }
 
-    const char* DDSDataPtr = decompressedDataVec->data();
+    const char* DDSDataPtr = decompressedData.get();
     DDSInfo texInfo(DDSDataPtr);
     if (!texInfo.errorString.empty())
     {
@@ -196,14 +197,15 @@ bool UOArt::getClassicPixelData(bool drawFromUOP, unsigned int id, std::vector<c
             return false;
         }
 
-        auto* decompressedDataVec = new std::vector<char>();
-        if (!uopFile->readPackedData(fin, &uopError) || !uopFile->unpack(decompressedDataVec, &uopError))
+        std::shared_ptr<char[]> decompressedData;
+        if (!uopFile->readPackedData(fin, &uopError) || !uopFile->unpack(&decompressedData, &uopError))
         {
             LOG(QString("Error unpacking from %1 (requested id %2).").arg(kCC_UOPFile, id).toStdString());
             LOG(uopError.buildErrorsString());
             return false;
         }
-        *data = *uopFile->getDataVec();
+        data->resize(uopFile->getDataSize());
+        memcpy(data->data(), decompressedData.get(), uopFile->getDataSize());
     }
     else
     {
@@ -253,7 +255,7 @@ QImage* UOArt::drawArtClassic(bool drawFromUOP, unsigned int id, unsigned int hu
     const char* READMEM_dataPtr = dataVec.data();
 #define READMEM(dest, size) \
     memcpy(static_cast<void*>(&(dest)), static_cast<const void*>(READMEM_dataPtr+READMEM_dataOffset), (size)); \
-    READMEM_dataOffset += (size);
+    READMEM_dataOffset += (size)
 
     if (id < kItemsOffset)
     {

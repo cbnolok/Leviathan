@@ -15,7 +15,7 @@ namespace uopp
 
 UOPBlock::UOPBlock(UOPPackage* parent, unsigned int index) :
     m_parent(parent), m_index(index),
-    m_fileCount(0), m_nextBlockAddress(0), m_curFileIdx(0)
+    m_fileCount(0), m_nextBlockAddress(0)
 {
 }
 
@@ -45,8 +45,9 @@ void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
     fin.read(reinterpret_cast<char*>(&m_fileCount), 4);
     fin.read(reinterpret_cast<char*>(&m_nextBlockAddress), 8);
 
-    // Read files informations (headers), i'm not decompressing their held data
+    // Read files informations (headers), i'm not decompressing their held data (if any, since placeholder file headers exist, without any related data)
     m_files.reserve(m_fileCount);
+    unsigned int fileCountReal = 0;
     for (unsigned int index = 0; index < m_fileCount; ++index)
     {
         UOPFile* f = new UOPFile(this, index);
@@ -55,8 +56,11 @@ void UOPBlock::read(std::ifstream& fin, UOPError *errorQueue)
         f->read(fin, errorQueue);
         f->m_parent = this;
         m_files.push_back(f);
-    }
 
+        if (f->getFileHash() != 0)
+            ++fileCountReal;
+    }
+    m_fileCount = fileCountReal; // fix wrong file counts
 }
 
 bool UOPBlock::readPackedData(std::ifstream& fin, UOPError* errorQueue)
@@ -80,7 +84,7 @@ void UOPBlock::freePackedData()
 
 //--
 
-bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)
+bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, ZLibQuality compression, bool addDataHash, UOPError *errorQueue)
 {
     std::stringstream ssHash; ssHash << std::hex << fileHash;
     const std::string strHash("0x" + ssHash.str());
@@ -89,9 +93,9 @@ bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, Compress
         ADDERROR("UOPBlock::addFile: Invalid fileHash: " + strHash);
         return false;
     }
-    if (compression == CompressionFlag::Uninitialized)
+    if (!isValidZLibQuality(compression))
     {
-        ADDERROR("UOPBlock::addFile: Invalid compression flag: " + std::to_string(short(compression)) + " (fileHash: " + strHash + ")");
+        ADDERROR("UOPBlock::addFile: Invalid compression level: " + std::to_string(int(compression)) + " (fileHash: " + strHash + ")");
         return false;
     }
     if (fin.bad())
@@ -100,9 +104,7 @@ bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, Compress
         return false;
     }
 
-    if (m_curFileIdx != 0)
-        ++m_curFileIdx;
-    UOPFile* file = new UOPFile(this, m_curFileIdx);
+    UOPFile* file = new UOPFile(this, m_fileCount);
     if (! file->createFile(fin, fileHash, compression, addDataHash, errorQueue) )
     {
         delete file;
@@ -115,16 +117,16 @@ bool UOPBlock::addFile(std::ifstream& fin, unsigned long long fileHash, Compress
     return true;
 }
 
-bool UOPBlock::addFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)
+bool UOPBlock::addFile(std::ifstream& fin, const std::string& packedFileName, ZLibQuality compression, bool addDataHash, UOPError *errorQueue)
 {
     if (packedFileName.empty())
     {
         ADDERROR("UOPBlock::addFile: Invalid packedFileName: " + packedFileName);
         return false;
     }
-    if (compression == CompressionFlag::Uninitialized)
+    if (!isValidZLibQuality(compression))
     {
-        ADDERROR("UOPBlock::addFile: Invalid compression flag: " + std::to_string(short(compression)) + " (" + packedFileName + ")");
+        ADDERROR("UOPBlock::addFile: Invalid compression level: " + std::to_string(int(compression)) + " (" + packedFileName + ")");
         return false;
     }
     const unsigned long long fileHash = hashFileName(packedFileName);

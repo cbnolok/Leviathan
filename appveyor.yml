@@ -15,10 +15,10 @@ build_script:
   - mkdir deploy64
 
   - set OPATH=%PATH%
-# 32 bits build (mingw 5.3.0, qt 5.10.1)
+# 32 bits build (mingw 7.3.0, qt 5.12.5)
   # Set Qt toolkit path
-  - set QTOOLS=C:\Qt\Tools\mingw530_32\bin
-  - set QTDIR=C:\Qt\5.10.1\mingw53_32 # required
+  - set QTOOLS=C:\Qt\Tools\mingw730_32\bin
+  - set QTDIR=C:\Qt\5.12.5\mingw73_32 # required
   - set PATH=%OPATH%;%QTOOLS%;%QTDIR%\bin
   - qmake Leviathan.pro CONFIG+=release
   - mingw32-make -j2
@@ -40,10 +40,10 @@ build_script:
   - 7z a LeviathanWin32-automated-%APPVEYOR_REPO_TAG_NAME%.zip .\deploy32\*
 
 
-# 64 bits build (mingw 7.3.0, qt 5.12.1)
+# 64 bits build (mingw 7.3.0, qt 5.12.5)
   # Set Qt toolkit path
   - set QTOOLS=C:\Qt\Tools\mingw730_64\bin
-  - set QTDIR=C:\Qt\5.12.1\mingw73_64 # required
+  - set QTDIR=C:\Qt\5.12.5\mingw73_64 # required
   - set PATH=%OPATH%;%QTOOLS%;%QTDIR%\bin
   - mingw32-make clean
   - del Makefile*

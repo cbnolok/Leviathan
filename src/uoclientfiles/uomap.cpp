@@ -256,7 +256,7 @@ MapBlock UOMap::readBlock(unsigned int index)
     }
 
     if (!m_stream.good())
-        throw InvalidStreamException("UOMap", "readBlock I/O error");
+        throw InvalidStreamException("UOMap", "readBlock I/O error.");
 
     block.initialized = true;
     return block;

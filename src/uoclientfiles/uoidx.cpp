@@ -32,7 +32,7 @@ void UOIdx::clearCache()
 }
 
 
-auto readLookup = [](std::ifstream &fin, UOIdx::Entry* idxEntry)
+auto readLookup = [](std::ifstream &fin, UOIdx::Entry* idxEntry) -> bool
 {
     // Look up in *idx.mul for the offset of the ID in *.mul
     // - Lookup:    size=4. Is either undefined (0xFFFFFFFF / -1) or the file offset in *.MUL
@@ -43,11 +43,12 @@ auto readLookup = [](std::ifstream &fin, UOIdx::Entry* idxEntry)
     fin.read(buf, 12);
 
     if (!fin.good())
-        throw InvalidStreamException("UOIdx", "readLookup I/O error");
+        return false;   // Not existing?
 
     memcpy(&idxEntry->lookup,   buf,     4);
     memcpy(&idxEntry->size,     buf + 4, 4);
     memcpy(&idxEntry->extra,    buf + 8, 4);
+    return true;
 };
 
 void UOIdx::cacheData()
@@ -79,8 +80,7 @@ bool UOIdx::getLookup(unsigned int id, Entry *idxEntry)
         throw InvalidStreamException("UOIdx", "getLookup accessing closed stream.");
 
     m_stream.seekg(id * Entry::kSize);
-    readLookup(m_stream, idxEntry);
-    return true;
+    return readLookup(m_stream, idxEntry);
 }
 
 bool UOIdx::getLookup(const std::string& filePath, unsigned int id, Entry* idxEntry)   // static
@@ -93,10 +93,7 @@ bool UOIdx::getLookup(const std::string& filePath, unsigned int id, Entry* idxEn
         return false;
 
     fin.seekg(id * Entry::kSize);
-    readLookup(fin, idxEntry);
-
-    fin.close();
-    return true;
+    return readLookup(fin, idxEntry);
 }
 
 

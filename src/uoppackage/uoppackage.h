@@ -1,5 +1,5 @@
 /**
-*	Ultima Online Package (UOP) Library v4.0.1 by Nolok
+*	Ultima Online Package (UOP) Library v5.0 by Nolok
 *   cbnolok  a t  gmail.com
 *
 *   This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,10 @@ public:
     UOPPackage(unsigned int version = kMaxSupportedVersion, unsigned int maxFilesPerBlock = 100);
     ~UOPPackage();
 
+private:
+    unsigned long long getDefaultStartAddress() const;
+
+public:
     UOPFile* getFileByIndex(unsigned int block, unsigned int index) const;
     UOPFile* getFileByName(const std::string &filename);
     bool searchByHash(unsigned long long hash, unsigned int *block, unsigned int *index) const;
@@ -44,13 +48,13 @@ public:
     bool readPackedData(UOPError* errorQueue = nullptr);
     void freePackedData();
 
-    bool addFile(const std::string &filePath, unsigned long long fileHash,          CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
-    bool addFile(const std::string &filePath, const std::string &packedFileName,    CompressionFlag compression, bool addDataHash, UOPError* errorQueue = nullptr);
+    bool addFile(const std::string &filePath, unsigned long long fileHash,      ZLibQuality compression, bool addDataHash, UOPError* errorQueue = nullptr);
+    bool addFile(const std::string &filePath, const std::string &packedFileName,ZLibQuality compression, bool addDataHash, UOPError* errorQueue = nullptr);
+    bool recompress(ZLibQuality compression, UOPError* errorQueue = nullptr);
     bool finalizeAndSave(const std::string& uopPath, UOPError* errorQueue = nullptr);
 
 // Package header data
 private:
-    std::string m_filePath;
     unsigned int m_version;
     unsigned int m_misc;
     unsigned long long m_startAddress;

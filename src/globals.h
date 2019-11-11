@@ -8,7 +8,18 @@
 #include "settings/scriptsprofile.h"
 
 
-extern AppSettings g_settings;     // contains general settings
+// Macros for platform specific functions
+#ifdef _WIN32
+    #define strcmpi		    _strcmpi
+    #define strnicmp	    _strnicmp
+#else
+    #define strcmpi			strcasecmp
+    #define strnicmp		strncasecmp
+#endif
+
+
+// Contains general settings
+extern AppSettings g_settings;
 
 // Client/Scripts profiles
 extern int g_loadedClientProfile;                       // index of the current client profile
@@ -20,7 +31,7 @@ extern std::vector<std::string> g_scriptFileList;       // contains the absolute
 
 extern bool g_sendKeystrokeAndFocusClient;              // for KeystrokeSender
 
-// containers for Sphere Objects: characters, items, maps...
+// Containers for Sphere Objects: characters, items, maps...
 class ScriptObjTree;
 extern ScriptObjTree *g_scriptObjTree_Chars;
 extern ScriptObjTree *g_scriptObjTree_Spawns;

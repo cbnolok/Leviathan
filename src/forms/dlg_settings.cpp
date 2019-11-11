@@ -18,6 +18,7 @@ Dlg_Settings::Dlg_Settings(QWidget *parent) :
     ui->setupUi(this);
 
     ui->checkBox_loadDefaultProfilesAtStartup->setChecked(g_settings.m_loadDefaultProfilesAtStartup);
+    ui->checkBox_caseSensitiveScriptParsing->setChecked(g_settings.m_caseSensitiveScriptParsing);
     ui->lineEdit_spawn->setText( QString::fromStdString(g_settings.m_customSpawnCmd) );
 }
 
@@ -31,9 +32,15 @@ void Dlg_Settings::on_checkBox_loadDefaultProfilesAtStartup_stateChanged(int /* 
     m_loadDefaultProfilesAtStartup = ui->checkBox_loadDefaultProfilesAtStartup->isChecked();
 }
 
+void Dlg_Settings::on_checkBox_caseSensitiveScriptParsing_stateChanged(int /* arg1 UNUSED */)
+{
+    m_caseSensitiveScriptParsing = ui->checkBox_caseSensitiveScriptParsing->isChecked();
+}
+
 void Dlg_Settings::on_buttonBox_accepted()
 {
     g_settings.m_loadDefaultProfilesAtStartup = m_loadDefaultProfilesAtStartup;
+    g_settings.m_caseSensitiveScriptParsing = m_caseSensitiveScriptParsing;
 
     // Open the file in which we store the Settings.
     QFile jsonFile;
@@ -60,3 +67,4 @@ void Dlg_Settings::on_buttonBox_rejected()
 {
     close();
 }
+

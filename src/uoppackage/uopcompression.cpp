@@ -10,6 +10,11 @@ namespace uopp
 {
 
 
+bool isValidZLibQuality(ZLibQuality compression)
+{
+    return (int(compression) > -1) && (int(compression) < 10);
+}
+
 std::string translateZlibError(int z_result)
 {
     switch (z_result)

@@ -161,7 +161,7 @@ StaticsBlock UOStatics::readBlock(const UOIdx::Entry &idxEntry)
     }
 
     if (!m_stream.good())
-        throw InvalidStreamException("UOStatics", "readBlock I/O error");
+        throw InvalidStreamException("UOStatics", "readBlock I/O error.");
 
     block.initialized = true;
     return block;

@@ -70,7 +70,7 @@ unsigned long long hashFileName(const char * const s) noexcept
             case 4:     ebx += uint_fast32_t( s[ i + 3  ] << 24 );  FALLTHROUGH;
             case 3:     ebx += uint_fast32_t( s[ i + 2  ] << 16 );  FALLTHROUGH;
             case 2:     ebx += uint_fast32_t( s[ i + 1  ] << 8  );  FALLTHROUGH;
-            case 1:     ebx += uint_fast32_t( s[ i ]            );  FALLTHROUGH;
+            case 1:     ebx += uint_fast32_t( s[ i ]            );
             break;
         #if defined(__GNUC__) && (__GNUC__ >= 7)
             #pragma GCC diagnostic pop
@@ -142,7 +142,7 @@ unsigned long long hashFileName(const std::string &s) noexcept
             case 4:     ebx += uint_fast32_t( s[ i + 3  ] << 24 );  FALLTHROUGH;
             case 3:     ebx += uint_fast32_t( s[ i + 2  ] << 16 );  FALLTHROUGH;
             case 2:     ebx += uint_fast32_t( s[ i + 1  ] << 8  );  FALLTHROUGH;
-            case 1:     ebx += uint_fast32_t( s[ i ]            );  FALLTHROUGH;
+            case 1:     ebx += uint_fast32_t( s[ i ]            );
             break;
         #if defined(__GNUC__) && (__GNUC__ >= 7)
             #pragma GCC diagnostic pop

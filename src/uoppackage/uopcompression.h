@@ -18,7 +18,20 @@ enum class CompressionFlag : short
     ZLib = 1
 };
 
+
+enum class ZLibQuality
+{
+    Uninitialized = -1,
+    None = 0,
+    Speed = 1,
+    Medium = 6,
+    Best = 9
+};
+
+
+bool isValidZLibQuality(ZLibQuality compression);
 std::string translateZlibError(int z_result);
+
 
 }
 

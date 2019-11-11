@@ -12,7 +12,8 @@
 
 
 AppSettings::AppSettings() :
-    m_loadDefaultProfilesAtStartup(true), m_customSpawnCmd(".spawn %1,%2,%3,%4,%5")
+    m_loadDefaultProfilesAtStartup(true), m_caseSensitiveScriptParsing(false),
+    m_customSpawnCmd(".spawn %1,%2,%3,%4,%5")
 {
 }
 
@@ -21,6 +22,7 @@ QJsonObject AppSettings::generateJsonObject()
     // Build the json object.
     QJsonObject obj;
     obj["LoadDefaultProfilesAtStartup"] = m_loadDefaultProfilesAtStartup;
+    obj["CaseSensitiveScriptParsing"] = m_caseSensitiveScriptParsing;
     obj["CustomSpawnCmd"] = QString::fromStdString(m_customSpawnCmd);
 
     return obj;
@@ -55,6 +57,10 @@ bool AppSettings::updateFromJson()
     val = settingsObj["LoadDefaultProfilesAtStartup"];
     if (QJSONVAL_ISVALID(val))
         m_loadDefaultProfilesAtStartup = val.toBool();
+
+    val = settingsObj["CaseSensitiveScriptParsing"];
+    if (QJSONVAL_ISVALID(val))
+        m_caseSensitiveScriptParsing = val.toBool();
 
     val = settingsObj["CustomSpawnCmd"];
     if (QJSONVAL_ISVALID(val))

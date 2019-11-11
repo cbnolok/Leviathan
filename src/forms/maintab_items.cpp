@@ -114,6 +114,8 @@ void MainTab_Items::updateViews()
     ScriptObjTree *trees[3] = { g_scriptObjTree_Items, g_scriptObjTree_Templates, g_scriptObjTree_Multis };
     for (int tree_i = 0; tree_i < 3; ++tree_i)
     {
+        if (!trees[tree_i])
+            continue;
         for (size_t category_i = 0; category_i < trees[tree_i]->m_categories.size(); ++category_i)
         {
             ScriptCategory *categoryInst = trees[tree_i]->m_categories[category_i];
@@ -296,6 +298,12 @@ void MainTab_Items::onManual_treeView_objList_selectionChanged(const QModelIndex
     if (hue < 0)    // template or random expr (not supported yet) or strange string
         hue = 0;
 
+    if (ui->graphicsView->scene() != nullptr)
+        delete ui->graphicsView->scene();
+    QGraphicsScene* scene = new QGraphicsScene();
+    ui->graphicsView->setScene(scene);
+    scene->clear();
+
     g_UOArt->setCachePointers(g_UOHues); // reset the right address (in case it has changed) to the hues to be used
     QImage* art = g_UOArt->drawArt(uocf::UOArt::kItemsOffset + id, hue, false);
     if (art == nullptr)
@@ -303,11 +311,6 @@ void MainTab_Items::onManual_treeView_objList_selectionChanged(const QModelIndex
 
     QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(*art));
     delete art;
-    if (ui->graphicsView->scene() != nullptr)
-        delete ui->graphicsView->scene();
-    QGraphicsScene* scene = new QGraphicsScene();
-    ui->graphicsView->setScene(scene);
-    scene->clear();
     scene->addItem(item);
 }
 

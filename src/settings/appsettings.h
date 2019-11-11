@@ -14,6 +14,7 @@ public:
     bool updateFromJson();
 
     bool m_loadDefaultProfilesAtStartup;
+    bool m_caseSensitiveScriptParsing;
     std::string m_customSpawnCmd;
 };
 

@@ -4,7 +4,7 @@
 */
 #include "uopfile.h"
 
-#include <cstring> // for memset
+#include <cstring> // for memcpy
 #include <sstream>
 #include "zlib.h"
 
@@ -12,15 +12,6 @@
 #include "uophash.h"
 
 #define ADDERROR(str) UOPError::append((str), errorQueue)
-
-enum class ZLibQuality
-{
-    None		= 0,
-    Speed		= 1,
-    Medium      = 5,
-    Best		= 9//,
-    //Default	= -1,
-};
 
 
 namespace uopp
@@ -68,11 +59,10 @@ bool UOPFile::read(std::ifstream& fin, UOPError *errorQueue)
 
 bool UOPFile::readPackedData(std::ifstream& fin, UOPError* errorQueue)
 {
-    m_data.resize(m_compressedSize);
-    memset(m_data.data(), 0, m_compressedSize);
+    m_data.reset(new char[m_compressedSize]); //std::make_shared<char[]>(m_compressedSize);  // Will work in C++20
 
     fin.seekg(std::streamoff(m_dataBlockAddress + m_dataBlockLength), std::ios::beg);
-    fin.read(m_data.data(), m_compressedSize * sizeof(char));
+    fin.read(m_data.get(), m_compressedSize);
 
     if (fin.bad() || fin.eof())
     {
@@ -86,36 +76,37 @@ bool UOPFile::readPackedData(std::ifstream& fin, UOPError* errorQueue)
 
 void UOPFile::freePackedData()
 {
-    m_data.clear();
-    m_data.shrink_to_fit();
+    m_data.reset();
 }
 
-bool UOPFile::unpack(std::vector<char>* decompressedData, UOPError *errorQueue)
+bool UOPFile::unpack(std::shared_ptr<char[]>* decompressedData, UOPError *errorQueue)
 {
-    if (m_data.empty())
+    if (m_data == nullptr)
         return false;
 
     switch ( m_compression )
     {
         case CompressionFlag::ZLib:
         {
-            decompressedData->resize(m_decompressedSize);
+            //*decompressedData = std::make_shared<char[]>(m_decompressedSize); // Will work in C++20
+            decompressedData->reset(new char[m_decompressedSize]);
             uLongf destLength = m_decompressedSize;
 
-            int z_result = ::uncompress(reinterpret_cast<Bytef*>(decompressedData->data()), &destLength,
-                                        reinterpret_cast<const Bytef*>(m_data.data()), m_compressedSize );
+            int z_result = ::uncompress(reinterpret_cast<Bytef*>(decompressedData->get()), &destLength,
+                                        reinterpret_cast<const Bytef*>(m_data.get()), m_compressedSize );
 
-            bool success = true;
+            m_decompressedSize = destLength;
+
             if (z_result != Z_OK)
             {
                 ADDERROR("UOPFile::unpack: ZLib decompression error: " + translateZlibError(z_result));
                 if (destLength != uLongf(m_decompressedSize))
                     ADDERROR("UOPFile::unpack: Compressed-decompressed size mismatch!");
                 //else
-                    success = false;
+                    return false;
             }
-            //resultSize = (size_t)destLength;
-            return success;
+
+            return true;
         }
 
         case CompressionFlag::None:
@@ -131,49 +122,49 @@ bool UOPFile::unpack(std::vector<char>* decompressedData, UOPError *errorQueue)
 
 //--
 
-bool UOPFile::compressAndReplaceData(const std::vector<char>* sourceDecompressed, CompressionFlag compression, bool addDataHash, UOPError* errorQueue)
+bool UOPFile::compressAndReplaceData(std::shared_ptr<char[]> sourceDecompressed, ZLibQuality compression, bool addDataHash, UOPError* errorQueue)
 {
-    if (compression == CompressionFlag::Uninitialized)
+    if (!isValidZLibQuality(compression))
     {
-        ADDERROR("UOPFile::compressAndReplaceData: Invalid compression flag: " + std::to_string(short(m_compression)));
+        ADDERROR("UOPFile::compressAndReplaceData: Invalid compression level: " + std::to_string(int(compression)));
         return false;
     }
 
-    m_compression = compression;
-    m_decompressedSize = unsigned(sourceDecompressed->size());
-    if (compression == CompressionFlag::None)
+    m_compression = (compression == ZLibQuality::None) ? CompressionFlag::None : CompressionFlag::ZLib;
+    if (m_compression == CompressionFlag::None)
     {
         m_compressedSize = m_decompressedSize;
-        m_data = *sourceDecompressed;
-        m_dataBlockHash = addDataHash ? hashDataBlock(m_data.data(), m_data.size()) : 0;
+        m_data = sourceDecompressed;
+        m_dataBlockHash = addDataHash ? hashDataBlock(m_data.get(), m_compressedSize) : 0;
         return true;
     }
 
-    m_data.clear();
-    m_data.resize(::compressBound( uLong(sourceDecompressed->size()) ));
+    uLongf compressedSizeTemp = uLongf(::compressBound(uLong(m_decompressedSize)));
+    std::unique_ptr<char[]> compressedDataTemp = std::make_unique<char[]>(compressedSizeTemp);
 
-    uLongf compressedSizeTemp = uLongf(m_data.size());
-    int error = ::compress2(reinterpret_cast<Bytef*>(m_data.data()), &compressedSizeTemp,
-                            reinterpret_cast<const Bytef*>(sourceDecompressed->data()), uLong(sourceDecompressed->size()),
-                            int(ZLibQuality::Speed) );
+    int error = ::compress2(reinterpret_cast<Bytef*>(compressedDataTemp.get()), &compressedSizeTemp,
+                            reinterpret_cast<const Bytef*>(sourceDecompressed.get()), uLong(m_decompressedSize),
+                            int(compression) );
+
     m_compressedSize = unsigned(compressedSizeTemp);
+    m_data.reset(new char[compressedSizeTemp]); //= std::make_shared<char[]>(compressedSizeTemp);    // Will work in C++20
+    memcpy(m_data.get(), compressedDataTemp.get(), compressedSizeTemp);    
 
     if (error != Z_OK)
     {
         ADDERROR("UOPFile::compressAndReplaceData: ZLib compression error: " + translateZlibError(error));
         m_fileHash = m_decompressedSize = m_compressedSize = m_dataBlockHash = 0;
         m_compression = CompressionFlag::Uninitialized;
-        m_data.clear();
-        m_data.shrink_to_fit();
+        freePackedData();
         return false;
     }
 
-    m_dataBlockHash = addDataHash ? hashDataBlock(m_data.data(), m_data.size()) : 0;
+    m_dataBlockHash = addDataHash ? hashDataBlock(m_data.get(), m_compressedSize) : 0;
 
     return true;
 }
 
-bool UOPFile::createFile(std::ifstream& fin, unsigned long long fileHash, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)    // create file in memory
+bool UOPFile::createFile(std::ifstream& fin, unsigned long long fileHash, ZLibQuality compression, bool addDataHash, UOPError *errorQueue)    // create file in memory
 {
     std::stringstream ssHash; ssHash << std::hex << fileHash;
     const std::string strHash("0x" + ssHash.str());
@@ -182,9 +173,9 @@ bool UOPFile::createFile(std::ifstream& fin, unsigned long long fileHash, Compre
         ADDERROR("UOPFile::createFile: Invalid fileHash: " + strHash);
         return false;
     }
-    if (compression == CompressionFlag::Uninitialized)
+    if (!isValidZLibQuality(compression))
     {
-        ADDERROR("UOPFile::createFile: Invalid compression flag: " + std::to_string(short(compression)) + " (fileHash: " + strHash + ")");
+        ADDERROR("UOPFile::createFile: Invalid compression level: " + std::to_string(int(compression)) + " (fileHash: " + strHash + ")");
         return false;
     }
     if (fin.bad())
@@ -206,24 +197,23 @@ bool UOPFile::createFile(std::ifstream& fin, unsigned long long fileHash, Compre
     const std::streamsize finSizeToRead = endPos - curPos;
 
     // Write the raw file data in internal buffer
-    std::vector<char> finData;
-    finData.resize(size_t(finSizeToRead));  // don't use reserve, or ifstream.read won't work!
+    std::shared_ptr<char[]> finData(new char[size_t(finSizeToRead)]); //std::make_shared<char[]>(size_t(finSizeToRead));  // Will work in C++20
     //fin.exceptions(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
-    fin.read(finData.data(), finSizeToRead);
+    fin.read(finData.get(), finSizeToRead);
 
-    return compressAndReplaceData(&finData, compression, addDataHash, errorQueue);
+    return compressAndReplaceData(finData, compression, addDataHash, errorQueue);
 }
 
-bool UOPFile::createFile(std::ifstream& fin, const std::string& packedFileName, CompressionFlag compression, bool addDataHash, UOPError *errorQueue)  // create file in memory
+bool UOPFile::createFile(std::ifstream& fin, const std::string& packedFileName, ZLibQuality compression, bool addDataHash, UOPError *errorQueue)  // create file in memory
 {
     if (packedFileName.empty())
     {
         ADDERROR("UOPFile::createFile: Invalid packedFileName: " + packedFileName);
         return false;
     }
-    if (compression == CompressionFlag::Uninitialized)
+    if (!isValidZLibQuality(compression))
     {
-        ADDERROR("UOPFile::createFile: Invalid compression flag: " + std::to_string(short(compression)) + " (" + packedFileName + ")");
+        ADDERROR("UOPFile::createFile: Invalid compression level: " + std::to_string(int(compression)) + " (" + packedFileName + ")");
         return false;
     }
 

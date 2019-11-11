@@ -1,5 +1,6 @@
 #include "uoanimuop.h"
 
+#include <cstring> // for memcpy
 #include <QImage>
 #include <QGraphicsPixmapItem>
 
@@ -154,12 +155,18 @@ UOAnimUOP::UOPFrameData UOAnimUOP::loadFrameData(int animID, int groupID, int di
     unsigned int decDataSize = animFile->getDecompressedSize();
     decompressedData->resize(decDataSize);
 
+
+    std::shared_ptr<char[]> decompressedDataRaw;
+
     uopp::UOPError uopErrorQueue;
     std::ifstream fin = animPkg->getOpenedStream();
     animFile->readPackedData(fin, &uopErrorQueue);
     fin.close();
-    animFile->unpack(decompressedData, &uopErrorQueue);
+    animFile->unpack(&decompressedDataRaw, &uopErrorQueue);
     animFile->freePackedData();
+
+    decompressedData->resize(animFile->getDataSize());
+    memcpy(decompressedData->data(), decompressedDataRaw.get(), animFile->getDataSize());
 
     if (uopErrorQueue.errorOccurred())   // check if there was an error when extracting the uop file
     {

@@ -1,6 +1,14 @@
 #include "scriptobjects.h"
 #include "../globals.h"
 
+/*--        Helper functions    --*/
+static bool strEqual_DefaultCase( std::string const& str1, std::string const& str2 )
+{
+    if (g_settings.m_caseSensitiveScriptParsing)
+        return (str1 == str2);
+    return (0 == strcmpi(str1.c_str(), str2.c_str()));
+}
+
 
 /*--        ScriptObj           --*/
 
@@ -55,7 +63,7 @@ ScriptSubsection * ScriptCategory::findSubsection(const std::string &subsectionN
         // looping by index should be slightly faster than looping by iterator
         for (ScriptSubsection* subsectionTest : m_subsections)
         {
-            if (subsectionTest->m_subsectionName == subsectionName)
+            if (strEqual_DefaultCase(subsectionTest->m_subsectionName,subsectionName))
             {
                 subsection = subsectionTest;
                 break;
@@ -90,7 +98,7 @@ ScriptCategory * ScriptObjTree::findCategory(const std::string& categoryName, bo
     {
         for (ScriptCategory* categoryTest : m_categories)
         {
-            if (categoryTest->m_categoryName == categoryName)
+            if (strEqual_DefaultCase(categoryTest->m_categoryName, categoryName))
             {
                 category = categoryTest;
                 break;
