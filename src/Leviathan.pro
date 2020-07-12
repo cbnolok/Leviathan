@@ -245,6 +245,7 @@ unix:!win32 {
         LIBS += -fopenmp                        # link against OpenMP library
     } else {
         LIBS += -L/usr/lib -lz                  # dynamically link zlib
+        LIBS += -framework ApplicationServices  # for KeystrokeSender OSX
 
         # UNTESTED
         # looks like OpenMP support here began only with recent LLVM versions?

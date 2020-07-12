@@ -4,6 +4,7 @@
 #if defined(__APPLE__)
 
 #include "keystrokesender_common.h"
+#include <qstring.h>
 
 namespace ks
 {
@@ -12,6 +13,11 @@ class KeystrokeSender_Mac
 {
 protected:
     KeystrokeSender_Mac(bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
+    static void focusWindow(int pid);
+    static void activateByPid(pid_t pid);
+    static int findWindowPid();
+    static std::string exec(const char* cmd);
+    static void setClipboard(std::string text);
 
 public:
     bool canSend();
