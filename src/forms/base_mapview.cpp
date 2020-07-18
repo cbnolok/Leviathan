@@ -69,7 +69,16 @@ Base_MapView::~Base_MapView()
     m_imgFutureWatcher.waitForFinished(); // otherwise we'll crash, since the qimage class member is being written by the other thread
 
     if (m_scene)
+    {
         delete m_scene;
+        m_scene = nullptr;
+    }
+
+    if (m_mapImage)
+    {
+        delete m_mapImage;
+        m_mapImage = nullptr;
+    }
 }
 
 

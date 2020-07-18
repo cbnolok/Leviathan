@@ -91,25 +91,25 @@ void loadClientFiles(std::function<void(int)> reportProgress)
         {
             g_UOMaps[i] = new uocf::UOMap(clientFolder, i);
         }
-        catch (uocf::InvalidStreamException)
+        catch (uocf::InvalidStreamException&)
         {
             g_UOMaps[i] = nullptr;
             appendToLog("Can't open map" + std::to_string(i) + ".mul.");
             continue;
         }
-        catch (uocf::MalformedFileException)
+        catch (uocf::MalformedFileException&)
         {
             g_UOMaps[i] = nullptr;
             appendToLog("Invalid size for map" + std::to_string(i) + ".mul.");
             continue;
         }
-        //catch (UnsupportedActionException)
+        //catch (UnsupportedActionException&)
 
         try
         {
             g_UOStatics[i] = new uocf::UOStatics(clientFolder, i, g_UOMaps[i]->getWidth(), g_UOMaps[i]->getHeight());
         }
-        catch (uocf::InvalidStreamException)
+        catch (uocf::InvalidStreamException&)
         {
             g_UOStatics[i] = nullptr;
             appendToLog("Can't open statics" + std::to_string(i) + ".mul.");
