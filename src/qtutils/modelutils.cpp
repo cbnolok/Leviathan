@@ -111,12 +111,15 @@ void ModelUtils::resetCheckedStateCheckableProxyModel(CheckableProxyModel *model
     for (int i = 0; i < model->rowCount(proxyParent); ++i)
     {
         const QModelIndex idx = model->index(i, 0, proxyParent);
-        if(!idx.isValid())
+        if (!idx.isValid())
             continue;
 
         model->setData(idx, value ? Qt::Checked : Qt::Unchecked, Qt::CheckStateRole);
 
-        const QModelIndex childIdx = idx.child(0,0);
+        const QAbstractItemModel *itemModel = idx.model();
+        if (!itemModel)
+            continue;
+        const QModelIndex childIdx = itemModel->index(0,0, idx);
         if (childIdx.isValid())
             resetCheckedStateCheckableProxyModel(model, value, childIdx);
     }
