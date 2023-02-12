@@ -10,12 +10,46 @@
 #endif
 #include <sys/stat.h>
 
+#ifdef QT_CORE_LIB
+    #include <QString>
+#endif
 
-void standardizePath(std::string &s)
+
+inline static constexpr char kStdDirDelim = '/';
+
+
+#ifdef QT_CORE_LIB
+
+QString& standardizePath(QString &s)
 {
-    std::replace(s.begin(), s.end(), '\\', '/');
-    if (s[s.length() - 1] != '/')
-        s += '/';
+    if (s.isEmpty())
+        return s;
+
+    std::replace(s.begin(), s.end(), '\\', kStdDirDelim);
+    if (isValidDirectory(s.toStdString()))
+    {
+        if (s[s.length() - 1] != kStdDirDelim)
+            s += kStdDirDelim;
+    }
+
+    return s;
+}
+
+#endif
+
+std::string& standardizePath(std::string &s)
+{
+    if (s.empty())
+        return s;
+
+    std::replace(s.begin(), s.end(), '\\', kStdDirDelim);
+    if (isValidDirectory(s))
+    {
+        if (s[s.length() - 1] != kStdDirDelim)
+            s += kStdDirDelim;
+    }
+
+    return s;
 }
 
 bool isValidFile(const std::string& filePath)
@@ -40,6 +74,26 @@ bool isValidDirectory(const std::string& directoryPath)
         return false;
 }
 
+
+size_t countDirLevels(std::string const& str)
+{
+    return std::count(str.cbegin(), str.cend(), kStdDirDelim);
+}
+
+bool comparatorDirLevels(std::string const& lhs, std::string const& rhs)
+{
+    return (countDirLevels(lhs) < countDirLevels(rhs));
+}
+
+std::string getDirectoryFromString(std::string const& str)
+{
+    if (str.empty())
+        return str;
+    std::string ret(str.substr(0, str.find_last_of(kStdDirDelim)));
+    standardizePath(ret);
+    return ret;
+}
+
 void getFilesInDirectorySub(std::vector<std::string> *out, std::string directory)
 {
     // This function checks recursively in the given folder.
@@ -53,10 +107,12 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string directory
     if ((dir = FindFirstFileA((directory + '*').c_str(), &findData)) == INVALID_HANDLE_VALUE)
         return;     // No files found
 
+    std::string file_name;
+    std::string full_file_name;
     do
     {
-        const std::string file_name = findData.cFileName;
-        const std::string full_file_name = directory + file_name;
+        file_name = findData.cFileName;
+        full_file_name = (directory + file_name);
         const bool is_directory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 
         if (is_directory)
@@ -75,21 +131,18 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string directory
         else if (strcmp(file_name.c_str() + file_name.length() - 4, ".scp") != 0)
             continue;   // we look only for .scp files.
 
-        out->push_back(full_file_name);
+        out->emplace_back(full_file_name);
     } while (FindNextFileA(dir, &findData));
 
     FindClose(dir);
 #else
-    DIR *dir;
-    class dirent *ent;
-    class stat st;
-
-    dir = opendir(directory.c_str());
-    while ((ent = readdir(dir)) != NULL)
+    DIR *dir = opendir(directory.c_str());
+    while (class dirent *ent = readdir(dir))
     {
         const std::string file_name = ent->d_name;
-        const std::string full_file_name = directory + "/" + file_name;
+        const std::string full_file_name = directory + kStdDirDelim + file_name;
 
+        class stat st;
         if (stat(full_file_name.c_str(), &st) == -1)
             continue;
         const bool is_directory = (st.st_mode & S_IFDIR) != 0;

@@ -3,7 +3,7 @@
 
 #include <QMessageBox>
 #include <QFileDialog>
-#include <QDirModel>
+#include <QFileSystemModel>
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <QFile>
@@ -11,7 +11,6 @@
 #include <QJsonArray>
 
 #include "../globals.h"
-#include "../cpputils/strings.h"
 #include "../cpputils/sysio.h"
 
 

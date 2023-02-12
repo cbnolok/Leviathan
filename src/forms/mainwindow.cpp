@@ -102,7 +102,7 @@ void MainWindow::setupMenuBar()
             connect(clientProfileActions[i], SIGNAL(triggered()), clientProfilesSignalMapper, SLOT(map()));
             clientProfilesSignalMapper->setMapping(clientProfileActions[i], (int)i);
         }
-        connect(clientProfilesSignalMapper, SIGNAL(mapped(int)), this, SLOT(onManual_actionLoadClientProfile_mapped(int)));
+        connect(clientProfilesSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(onManual_actionLoadClientProfile_mapped(int)));
         ui->menuProfiles->addMenu(menuLoadClientProfile);
     }
 
@@ -129,7 +129,7 @@ void MainWindow::setupMenuBar()
             connect(scriptsProfileActions[i], SIGNAL(triggered()), scriptsProfilesSignalMapper, SLOT(map()));
             scriptsProfilesSignalMapper->setMapping(scriptsProfileActions[i], (int)i);
         }
-        connect(scriptsProfilesSignalMapper, SIGNAL(mapped(int)), this, SLOT(onManual_actionLoadScriptsProfile_mapped(int)));
+        connect(scriptsProfilesSignalMapper, SIGNAL(mappedInt(int)), this, SLOT(onManual_actionLoadScriptsProfile_mapped(int)));
         ui->menuProfiles->addMenu(menuLoadScriptsProfile);
     }
 
@@ -235,7 +235,7 @@ void MainWindow::loadDefaultProfiles_Async()
     m_loadProgressDlg->setLabelText("Loading client files...");
 
     setEnabled(false);
-    m_futureTask = QtConcurrent::run(this, &MainWindow::loadDefaultProfiles_helper);
+    m_futureTask = QtConcurrent::run(&MainWindow::loadDefaultProfiles_helper, this);
     m_futureWatcher.setFuture(m_futureTask);
 }
 
@@ -280,7 +280,7 @@ int MainWindow::getDefaultScriptsProfile()
 }
 
 
-void MainWindow::loadDefaultProfiles_helper()
+bool MainWindow::loadDefaultProfiles_helper()
 {
     int clientProfileIdx = getDefaultClientProfile();
     if (clientProfileIdx != -1)
@@ -289,15 +289,17 @@ void MainWindow::loadDefaultProfiles_helper()
     int scriptsProfileIdx = getDefaultScriptsProfile();
     if (scriptsProfileIdx != -1)
         loadScriptProfile_helper(scriptsProfileIdx);
+    return true;
 }
 
-void MainWindow::loadClientProfile_helper(int index)
+bool MainWindow::loadClientProfile_helper(int index)
 {
     g_loadedClientProfile = index;
     loadClientFiles(nullptr);
+    return true;
 }
 
-void MainWindow::loadScriptProfile_helper(int index)
+bool MainWindow::loadScriptProfile_helper(int index)
 {
     // Set up the parser and the progress window.
     ScriptParser parser(index);
@@ -310,6 +312,7 @@ void MainWindow::loadScriptProfile_helper(int index)
     }
 
     parser.run();
+    return true;
 }
 
 void MainWindow::loadClientProfile_Async(int index)
@@ -330,7 +333,7 @@ void MainWindow::loadClientProfile_Async(int index)
     m_loadProgressDlg->setLabelText("Loading client files...");
 
     setEnabled(false);
-    m_futureTask = QtConcurrent::run(this, &MainWindow::loadClientProfile_helper, index);
+    m_futureTask = QtConcurrent::run(&MainWindow::loadClientProfile_helper, this, index);
     m_futureWatcher.setFuture(m_futureTask);
 }
 
@@ -345,7 +348,7 @@ void MainWindow::loadScriptProfile_Async(int index)
     m_loadProgressDlg->show();
 
     setEnabled(false);
-    m_futureTask = QtConcurrent::run(this, &MainWindow::loadScriptProfile_helper, index);
+    m_futureTask = QtConcurrent::run(&MainWindow::loadScriptProfile_helper, this, index);
     m_futureWatcher.setFuture(m_futureTask);
 }
 

@@ -3,7 +3,7 @@
 
 #include <QMessageBox>
 #include <QFileDialog>
-#include <QDirModel>
+#include <QFileSystemModel>
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <QFile>
@@ -13,70 +13,73 @@
 #include "../globals.h"
 #include "../qtutils/checkableproxymodel.h"
 #include "../qtutils/modelutils.h"
-#include "../cpputils/strings.h"
+#include "../cpputils/collections.h"
 #include "../cpputils/sysio.h"
+
+
+void Dlg_ProfileScripts_Options::setEnabledScriptsGroup(bool val)
+{
+    ui->lineEdit_editName->setEnabled(val);
+    ui->lineEdit_editPath->setEnabled(val);
+    ui->pushButton_pathBrowse->setEnabled(val);
+    ui->checkBox_setDefaultProfile->setEnabled(val);
+}
 
 
 Dlg_ProfileScripts_Options::Dlg_ProfileScripts_Options(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::Dlg_ProfileScripts_Options)
+    ui(new Ui::Dlg_ProfileScripts_Options),
+    m_currentProfileIndex(-1), m_scriptsProfileLoaded(nullptr)
 {
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);   // disable the '?' (what's this) in the title bar
-
     ui->setupUi(this);
 
     /* Profiles View */
-    m_profiles_model = new QStandardItemModel();
+    m_profiles_model = new QStandardItemModel(this);
     ui->listView_profiles->setModel(m_profiles_model);
 
     /* Scripts View */
     // Since Qt doesn't give us a model which both shows a directory tree with subdirectories and files and a
     //  checkbox for them, i used a proxy model (CheckableProxyModel, by Andre Somers) which adds the checkbox
-    //  to the source model (QDirModel).
+    //  to the source model (QFileSystemModel).
 
-    // Set up the QDirModel, which will be the source model for the CheckableProxyModel.
-    // I use QDirModel (outdated) instead of QFileSystemModel because the latter is slow and gives some syncronization
-    //  problems (with fetchMore())
-    m_scripts_model_base = new QDirModel();
-    m_scripts_model_base->setSorting(QDir::DirsFirst | QDir::Name);
+    // Set up theQFileSystemModel, which will be the source model for the CheckableProxyModel.
+    m_scripts_model_base = new QFileSystemModel(this);
+    //m_scripts_model_base->setSorting(QDir::DirsFirst | QDir::Name);
     m_scripts_model_base->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
-    QStringList extensions;
-    extensions << "*.scp";
+    QStringList extensions("*.scp");
     m_scripts_model_base->setNameFilters(extensions);   // filter out unneeded files (grays them)
+    m_scripts_model_base->setNameFilterDisables(false); // don't show them
     m_scripts_model_base->setReadOnly(true);            // can't do actions like rename, copy, cut, etc.
 
     // Set up the CheckableProxyModel.
-    m_scripts_model = new CheckableProxyModel();
-    //m_scripts_model->setDefaultCheckState(false);
-    m_scripts_model->setSourceModel(m_scripts_model_base);
-    ui->treeView_scripts->setModel(m_scripts_model);
+    m_scripts_model_proxy = new CheckableProxyModel(this);
+    //m_scripts_model_proxy->setDefaultCheckState(false);
+    m_scripts_model_proxy->setSourceModel(m_scripts_model_base);
+    //m_scripts_model_proxy->invalidate();
+    ui->treeView_scripts->setModel(m_scripts_model_proxy);
     ui->treeView_scripts->setDisabled(true);
 
-    ui->treeView_scripts->hideColumn(1);        // hide columns showing size, file type, etc.
+    // hide columns showing size, file type, etc.
+    ui->treeView_scripts->hideColumn(1);
     ui->treeView_scripts->hideColumn(2);
     ui->treeView_scripts->hideColumn(3);
-    ui->treeView_scripts->header()->setSectionResizeMode(0, QHeaderView::Stretch);  // stretch the column to fit the view width.
-
-    // connect a checkbox to control the default state of the checkboxes
-    //connect(ui->chkSetDefaultChecked, SIGNAL (toggled(bool)), m_checkProxy, SLOT (setDefaultCheckState(bool)));
-    //m_scripts_model->setDefaultCheckState(ui->chkSetDefaultChecked->isChecked());
-
-    // connect a reset button to reset the checkboxes
-    //connect(ui->cmdReset, SIGNAL (clicked()), m_scripts_model, SLOT (resetToDefault()));
-
-    // do something when the checked boxes changed
-    //connect(m_scripts_model, SIGNAL (checkedNodesChanged()), this, SLOT (selectedItemsChanged()));
+    // stretch the column to fit the view width.
+    ui->treeView_scripts->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
     ui->pushButton_profileDelete->setEnabled(false);
     ui->pushButton_profileSave->setEnabled(false);
 
+    connect(m_scripts_model_base, SIGNAL(directoryLoaded(QString)), this, SLOT(ms_scriptTree_directoryLoaded(QString)));
+
     updateProfilesView();
 }
+
 
 Dlg_ProfileScripts_Options::~Dlg_ProfileScripts_Options()
 {
     delete m_profiles_model;
-    delete m_scripts_model;
+    delete m_scripts_model_proxy;
     delete m_scripts_model_base;
 
     delete ui;
@@ -94,7 +97,7 @@ void Dlg_ProfileScripts_Options::updateProfilesView()
     //g_scriptsProfiles = ScriptsProfile::createFromJson();
     for (auto it = g_scriptsProfiles.begin(); it != g_scriptsProfiles.end(); ++it)
     {
-        QStandardItem *newProfileItem = new QStandardItem(it->m_name.c_str());
+        auto* newProfileItem = new QStandardItem(QString::fromStdString(it->m_name));
         if (it->m_defaultProfile)        // set blue text color for the default profile
             newProfileItem->setForeground(QBrush(QColor("blue")));
         m_profiles_model->appendRow(newProfileItem);
@@ -103,90 +106,249 @@ void Dlg_ProfileScripts_Options::updateProfilesView()
 
 void Dlg_ProfileScripts_Options::updateScriptsView(QString path)
 {
+    Q_ASSERT(m_scriptsViewHelper.viewStage == FSLoadingStage::Init);
+    m_scriptsViewHelper.pendingDirectories = 1;
+    m_scriptsViewHelper.viewStage = FSLoadingStage::ExpandingTreeStructure;
+
+    m_scripts_model_base->setRootPath(path);    // This starts the first directory (the root path) loading, calling ms_scriptTree_directoryLoaded.
+
     // The QDirModel needs to have the Root Path, then the Tree View needs the Root Index (which is the shown directory of the model)
-    QModelIndex rootIndexBase = m_scripts_model_base->index(path);
+    const QModelIndex rootIndexBase = m_scripts_model_base->index(path);
     // You can set the root index of the view only if the index is from the proxy model, you can't use an index of the source one,
     //  so you need to map the source index to a proxy model index, which you can then apply.
-    QModelIndex rootIndex = m_scripts_model->mapFromSource(rootIndexBase);
+    const QModelIndex rootIndex = m_scripts_model_proxy->mapFromSource(rootIndexBase);
     ui->treeView_scripts->setRootIndex(rootIndex);
     ui->treeView_scripts->setDisabled(false);
 }
 
-bool Dlg_ProfileScripts_Options::checkScriptsFromProfile_loop(const std::string& scriptFromProfile, const QModelIndex &proxyParent)
+
+// ----
+
+
+// ms = manual(ly connected) slot
+void Dlg_ProfileScripts_Options::ms_scriptTree_directoryLoaded(QString element)
 {
-    for (int modelRow = 0; modelRow < m_scripts_model->rowCount(proxyParent); ++modelRow)
+    m_scriptsViewHelper.pendingDirectories -= 1;
+    Q_ASSERT(m_scriptsViewHelper.pendingDirectories >= 0);
+
+    if ((m_scriptsViewHelper.pendingDirectories != 0) || (m_scriptsViewHelper.viewStage != FSLoadingStage::ExpandingTreeStructure))
+        return;
+
+    const bool modelChanged = (m_scripts_model_proxy != ui->treeView_scripts->rootIndex().model());
+    Q_ASSERT(!modelChanged);
+
+    // The argument "element" is a full path, not relative.
+    standardizePath(element);
+    const QModelIndex sourceDirIdx(m_scripts_model_base->index(element));
+    if (!sourceDirIdx.isValid())
+        return;
+
+    QString modelRootPath(m_scripts_model_base->rootPath());
+    standardizePath(modelRootPath);
+    if (!modelRootPath.compare(element))
     {
-        const QModelIndex proxyIdx = m_scripts_model->index(modelRow, 0, proxyParent);
-        if(!proxyIdx.isValid())
+        const auto rep = deleteElementReport(&m_scriptsViewHelper.dirsToExpand, element.toStdString());
+        Q_ASSERT(rep.first);
+    }
+
+    const int nRows = m_scripts_model_base->rowCount(sourceDirIdx);
+    if (nRows == 0)
+        return;
+
+    // Loop through all the rows on the same level (with the same parent).
+    for (int iRow = 0; iRow < nRows; ++iRow)
+    {
+        const QModelIndex sourceChildIdx = m_scripts_model_base->index(iRow, 0, sourceDirIdx);
+        if (!sourceChildIdx.isValid() || !m_scripts_model_base->isDir(sourceChildIdx))
             continue;
-        const QModelIndex sourceIdx = m_scripts_model->mapToSource(proxyIdx);
 
-        if (m_scripts_model_base->isDir(sourceIdx))
-        {
-            if (checkScriptsFromProfile_loop(scriptFromProfile, proxyIdx) == true)
-                return true;
-        }
+        QString childFullPath(m_scripts_model_base->filePath(sourceChildIdx));
+        standardizePath(childFullPath);
+        const auto rep = deleteElementReport(&m_scriptsViewHelper.dirsToExpand, childFullPath.toStdString());
+        if (!rep.first)
+            continue;
 
-        // get the absolute path of the current file in the view
-        //std::string curFileStr = idx.data(Qt::DisplayRole).toString().toStdString();    // filename
-        std::string curViewFileStr = m_scripts_model_base->filePath(sourceIdx).toStdString();
-        if ( !scriptFromProfile.compare(curViewFileStr) )
-        {
-            m_scripts_model->setData(proxyIdx, Qt::Checked, Qt::CheckStateRole);
-            return true;
-        }
+        const QModelIndex proxyChildIdx = m_scripts_model_proxy->mapFromSource(sourceChildIdx);
+        Q_ASSERT(proxyChildIdx.isValid());
+
+        m_scriptsViewHelper.pendingDirectories += 1;
+        ui->treeView_scripts->expand(proxyChildIdx);
     }
-    return false;
-}
 
-void Dlg_ProfileScripts_Options::checkScriptsFromProfile(const ScriptsProfile *sp, const QModelIndex &proxyParent)
-{
-    // set the check state of the scripts in the treeview
-
-    for (auto it = sp->m_scriptsToLoad.begin(), end = sp->m_scriptsToLoad.end(); it != end; ++it)
+    // Am I done?
+    if (m_scriptsViewHelper.pendingDirectories == 0)
     {
-        if (!checkScriptsFromProfile_loop(*it, proxyParent))
-            appendToLog("Profile \"" + sp->m_name + "\": File \"" + *it + "\" saved in the profile doesn't exist anymore!");
+        // Done.
+        // Reporting missing folders.
+        if (!m_scriptsViewHelper.dirsToExpand.empty())
+        {
+            appendToLog("Profile \"" + m_scriptsProfileLoaded->m_name + "\": The following saved directories were not found:");
+            for (auto const& s : m_scriptsViewHelper.dirsToExpand)
+            {
+                appendToLog("-- " + s);
+            }
+        }
+
+        //Now populate the checkboxes.
+        m_scriptsViewHelper.viewStage = FSLoadingStage::PopulatingCheckboxes;
+
+        std::vector<std::string> scriptsToLoad(m_scriptsProfileLoaded->m_scriptsToLoad);
+        checkExpandedScriptsFromProfile(ui->treeView_scripts->rootIndex(), &scriptsToLoad);
+
+
+        // End of the view setup process!
+        m_scriptsViewHelper.viewStage = FSLoadingStage::Idle;
+        setEnabledScriptsGroup(true);
     }
 }
 
-void Dlg_ProfileScripts_Options::on_listView_profiles_clicked(const QModelIndex &index)
+
+void Dlg_ProfileScripts_Options::checkExpandedScriptsFromProfile(const QModelIndex proxyParentIdx, std::vector<std::string>* scriptsToLoad)
 {
+    Q_ASSERT(m_scriptsViewHelper.viewStage == FSLoadingStage::PopulatingCheckboxes);
+    Q_ASSERT(m_scriptsProfileLoaded != nullptr);
+    Q_ASSERT(proxyParentIdx.model() == m_scripts_model_proxy);
+
+    const QModelIndex sourceParentIdx = m_scripts_model_proxy->mapToSource(proxyParentIdx);
+    Q_ASSERT(sourceParentIdx.isValid());
+
+    // Loop through all the rows on the same level (with the same parent).
+    for (int modelRow = 0; modelRow < m_scripts_model_base->rowCount(sourceParentIdx); ++modelRow)
+    {
+        const QModelIndex sourceChildIdx = m_scripts_model_base->index(modelRow, 0, sourceParentIdx);
+        Q_ASSERT(sourceChildIdx.isValid());
+
+        bool match = false;
+        std::string childFileStr (m_scripts_model_base->filePath(sourceChildIdx).toStdString());
+        standardizePath(childFileStr);
+        for (std::string& strScriptFullPath : *scriptsToLoad)
+        {
+            if (childFileStr.compare(strScriptFullPath))
+                continue;
+
+            match = true;
+            strScriptFullPath.clear();
+            break;
+        }
+
+        const QModelIndex proxyChildIdx = m_scripts_model_proxy->mapFromSource(sourceChildIdx);
+        Q_ASSERT(proxyChildIdx.isValid());
+        if (match)
+        {
+            m_scripts_model_proxy->setData(proxyChildIdx, Qt::Checked, Qt::CheckStateRole);
+        }
+        if (m_scripts_model_base->isDir(sourceChildIdx))
+        {
+            checkExpandedScriptsFromProfile(proxyChildIdx, scriptsToLoad);
+        }
+    }
+
+    // Am I done?
+    if (proxyParentIdx == ui->treeView_scripts->rootIndex())
+    {   // Topmost level. I'm done with the PopulatingCheckboxes task.
+
+        // Reporting missing files.
+        scriptsToLoad->erase(
+                    std::remove_if(scriptsToLoad->begin(), scriptsToLoad->end(),
+                                   [](std::string const& str) -> bool { return str.empty(); }),
+                    scriptsToLoad->end()
+                );
+        if (!scriptsToLoad->empty())
+        {
+            appendToLog("Profile \"" + m_scriptsProfileLoaded->m_name + "\": The following saved files were not found:");
+            for (auto const& s : *scriptsToLoad)
+            {
+                appendToLog("-- " + s);
+            }
+        }
+
+        // Mark the completion of the task.
+        m_scriptsViewHelper.viewStage = FSLoadingStage::Idle;
+    }
+}
+
+void Dlg_ProfileScripts_Options::loadScriptsFromProfile(const ScriptsProfile *sp)
+{
+    // To set the check state of the scripts in the treeview:
+    //-- First get the involved folders and, if needed, expand them in the treeView; this is done asynchronously
+    //--   and recursively via the ms_scriptTree_directoryLoaded slot.
+    //-- Then, check the boxes of the scripts.
+    Q_ASSERT(m_scriptsViewHelper.viewStage == FSLoadingStage::Init);
+
+    m_scriptsProfileLoaded = sp;
+    updateScriptsView(QString::fromStdString(sp->m_scriptsPath));
+
+    // Find the sub-folders containing the scripts.
+    std::vector<std::string> scriptDirectories;
+    for (std::string const& elem : sp->m_scriptsToLoad)
+    {
+        const std::string dir(getDirectoryFromString(elem));
+        if (std::find(scriptDirectories.cbegin(), scriptDirectories.cend(), dir) != scriptDirectories.cend())
+            continue;
+        scriptDirectories.emplace_back(dir);
+    }
+
+    // Expand only those subfolders.
+    //-- sort the folders in increasing order of depth.
+    std::sort(scriptDirectories.begin(), scriptDirectories.end(), comparatorDirLevels);
+    m_scriptsViewHelper.dirsToExpand = std::move(scriptDirectories);
+}
+
+
+// ----
+
+
+void Dlg_ProfileScripts_Options::on_listView_profiles_clicked(const QModelIndex index)
+{
+    if (m_scriptsViewHelper.viewStage != FSLoadingStage::Idle)
+        return;
+
     /* // For multiple selections:
     QItemSelectionModel selection = ui->listView_profiles->selectionModel()->selectedIndexes();
-    if(selection.indexes().isEmpty())
+    if (selection.indexes().isEmpty())
     {
         // empty the scripts tree view
         updateScriptsView("");
         return;
     }
-
     if (selection.indexes().first().row() > (int)g_scriptsProfiles.size())
         return;
     */
+    const int newProfileIndex = index.row();
+    if (newProfileIndex == m_currentProfileIndex)
+        return;
 
-    m_currentProfileIndex = index.row();
+    setEnabledScriptsGroup(false);
+    m_scriptsViewHelper.viewStage = FSLoadingStage::Init;
+
+    m_currentProfileIndex = newProfileIndex;
     ScriptsProfile *sp = &g_scriptsProfiles[m_currentProfileIndex];
 
-    m_scripts_model->resetToDefault();  // TODO: or another method?
+    m_scripts_model_proxy->resetToDefault();  // TODO: or another method?
 
-    ui->lineEdit_editName->setText(QString(sp->m_name.c_str()));
     ui->checkBox_setDefaultProfile->setCheckState(sp->m_defaultProfile ? Qt::Checked : Qt::Unchecked);
-    ui->lineEdit_editPath->setText(QString(sp->m_scriptsPath.c_str()));
-    if (sp->m_useSpheretables)
-        ui->checkBox_spheretables->setCheckState(Qt::Checked);
-    else
-    {
-        updateScriptsView(QString(sp->m_scriptsPath.c_str()));
-        checkScriptsFromProfile(sp, ui->treeView_scripts->rootIndex());
-    }
+    ui->lineEdit_editName->setText(QString::fromStdString(sp->m_name));
+    ui->lineEdit_editPath->setText(QString::fromStdString(sp->m_scriptsPath));
 
     ui->pushButton_profileDelete->setDisabled(false);
     ui->pushButton_profileSave->setDisabled(false);
+
+    if (sp->m_useSpheretables)
+    {
+        ui->checkBox_spheretables->setCheckState(Qt::Checked);
+        ui->treeView_scripts->setDisabled(true);
+        return;
+    }
+
+    ui->treeView_scripts->setDisabled(false);
+    loadScriptsFromProfile(sp);
 }
 
 void Dlg_ProfileScripts_Options::on_lineEdit_editPath_textChanged(const QString &arg1)
 {
+    if (m_scriptsViewHelper.viewStage != FSLoadingStage::Idle)
+        return;
+
     // Check if it's a valid path, if not, set the color of the text to red.
     if (!isValidDirectory(arg1.toStdString()))
     {
@@ -270,8 +432,8 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileAdd_clicked()
     }
 
     // Populate the scripts file list in the profile.
-    //fetchSyncCheckableProxyModelSourcedQFileSystemModelCheckedDirRecursive(m_scripts_model, ui->treeView_scripts->rootIndex());
-    QStringList selectedScripts = ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(m_scripts_model, ui->treeView_scripts->rootIndex());
+    QStringList selectedScripts = ModelUtils::
+            CheckableProxy::FileSystem::extractCheckedFilesPath(m_scripts_model_base, m_scripts_model_proxy, ui->treeView_scripts->rootIndex(), true);
     for (int i = 0; i < selectedScripts.count(); ++i)
         newProfile.m_scriptsToLoad.push_back(selectedScripts.at(i).toStdString());
 
@@ -347,7 +509,8 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
 
     if (!sp->m_useSpheretables)
     {
-        QStringList selectedScripts = ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(m_scripts_model, ui->treeView_scripts->rootIndex());
+        QStringList selectedScripts = ModelUtils::
+                CheckableProxy::FileSystem::extractCheckedFilesPath(m_scripts_model_base, m_scripts_model_proxy, ui->treeView_scripts->rootIndex(), true);
         sp->m_scriptsToLoad.clear();
         for (int i = 0; i < selectedScripts.count(); ++i)
             sp->m_scriptsToLoad.push_back(selectedScripts.at(i).toStdString());
@@ -359,10 +522,10 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
 
 void Dlg_ProfileScripts_Options::on_pushButton_SelectAllScripts_clicked()
 {
-    ModelUtils::resetCheckedStateCheckableProxyModel(m_scripts_model, true);
+    ModelUtils::CheckableProxy::resetCheckedState(m_scripts_model_proxy, true);
 }
 
 void Dlg_ProfileScripts_Options::on_pushButton_clearSelection_clicked()
 {
-    ModelUtils::resetCheckedStateCheckableProxyModel(m_scripts_model, false);
+    ModelUtils::CheckableProxy::resetCheckedState(m_scripts_model_proxy, false);
 }

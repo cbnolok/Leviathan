@@ -4,13 +4,12 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui widgets concurrent
 
 TARGET = Leviathan
 TEMPLATE = app
 
-CONFIG += c++14
+CONFIG += c++17
 
 RESOURCES = leviathan_resources.qrc
 
@@ -80,6 +79,7 @@ SOURCES += \
     keystrokesender/keystrokesender_mac.cpp
 
 HEADERS  += \
+    cpputils/collections.h \
     globals.h \
     logging.h \
     version.h \

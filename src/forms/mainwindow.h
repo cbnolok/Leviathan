@@ -48,9 +48,9 @@ public:
 
 private:
     void setupMenuBar();
-    void loadDefaultProfiles_helper();
-    void loadClientProfile_helper(int index);
-    void loadScriptProfile_helper(int index);
+    bool loadDefaultProfiles_helper();
+    bool loadClientProfile_helper(int index);
+    bool loadScriptProfile_helper(int index);
 
     Ui::MainWindow      *ui;
     MainTab_Items       *m_MainTab_Items_inst;
@@ -59,8 +59,8 @@ private:
     MainTab_Log         *m_MainTab_Log_inst;
 
     SubDlg_TaskProgress *m_loadProgressDlg;
-    QFutureWatcher<void> m_futureWatcher;
-    QFuture<void>        m_futureTask;
+    QFutureWatcher<bool> m_futureWatcher;
+    QFuture<bool>        m_futureTask;
 };
 
 

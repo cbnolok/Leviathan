@@ -58,6 +58,22 @@ private:
   To retreive lists of (un-) checked items in the model, use the checkedState() method.
   */
 
+/*
+QModelIndex CheckableProxyModel::mapToSource(const QModelIndex &proxyIndex) const
+{
+    if (!proxyIndex.isValid())
+        return {};
+    return QSortFilterProxyModel::mapToSource(proxyIndex);
+}
+
+QModelIndex CheckableProxyModel::mapFromSource(const QModelIndex &proxyIndex) const
+{
+    if (!proxyIndex.isValid())
+        return {};
+    return QSortFilterProxyModel::mapFromSource(proxyIndex);
+}
+*/
+
 CheckableProxyModel::CheckableProxyModel(QObject *parent) :
     QSortFilterProxyModel(parent),
     m_cleanupTimer(new DelayedExecutionTimer(30000, 1000, this)),
@@ -85,7 +101,7 @@ Qt::ItemFlags CheckableProxyModel::flags(const QModelIndex &index) const
     if (index.column() == 0) {
         flags |= Qt::ItemIsUserCheckable;
         if (sourceIndex.model()->hasChildren(sourceIndex)) {
-            flags |= Qt::ItemIsTristate;
+            flags |= Qt::ItemIsUserTristate;
         }
     }
 
@@ -120,7 +136,8 @@ bool CheckableProxyModel::setData(const QModelIndex &index, const QVariant &valu
     QModelIndex sourceIndex = mapToSource(index);
 
     if (index.column() == 0 && role == Qt::CheckStateRole) {
-        Qt::CheckState state = static_cast<Qt::CheckState>(value.toInt());
+        const int val = value.toInt();
+        Qt::CheckState state = static_cast<Qt::CheckState>((val == 1) ? 2 : val);
         return setCheckState(sourceIndex, state);
     }
 

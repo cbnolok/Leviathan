@@ -1,18 +1,23 @@
 #include "modelutils.h"
 #include <QAbstractItemModel>
-#include <QDirModel>
+#include <QFileSystemModel>
+#include <QTreeView>
 #include "checkableproxymodel.h"
+
+#include <QDebug>
 
 
 // To use with a tree-style model.
-QStringList ModelUtils::extractStringsFromModel(QAbstractItemModel *model, const QModelIndex &parent, bool appendParent)
+auto ModelUtils::Abstract::
+extractStrings(QAbstractItemModel *model, const QModelIndex &parent, bool appendParent)
+-> QStringList
 {
     QStringList retVal;
 
     for(int i = 0; i < model->rowCount(parent); ++i)
     {
-        QModelIndex idx = model->index(i, 0, parent);
-        if(!idx.isValid())
+        const QModelIndex idx = model->index(i, 0, parent);
+        if (!idx.isValid())
             continue;
 
         QString str(idx.data(Qt::DisplayRole).toString());
@@ -28,7 +33,7 @@ QStringList ModelUtils::extractStringsFromModel(QAbstractItemModel *model, const
         retVal << str;
 
         // Check if this node has children elements, if affirmative, append them to the list.
-        QStringList recursiveList = extractStringsFromModel(model, idx, appendParent);
+        QStringList recursiveList = Abstract::extractStrings(model, idx, appendParent);
         if (!recursiveList.isEmpty())
             retVal << recursiveList;
     }
@@ -37,15 +42,17 @@ QStringList ModelUtils::extractStringsFromModel(QAbstractItemModel *model, const
 }
 
 // To use with a tree-style model.
-QStringList ModelUtils::extractStringsFromCheckableProxyModel(CheckableProxyModel *model, const QModelIndex &proxyParent, bool appendParent, bool extractCheckedOnly)
+auto ModelUtils::CheckableProxy::
+extractStrings(CheckableProxyModel *model, const QModelIndex &folderIdxProxy, bool appendParent, bool extractCheckedOnly)
+-> QStringList
 {
     // It isn't suitable for directory trees (QFileSystemModel), since on Windows the drive letter is followed by other text, and because also
     //  the directories are checked and included in the returned list.
     QStringList retVal;
 
-    for (int i = 0; i < model->rowCount(proxyParent); ++i)
+    for (int i = 0; i < model->rowCount(folderIdxProxy); ++i)
     {
-        QModelIndex idx = model->index(i, 0, proxyParent);
+        const QModelIndex idx = model->index(i, 0, folderIdxProxy);
         if(!idx.isValid())
             continue;
 
@@ -55,7 +62,7 @@ QStringList ModelUtils::extractStringsFromCheckableProxyModel(CheckableProxyMode
             QString str(idx.data(Qt::DisplayRole).toString());
             if (appendParent)
             {
-                QModelIndex parentOfParent = proxyParent;
+                QModelIndex parentOfParent = folderIdxProxy;
                 while (parentOfParent.isValid())
                 {
                     str.prepend(parentOfParent.data(Qt::DisplayRole).toString() + '/');
@@ -66,7 +73,7 @@ QStringList ModelUtils::extractStringsFromCheckableProxyModel(CheckableProxyMode
         }
 
         // Check if this node has children elements, if affirmative, append them to the list.
-        QStringList recursiveList = extractStringsFromCheckableProxyModel(model, idx, appendParent, extractCheckedOnly);
+        QStringList recursiveList = CheckableProxy::extractStrings(model, idx, appendParent, extractCheckedOnly);
         if (!recursiveList.isEmpty())
             retVal << recursiveList;
     }
@@ -75,28 +82,28 @@ QStringList ModelUtils::extractStringsFromCheckableProxyModel(CheckableProxyMode
 }
 
 
-QStringList ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(CheckableProxyModel *model, const QModelIndex &proxyParent, bool extractCheckedOnly)
+auto ModelUtils::CheckableProxy::FileSystem::
+extractCheckedFilesPath(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, const QModelIndex &folderIdxProxy, bool extractCheckedOnly)
+-> QStringList
 {
     QStringList retVal;
-    QDirModel *sourceModel = static_cast<QDirModel*>(model->sourceModel());   // if source model is wrong this will crash...
-
-    for (int i = 0; i < model->rowCount(proxyParent); ++i)
+    for (int i = 0; i < model_proxy->rowCount(folderIdxProxy); ++i)
     {
-        const QModelIndex idx = model->index(i, 0, proxyParent);
+        const QModelIndex idx = model_proxy->index(i, 0, folderIdxProxy);
         if(!idx.isValid())
             continue;
-        const QModelIndex sourceIdx = model->mapToSource(idx);
+        const QModelIndex sourceIdx = model_proxy->mapToSource(idx);
 
         int role = idx.data(Qt::CheckStateRole).toInt();
         bool checked = (role==Qt::Checked) || (role==Qt::PartiallyChecked);
         if ( (extractCheckedOnly && checked) || !extractCheckedOnly )
         {
-            if (!sourceModel->isDir(sourceIdx))
-                retVal << sourceModel->filePath(sourceIdx);
+            if (!model_base->isDir(sourceIdx))
+                retVal << model_base->filePath(sourceIdx);
             else
             {
                 // Check if this node has children elements, if affirmative, append them to the list.
-                QStringList recursiveList = extractPathsFromCheckableProxyModelSourcedQDirModel(model, idx, extractCheckedOnly);
+                QStringList recursiveList = CheckableProxy::FileSystem::extractCheckedFilesPath(model_base, model_proxy, idx, extractCheckedOnly);
                 if (!recursiveList.isEmpty())
                     retVal << recursiveList;
             }
@@ -106,11 +113,73 @@ QStringList ModelUtils::extractPathsFromCheckableProxyModelSourcedQDirModel(Chec
     return retVal;
 }
 
-void ModelUtils::resetCheckedStateCheckableProxyModel(CheckableProxyModel *model, bool value, const QModelIndex &proxyParent)
+auto ModelUtils::CheckableProxy::FileSystem::
+checkChildren(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, QTreeView *view, QString const& folder)
+-> void
 {
-    for (int i = 0; i < model->rowCount(proxyParent); ++i)
+    qDebug() << "entro";
+    if (!model_base || !model_proxy || !view)
+        return;
+    if (folder.isEmpty())
+        return;
+
+    QModelIndex viewRootIdx     = view->rootIndex();
+    if (!viewRootIdx.isValid())
+        return;
+    QModelIndex folderIdxBase   = model_base->index(folder);
+    if (!folderIdxBase.isValid())
+        return;
+    QModelIndex folderIdxProxy  = model_proxy->mapFromSource(folderIdxBase);
+    if (!folderIdxProxy.isValid())
+        return;
+
+    qDebug() << "inizio";
+    for (int baseRow = 0; baseRow < model_proxy->rowCount(folderIdxProxy); ++baseRow)
     {
-        const QModelIndex idx = model->index(i, 0, proxyParent);
+        qDebug() << 1;
+        const QModelIndex elemIdxProxy = model_proxy->index(baseRow, 0, folderIdxProxy);
+        //const QModelIndex elemIdxProxy = folderIdxProxy.siblingAtRow(baseRow);
+        if (!elemIdxProxy.isValid())
+            continue;
+
+        qDebug() << 2;
+        const int state = model_proxy->data(elemIdxProxy, Qt::CheckStateRole).toInt();
+        const QModelIndex elemIdxSource = model_proxy->mapToSource(elemIdxProxy);
+        if (!model_base->isDir(elemIdxSource))
+        {
+            qDebug() << 3;
+            // I'm a child file
+            if (folderIdxProxy == viewRootIdx)
+                continue; //check only files in subfolders
+
+            qDebug() << elemIdxSource.data() << " " << elemIdxProxy.data(Qt::CheckStateRole);
+
+            if (state != Qt::Checked)
+                model_proxy->setData(elemIdxProxy, Qt::Checked, Qt::CheckStateRole);
+
+            continue;
+        }
+
+        qDebug() << 4;
+        // I'm a child folder.
+        if (state != Qt::Checked)
+            continue;
+
+        view->expand(elemIdxProxy);
+    }
+}
+
+auto ModelUtils::CheckableProxy::
+resetCheckedState(CheckableProxyModel *model, bool value, QModelIndex folderIdxProxy)
+-> void
+{
+    if (!folderIdxProxy.isValid())
+        folderIdxProxy = model->index(0,0,QModelIndex());
+    Q_ASSERT(folderIdxProxy.isValid());
+
+    for (int i = 0; i < model->rowCount(folderIdxProxy); ++i)
+    {
+        const QModelIndex idx = model->index(i, 0, folderIdxProxy);
         if (!idx.isValid())
             continue;
 
@@ -121,7 +190,8 @@ void ModelUtils::resetCheckedStateCheckableProxyModel(CheckableProxyModel *model
             continue;
         const QModelIndex childIdx = itemModel->index(0,0, idx);
         if (childIdx.isValid())
-            resetCheckedStateCheckableProxyModel(model, value, childIdx);
+            CheckableProxy::resetCheckedState(model, value, childIdx);
     }
 }
+
 

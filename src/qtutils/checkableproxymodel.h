@@ -59,10 +59,10 @@ class CheckableProxyModel : public QSortFilterProxyModel
 public:
     explicit CheckableProxyModel(QObject *parent = nullptr);
 
-    virtual void setSourceModel(QAbstractItemModel *sourceModel);
-    virtual QVariant data(const QModelIndex &index, int role) const;
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int role);
-    virtual Qt::ItemFlags flags(const QModelIndex &index) const;
+    virtual void setSourceModel(QAbstractItemModel *sourceModel) override;
+    virtual QVariant data(const QModelIndex &index, int role) const override;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     bool defaultCheckStateIsChecked() const;
 
@@ -70,6 +70,9 @@ public:
 
     bool setSourceIndexCheckedState(QModelIndex sourceIndex, bool checked);
     bool setCheckedState(QModelIndex proxyIndex, bool checked);
+
+    //virtual QModelIndex mapToSource(const QModelIndex &proxyIndex) const override;
+    //virtual QModelIndex mapFromSource(const QModelIndex &proxyIndex) const override;
 
 signals:
     void checkedNodesChanged();
