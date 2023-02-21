@@ -13,6 +13,9 @@ void strTrim(std::string &string);      // Remove leading and trailing spaces an
 bool isStringNumericHex(const std::string &s);
 bool isStringNumericDec(const std::string &s);
 
+std::wstring stringToWideString(const std::string& str);
+std::string  wideStringToString(const std::wstring& wstr);
+
 
 // Function by Marius: https://stackoverflow.com/questions/236129/split-a-string-in-c
 template < class ContainerT >

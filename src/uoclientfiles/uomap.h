@@ -72,7 +72,7 @@ public:
     const StaticsBlock *getCacheStaticsBlock(unsigned int x, unsigned int y);
 
     const MapCell&  getCellFromBlock(const MapBlock& block, unsigned int xTile, unsigned int yTile) const;
-    const MapCell&  readCell(unsigned int xTile, unsigned int yTile);
+    MapCell readCell(unsigned int xTile, unsigned int yTile);
     MapBlock readBlock(unsigned int index);
 
     char getTopZAtXY(unsigned int x, unsigned int y);

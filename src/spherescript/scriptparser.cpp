@@ -46,8 +46,14 @@ void ScriptParser::run()
     g_loadedScriptsProfile = m_profileIndex;
 
     // TODO: enable reading scripts file from spheretables
-    g_scriptFileList = g_scriptsProfiles[m_profileIndex].m_scriptsToLoad;
-    //getFilesInDirectorySub(&g_scriptFileList, g_scriptsProfiles[m_profileIndex].m_scriptsPath);
+    std::vector<std::string> const& tempFileList(g_scriptsProfiles[m_profileIndex].m_scriptsToLoad);
+    std::vector<std::string>        expandedFileList;
+    expandedFileList.reserve(tempFileList.size());
+    for (std::string const& str : tempFileList)
+    {
+        getFilesInDirectorySub(&expandedFileList, str);
+    }
+    g_scriptFileList = std::move(expandedFileList);
 
     int progressVal = 0;
 
@@ -241,6 +247,7 @@ void ScriptParser::run()
 
 bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
 {
+    (void)loadingResources; // TODO Unused, for now.
     //if (g_scriptObjTree == nullptr)
     //    return false;       // if it wasn't initialized we can't store the objects that will be parsed.
 
@@ -265,11 +272,16 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
     appendToLog(std::string("Loading file " + filePath));
     m_scriptLine = 0;
 
+    // Pre-allocate strings.
+    std::string line;
+    std::string blockStr;
+    std::string keywordStr;
+    std::string argumentStr;
+
 //    try
 //    {
         while ( !fileStream.eof() )
         {         
-            std::string line;
             std::getline(fileStream, line);
             if ( fileStream.bad() )
                 break;
@@ -279,34 +291,34 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
                 continue;
 
             //-- Get the pure block string (removing also leading/trailing spaces, trailing \n, \t, \r, \v, \f...)
-            size_t index_startBlock = line.find_first_of('[');
-            size_t index_endBlock = line.find_first_of(']');
+            const size_t index_startBlock = line.find_first_of('[');
+            const size_t index_endBlock = line.find_first_of(']');
             if (index_endBlock == std::string::npos)
                 continue;
-            size_t index_comment = line.find("//");     // Checking if the block is commented.
+            const size_t index_comment = line.find("//");     // Checking if the block is commented.
             if (index_comment != std::string::npos)
             {
                 if (index_comment < index_startBlock)
                     continue;
             }
-            std::string blockStr = line.substr(index_startBlock, index_endBlock-index_startBlock+1);
+            blockStr = line.substr(index_startBlock, index_endBlock-index_startBlock+1);
 
             //-- Get the keyword
             // Skip eventual spaces and the '[' character before the keyword
-            size_t index_keywordLeft = blockStr.find_first_not_of(" \r", 1); // starting from 1 skips the '['
+            const size_t index_keywordLeft = blockStr.find_first_not_of(" \r", 1); // starting from 1 skips the '['
             if (index_keywordLeft == std::string::npos)
                 continue;
 
             // Skip eventual spaces and the ']' character after the keyword
-            size_t index_keywordRight = blockStr.find_first_of("] \r", index_keywordLeft);
+            const size_t index_keywordRight = blockStr.find_first_of("] \r", index_keywordLeft);
             if (index_keywordRight == std::string::npos)
                 continue;
 
             // Get the pure keyword (it can also be COMMENT, which isn't in the table, so we won't do anything if we encounter it).
-            std::string keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight-index_keywordLeft);
+            keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight-index_keywordLeft);
 
             //-- Get the eventual keyword argument (e.g.: [DEFNAME *c_foo*]). We can also have no argument.
-            std::string argumentStr("<No Argument>");
+            argumentStr = "<No Argument>";
             size_t index_argumentLeft = index_keywordRight + 1;
             while ( (blockStr[index_argumentLeft]==' ') || (blockStr[index_argumentLeft]=='\r') )
             {
@@ -314,7 +326,7 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             }
             if (blockStr[index_argumentLeft]!=']')  // encountered the end of the block: argument not found
             {
-                size_t index_argumentRight = blockStr.find_first_of("] \r", index_argumentLeft);
+                const size_t index_argumentRight = blockStr.find_first_of("] \r", index_argumentLeft);
                 if (index_argumentRight == std::string::npos)
                     continue;
                 argumentStr = blockStr.substr(index_argumentLeft, index_argumentRight-index_argumentLeft);
@@ -548,11 +560,11 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
                     bStatus = pFile->ReadString(csLine);
                 }
                     break;
-                /*  // TO-DO
+
+                // TO-DO
                 case SCRIPTOBJ_RES_LISTS:
                     break
-                */
-                /*
+
                 case ScriptUtils::SCRIPTOBJ_RES_SPELL:
                 {
                     CSObject * pSpell = new CSObject;
@@ -1076,7 +1088,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         //if (!objID.empty())    // There's an "override" for the ID.
         //    obj->m_ID = objID;
         //else
-            obj->m_ID = ScriptUtils::numericalStrFormattedAsSphereInt(objIDHeader);
+        obj->m_ID = ScriptUtils::numericalStrFormattedAsSphereInt(objIDHeader);
 
         obj->m_display = ScriptUtils::strToSphereInt(obj->m_ID);
     }

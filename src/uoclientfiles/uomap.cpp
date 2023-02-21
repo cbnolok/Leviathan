@@ -217,7 +217,7 @@ const MapCell& UOMap::getCellFromBlock(const MapBlock& block, unsigned int xTile
     return block.cells[(yCell * MapBlock::kCellsPerColumn) + xCell];
 }
 
-const MapCell& UOMap::readCell(unsigned int xTile, unsigned int yTile)
+MapCell UOMap::readCell(unsigned int xTile, unsigned int yTile)
 {
     if (!m_stream.is_open())
         throw InvalidStreamException("UOMap", "getCell accessing closed stream.");

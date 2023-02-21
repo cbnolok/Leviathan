@@ -4,6 +4,7 @@
 #include <sstream>      // for std::stringstream
 #include <iomanip>      // for std::hex
 #include <stdexcept>    // for std::invalid_argument
+#include <thread>       // for thread_local macro
 
 #include "cpputils/strings.h"
 
@@ -81,7 +82,7 @@ std::string ScriptUtils::numericalStrFormattedAsSphereInt(const char *str)
 
 //-------------
 
-int ScriptUtils::findTableSorted(std::string stringToFind, const std::vector<const char *> &table, int tableSize)
+int ScriptUtils::findTableSorted(const std::string &stringToFind, const std::vector<const char *> &table, const int tableSize)
 {
     // Do a binary search (un-cased) on a sorted table.
     // RETURN: -1 = not found
@@ -95,14 +96,14 @@ int ScriptUtils::findTableSorted(std::string stringToFind, const std::vector<con
     int iLow = 0;
 
     // std::string automatically stores the length, so there's no need to use C string + strlen when uppercasing the string
-    strToUpper(stringToFind);
-    const char* stringToFindC = stringToFind.c_str();
+    thread_local static std::string strTransformed = stringToFind;
+    strToUpper(strTransformed);
+    const char *const stringToFindC = stringToFind.c_str();
 
     while (iLow <= iHigh)
     {
-        int i = (iHigh + iLow) >> 1; // / 2;
-
-        int compare = strcmp(stringToFindC, table[i]);
+        const int i = (iHigh + iLow) >> 1; // / 2;
+        const int compare = strcmp(stringToFindC, table[i]);
 
         if (compare == 0)
             return i;

@@ -24,7 +24,7 @@ bool comparatorDirLevels(std::string const& lhs, std::string const& rhs);
 std::string getDirectoryFromString(std::string const& str);
 
 // searches recursively for .scp files in a folder.
-void getFilesInDirectorySub(std::vector<std::string> *out, std::string directory);
+void getFilesInDirectorySub(std::vector<std::string> *out, std::string path);
 
 
 #endif // SYSIO_H

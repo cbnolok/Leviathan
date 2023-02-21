@@ -1,3 +1,4 @@
+#include "strings.h"
 #include "sysio.h"
 #include <algorithm>    // for std::replace
 
@@ -19,7 +20,6 @@ inline static constexpr char kStdDirDelim = '/';
 
 
 #ifdef QT_CORE_LIB
-
 QString& standardizePath(QString &s)
 {
     if (s.isEmpty())
@@ -34,7 +34,6 @@ QString& standardizePath(QString &s)
 
     return s;
 }
-
 #endif
 
 std::string& standardizePath(std::string &s)
@@ -94,45 +93,43 @@ std::string getDirectoryFromString(std::string const& str)
     return ret;
 }
 
-void getFilesInDirectorySub(std::vector<std::string> *out, std::string directory)
+void getFilesInDirectorySub(std::vector<std::string> *out, std::string path)
 {
-    // This function checks recursively in the given folder.
+    // This function adds to the list, recursively, files inside folders.
     // TODO: right now doesn't get saves and .ini.
-    standardizePath(directory);
+    standardizePath(path);
 
 #ifdef _WIN32
     HANDLE dir;
-    WIN32_FIND_DATAA findData;
+    WIN32_FIND_DATAW findData;
 
-    if ((dir = FindFirstFileA((directory + '*').c_str(), &findData)) == INVALID_HANDLE_VALUE)
+    std::replace(path.begin(), path.end(), kStdDirDelim, '\\');
+    std::wstring buf(stringToWideString("\\\\?\\" + path));
+    if ((dir = FindFirstFileW(buf.c_str(), &findData)) == INVALID_HANDLE_VALUE)
         return;     // No files found
 
-    std::string file_name;
-    std::string full_file_name;
+    std::wstring file_name;
     do
     {
         file_name = findData.cFileName;
-        full_file_name = (directory + file_name);
         const bool is_directory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 
         if (is_directory)
         {
             // Recurse this directory
-            if ( (strcmp(file_name.c_str(), "..") == 0) || (strcmp(file_name.c_str(), ".") == 0) )
-                continue;   // Ignore this one
-
-            getFilesInDirectorySub(out, full_file_name);
+            getFilesInDirectorySub(out, path);
             continue;
         }
         else if (file_name[0] == '.')
             continue;
         else if (file_name.length() <= 4)
             continue;
-        else if (strcmp(file_name.c_str() + file_name.length() - 4, ".scp") != 0)
+
+        if (strcmp(path.c_str() + path.length() - 4, ".scp") != 0)
             continue;   // we look only for .scp files.
 
-        out->emplace_back(full_file_name);
-    } while (FindNextFileA(dir, &findData));
+        out->emplace_back(path);
+    } while (FindNextFileW(dir, &findData));
 
     FindClose(dir);
 #else

@@ -19,7 +19,7 @@ public:
     static std::string numericalStrFormattedAsSphereInt(const char *str);
 
 
-    static int findTableSorted(std::string stringToFind, const std::vector<const char*> &table, int tableSize);
+    static int findTableSorted(const std::string& stringToFind, const std::vector<const char*> &table, const int tableSize);
 
 
     // All the script resource blocks in SphereServer.
