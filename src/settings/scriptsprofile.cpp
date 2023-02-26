@@ -14,7 +14,7 @@
 ScriptsProfile::ScriptsProfile(std::string scriptsPath) :
         m_name("Unnamed"), m_defaultProfile(false), m_scriptsPath(scriptsPath), m_useSpheretables(false)
 {
-    standardizePath(m_scriptsPath);
+    m_scriptsPath = standardizePath(m_scriptsPath);
 }
 
 QJsonObject ScriptsProfile::generateJsonObject()
@@ -23,7 +23,7 @@ QJsonObject ScriptsProfile::generateJsonObject()
     QJsonObject obj;
     obj["Name"] = m_name.c_str();
     obj["DefaultProfile"] = m_defaultProfile;
-    obj["Path"] = m_scriptsPath.c_str();
+    obj["Path"] = standardizePath(m_scriptsPath).c_str();
     obj["LoadFromSpheretables"] = m_useSpheretables;
 
     if (!m_useSpheretables)
@@ -92,7 +92,7 @@ std::vector<ScriptsProfile> ScriptsProfile::createFromJson()
 
         val = profileObj["Path"];
         if (QJSONVAL_ISVALID(val))
-            profile.m_scriptsPath = val.toString().toStdString();
+            profile.m_scriptsPath = standardizePath(val.toString().toStdString());
 
         if (!profile.m_useSpheretables)
         {

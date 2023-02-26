@@ -29,6 +29,7 @@ private slots:
     void on_pushButton_pathBrowse_clicked();
 
     void on_listView_profiles_clicked(const QModelIndex index);
+    void on_checkBox_setDefaultProfile_stateChanged(int arg1);
     void on_pushButton_profileAdd_clicked();
     void on_pushButton_profileSave_clicked();
     void on_pushButton_profileDelete_clicked();
@@ -38,6 +39,7 @@ private slots:
     void on_pushButton_clearSelection_clicked();
 
     void ms_scriptTree_directoryLoaded(QString);
+
 
 private:
     Ui::Dlg_ProfileScripts_Options *ui;
@@ -50,9 +52,9 @@ private:
     const ScriptsProfile* m_scriptsProfileLoaded;
 
     void setEnabledScriptsGroup(bool);
-
+    void initNewScriptsModel();
     void updateProfilesView();
-    void updateScriptsView(QString path);
+    void updateScriptsViewRoot(QString path);
     void saveProfilesToJson();
 
     void loadScriptsFromProfile(const ScriptsProfile *sp);

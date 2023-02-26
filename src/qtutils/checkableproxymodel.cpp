@@ -74,8 +74,9 @@ QModelIndex CheckableProxyModel::mapFromSource(const QModelIndex &proxyIndex) co
 }
 */
 
-CheckableProxyModel::CheckableProxyModel(QObject *parent) :
+CheckableProxyModel::CheckableProxyModel(QObject *parent, bool unstableSourceModel) :
     QSortFilterProxyModel(parent),
+    m_unstableSourceModel(unstableSourceModel),
     m_cleanupTimer(new DelayedExecutionTimer(30000, 1000, this)),
     m_periodicalCleanupTimer(new QTimer(this))
 {
@@ -390,8 +391,13 @@ void CheckableProxyModel::removeSubtree(QModelIndex sourceIndex)
         m_checkStates.remove(pIndex);
     }
 
-    if (rowCount > 0)
-        emit dataChanged(itemModel->index(0,0,sourceIndex), itemModel->index(rowCount-1,0,sourceIndex));
+    // If the model changes itself asynchronously or frequently, it will invalidate existing indexes
+    if (!m_unstableSourceModel)
+    {
+        // It causes an exception: ASSERT: "!"QSortFilterProxyModel: index from wrong model passed to mapToSource""
+        if (rowCount > 0)
+            emit dataChanged(itemModel->index(0,0,sourceIndex), itemModel->index(rowCount-1,0,sourceIndex));
+    }
 }
 
 void CheckableProxyModel::cleanupStorage()

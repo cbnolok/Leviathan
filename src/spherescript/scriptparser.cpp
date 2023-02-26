@@ -51,7 +51,7 @@ void ScriptParser::run()
     expandedFileList.reserve(tempFileList.size());
     for (std::string const& str : tempFileList)
     {
-        getFilesInDirectorySub(&expandedFileList, str);
+        getFilesInDirectorySub(&expandedFileList, str, -1);
     }
     g_scriptFileList = std::move(expandedFileList);
 

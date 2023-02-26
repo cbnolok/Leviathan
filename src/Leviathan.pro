@@ -9,7 +9,7 @@ QT       += core gui widgets concurrent
 TARGET = Leviathan
 TEMPLATE = app
 
-CONFIG += c++17
+CONFIG += c++20
 
 RESOURCES = leviathan_resources.qrc
 

@@ -75,7 +75,7 @@
            <enum>Qt::StrongFocus</enum>
           </property>
           <property name="text">
-           <string>Save Changes</string>
+           <string>Save Selected</string>
           </property>
          </widget>
         </item>

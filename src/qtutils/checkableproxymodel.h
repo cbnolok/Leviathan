@@ -37,6 +37,9 @@ m_checkProxy = new CheckableProxyModel(this);
  connect(m_checkProxy, SIGNAL (checkedNodesChanged()), this, SLOT (selectedItemsChanged()));
 */
 
+
+// This is a modified version of the original CheckableProxyModel by Andre Somers.
+
 #ifndef CHECKABLEPROXYMODEL_H
 #define CHECKABLEPROXYMODEL_H
 
@@ -57,7 +60,7 @@ class CheckableProxyModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 public:
-    explicit CheckableProxyModel(QObject *parent = nullptr);
+    explicit CheckableProxyModel(QObject *parent = nullptr, bool unstableSourceModel = false);
 
     virtual void setSourceModel(QAbstractItemModel *sourceModel) override;
     virtual QVariant data(const QModelIndex &index, int role) const override;
@@ -118,9 +121,10 @@ private:
     NodeState getTreeNodeState(QModelIndex index) const;
     bool setCheckState(QModelIndex sourceIndex, Qt::CheckState state);
     void removeSubtree(QModelIndex sourceIndex);
-    void rebuildCheckedNodes() ;
+    void rebuildCheckedNodes();
 
 private:
+    bool m_unstableSourceModel;
     QHash<QPersistentModelIndex, NodeState> m_checkStates;
     DelayedExecutionTimer* m_cleanupTimer;
     QTimer* m_periodicalCleanupTimer;

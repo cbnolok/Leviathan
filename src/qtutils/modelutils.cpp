@@ -94,14 +94,19 @@ extractCheckedFilesPath(QFileSystemModel *model_base, CheckableProxyModel *model
             continue;
         const QModelIndex sourceIdx = model_proxy->mapToSource(idx);
 
-        int role = idx.data(Qt::CheckStateRole).toInt();
-        bool checked = (role==Qt::Checked) || (role==Qt::PartiallyChecked);
+        const int role = idx.data(Qt::CheckStateRole).toInt();
+        const bool checked = (role==Qt::Checked) || (role==Qt::PartiallyChecked);
         if ( (extractCheckedOnly && checked) || !extractCheckedOnly )
         {
             if (!model_base->isDir(sourceIdx))
+            {
                 retVal << model_base->filePath(sourceIdx);
+            }
             else
             {
+                if (role==Qt::Checked)
+                    retVal << model_base->filePath(sourceIdx);
+
                 // Check if this node has children elements, if affirmative, append them to the list.
                 QStringList recursiveList = CheckableProxy::FileSystem::extractCheckedFilesPath(model_base, model_proxy, idx, extractCheckedOnly);
                 if (!recursiveList.isEmpty())

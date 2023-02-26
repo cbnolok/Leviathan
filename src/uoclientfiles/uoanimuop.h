@@ -24,8 +24,8 @@ class UOAnimUOP
     struct UOPAnimationData
     {
         int animFileIdx;        // AnimationFrame(x).uop
-        size_t blockIdx;
-        size_t fileIdx;
+        unsigned int blockIdx;
+        unsigned int fileIdx;
         unsigned long long hash;
     };
 

@@ -14,7 +14,7 @@
 ClientProfile::ClientProfile(std::string clientPath) :
         m_name("Unnamed"), m_defaultProfile(false), m_clientPath(clientPath)
 {
-    standardizePath(m_clientPath);
+    m_clientPath = standardizePath(m_clientPath);
 }
 
 QJsonObject ClientProfile::generateJsonObject()
@@ -22,7 +22,7 @@ QJsonObject ClientProfile::generateJsonObject()
     // Build the json object.
     QJsonObject obj;
     obj["Name"] = m_name.c_str();
-    obj["Path"] = m_clientPath.c_str();
+    obj["Path"] = standardizePath(m_clientPath).c_str();
     obj["DefaultProfile"] = m_defaultProfile;
 
     return obj;
@@ -66,7 +66,8 @@ std::vector<ClientProfile> ClientProfile::createFromJson()
             continue;
         }
 
-        ClientProfile profile(val.toString().toStdString());
+        const std::string valStr(val.toString().toStdString());
+        ClientProfile profile(standardizePath(valStr));
 
         val = profileObj["Name"];
         if (QJSONVAL_ISVALID(val))

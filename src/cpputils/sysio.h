@@ -10,9 +10,9 @@
 
 
 #ifdef QT_CORE_LIB
-QString & standardizePath(QString &s);
+QString standardizePath(QString s);
 #endif
-std::string & standardizePath(std::string &s);   // Change back slash to forward slash and add (if not present) trailing forward slash
+std::string standardizePath(std::string s);   // Change back slash to forward slash and add (if not present) trailing forward slash
 
 // self explanatory.
 bool isValidFile(const std::string& filePath);
@@ -24,7 +24,7 @@ bool comparatorDirLevels(std::string const& lhs, std::string const& rhs);
 std::string getDirectoryFromString(std::string const& str);
 
 // searches recursively for .scp files in a folder.
-void getFilesInDirectorySub(std::vector<std::string> *out, std::string path);
+void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int maxFolderLevel);
 
 
 #endif // SYSIO_H

@@ -28,6 +28,7 @@ private slots:
     void on_pushButton_profileAdd_clicked();
     void on_pushButton_profileSave_clicked();
     void on_listView_profiles_clicked(const QModelIndex &index);
+    void on_checkBox_setDefaultProfile_stateChanged(int arg1);
 
 private:
     Ui::Dlg_ProfileClient_Options *ui;

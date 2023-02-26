@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>796</width>
-    <height>246</height>
+    <height>274</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -127,19 +127,6 @@
      <layout class="QGridLayout" name="gridLayout_5">
       <item row="1" column="0">
        <layout class="QGridLayout" name="gridLayout_6" columnstretch="0,0,0">
-        <item row="0" column="1">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="10" column="1">
          <spacer name="verticalSpacer_2">
           <property name="orientation">
@@ -153,12 +140,21 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_editName">
-          <property name="text">
-           <string>Name</string>
+        <item row="2" column="0" colspan="2">
+         <widget class="QLineEdit" name="lineEdit_editName"/>
+        </item>
+        <item row="3" column="1">
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
           </property>
-         </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item row="9" column="2">
          <widget class="QPushButton" name="pushButton_pathBrowse">
@@ -179,14 +175,8 @@
           </property>
          </widget>
         </item>
-        <item row="9" column="0" colspan="2">
-         <widget class="QLineEdit" name="lineEdit_editPath"/>
-        </item>
-        <item row="2" column="0" colspan="2">
-         <widget class="QLineEdit" name="lineEdit_editName"/>
-        </item>
-        <item row="3" column="1">
-         <spacer name="verticalSpacer_3">
+        <item row="0" column="1">
+         <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -198,10 +188,43 @@
           </property>
          </spacer>
         </item>
+        <item row="13" column="1">
+         <spacer name="verticalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="9" column="0" colspan="2">
+         <widget class="QLineEdit" name="lineEdit_editPath"/>
+        </item>
+        <item row="12" column="1">
+         <widget class="QLineEdit" name="lineEdit_editWindowTitle"/>
+        </item>
         <item row="4" column="0" rowspan="5" colspan="3">
          <widget class="QLabel" name="label_editPath">
           <property name="text">
            <string>Client Directory Path</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0" colspan="3">
+         <widget class="QLabel" name="label_editWindowtitle">
+          <property name="text">
+           <string>Client Title</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="3">
+         <widget class="QLabel" name="label_editName">
+          <property name="text">
+           <string>Name</string>
           </property>
          </widget>
         </item>

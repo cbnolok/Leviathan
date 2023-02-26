@@ -121,8 +121,8 @@ void Dlg_ProfileClient_Options::on_pushButton_profileAdd_clicked()
     }
 
     // Create a new profile.
-    std::string profileDir = ui->lineEdit_editPath->text().toStdString();
-    standardizePath(profileDir);
+    std::string profileDir(ui->lineEdit_editPath->text().toStdString());
+    profileDir = standardizePath(profileDir);
     ClientProfile newProfile(profileDir);
     if (! ui->lineEdit_editName->text().isEmpty() )
         newProfile.m_name = ui->lineEdit_editName->text().toStdString();
@@ -133,7 +133,7 @@ void Dlg_ProfileClient_Options::on_pushButton_profileAdd_clicked()
             g_clientProfiles[i].m_defaultProfile = false;
     }
 
-    g_clientProfiles.push_back(newProfile);
+    g_clientProfiles.emplace_back(std::move(newProfile));
 
     // Refresh the profiles list.
     updateProfilesView();
@@ -168,7 +168,7 @@ void Dlg_ProfileClient_Options::on_pushButton_profileSave_clicked()
     ClientProfile *cp = &g_clientProfiles[m_currentProfileIndex];
     cp->m_name = ui->lineEdit_editName->text().toStdString();
     cp->m_clientPath = ui->lineEdit_editPath->text().toStdString();
-    standardizePath(cp->m_clientPath);
+    cp->m_clientPath = standardizePath(cp->m_clientPath);
 
     cp->m_defaultProfile = (ui->checkBox_setDefaultProfile->checkState() == Qt::Unchecked) ? false: true;
     if (cp->m_defaultProfile)
@@ -220,5 +220,19 @@ void Dlg_ProfileClient_Options::saveProfilesToJson()
     QByteArray textData = QJsonDocument(mainJsonField).toJson(QJsonDocument::Indented);
     jsonFile.write(textData);
     jsonFile.close();
+}
+
+
+void Dlg_ProfileClient_Options::on_checkBox_setDefaultProfile_stateChanged(int arg1)
+{
+    if (arg1 != Qt::Checked)
+        return;
+
+    for (int idx = 0; ClientProfile &cp : g_clientProfiles)
+    {
+        if ((cp.m_defaultProfile) && (idx != m_currentProfileIndex))
+            cp.m_defaultProfile = false;
+        ++idx;
+    }
 }
 

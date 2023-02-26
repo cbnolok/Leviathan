@@ -310,7 +310,7 @@ void Base_MapView::drawMapFull()
         emit progressValChanged(i);
     };
 
-    auto render = [=]() -> bool
+    auto render = [this, emitUpdateSignal]() -> bool
     {
       return m_selectedMapData->drawRectInImage(m_mapImage, 0, 0,
                                               emitUpdateSignal,

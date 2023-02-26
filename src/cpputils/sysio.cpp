@@ -20,7 +20,7 @@ inline static constexpr char kStdDirDelim = '/';
 
 
 #ifdef QT_CORE_LIB
-QString& standardizePath(QString &s)
+QString standardizePath(QString s)
 {
     if (s.isEmpty())
         return s;
@@ -36,7 +36,7 @@ QString& standardizePath(QString &s)
 }
 #endif
 
-std::string& standardizePath(std::string &s)
+std::string standardizePath(std::string s)
 {
     if (s.empty())
         return s;
@@ -88,48 +88,81 @@ std::string getDirectoryFromString(std::string const& str)
 {
     if (str.empty())
         return str;
-    std::string ret(str.substr(0, str.find_last_of(kStdDirDelim)));
-    standardizePath(ret);
-    return ret;
+    const std::string ret(standardizePath(str));
+    return ret.substr(0, ret.find_last_of(kStdDirDelim));
 }
 
-void getFilesInDirectorySub(std::vector<std::string> *out, std::string path)
+void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int maxFolderLevel)
 {
     // This function adds to the list, recursively, files inside folders.
     // TODO: right now doesn't get saves and .ini.
-    standardizePath(path);
+    path = standardizePath(path);
 
 #ifdef _WIN32
     HANDLE dir;
     WIN32_FIND_DATAW findData;
 
     std::replace(path.begin(), path.end(), kStdDirDelim, '\\');
+    Q_ASSERT(!path.empty());
+    //Q_ASSERT((path.back() == '\\') || (path.back() == '*')); // Throws if path is not a folder
+    if (path.back() == '\\')
+        path.pop_back();
+
     std::wstring buf(stringToWideString("\\\\?\\" + path));
     if ((dir = FindFirstFileW(buf.c_str(), &findData)) == INVALID_HANDLE_VALUE)
         return;     // No files found
 
-    std::wstring file_name;
-    do
-    {
-        file_name = findData.cFileName;
-        const bool is_directory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    // Prepare path to append filename
+    if (path.back() == '*')
+        path.pop_back();    // Remove '*'
 
+    std::string fileName;
+    std::string bufNewPath;
+    bool success = true;
+    while (success && (dir != INVALID_HANDLE_VALUE))
+    {
+        fileName = wideStringToString(findData.cFileName);
+        if (!fileName.compare("."))
+            goto loopcont;
+        if (!fileName.compare(".."))
+            goto loopcont;
+
+        {
+        const bool is_directory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
         if (is_directory)
         {
             // Recurse this directory
-            getFilesInDirectorySub(out, path);
-            continue;
+            bufNewPath = path;
+            if (path.back() == '\\')
+                bufNewPath += fileName + '\\';
+            else
+                bufNewPath += '\\';
+
+            if (maxFolderLevel != 0)
+            {
+                getFilesInDirectorySub(out, bufNewPath + "*", maxFolderLevel - 1);
+                out->emplace_back(standardizePath(bufNewPath));
+            }
+            maxFolderLevel -= 1;
+            goto loopcont;
         }
-        else if (file_name[0] == '.')
-            continue;
-        else if (file_name.length() <= 4)
-            continue;
+        }
 
-        if (strcmp(path.c_str() + path.length() - 4, ".scp") != 0)
-            continue;   // we look only for .scp files.
+        if (fileName[0] == '.')
+            goto loopcont;
+        if (fileName.length() <= 4)
+            goto loopcont;
+        if (strcmp(fileName.c_str() + fileName.length() - 4, ".scp") != 0)
+            goto loopcont;   // we look only for .scp files.
 
-        out->emplace_back(path);
-    } while (FindNextFileW(dir, &findData));
+        out->emplace_back(standardizePath(path + fileName));
+
+loopcont:
+        if (maxFolderLevel == 0)
+            success = false;
+        else
+            success = FindNextFileW(dir, &findData);
+    }
 
     FindClose(dir);
 #else

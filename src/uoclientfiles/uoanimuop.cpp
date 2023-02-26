@@ -4,7 +4,6 @@
 #include <QImage>
 #include <QGraphicsPixmapItem>
 
-#include "../cpputils/strings.h"
 #include "../cpputils/sysio.h"
 #include "uoppackage/uophash.h"
 #include "uoppackage/uoppackage.h"
