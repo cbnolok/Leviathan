@@ -10,21 +10,23 @@ namespace ks
 
 enum class UOClientType
 {
-    Unknown  = -1,
-    Classic  = 0,
-    Enhanced = 1,
+    Unknown     = -1,
+    Classic     = 0,
+    Enhanced    = 1,
+    ThirdParty  = 2
 };
 
 enum class KSError
 {
-    Ok         = 0,    // no error
+    Ok          = 0,    // no error
     NoWindow,
     StringShort,
 };
 
-extern const char * const UOClientWindowTitles[];
+
 extern const char * const KSErrorString[];
 
+UOClientType detectClientType(std::string windowName, std::string windowNameThirdpartyFragment);
 
 }
 

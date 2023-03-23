@@ -6,15 +6,18 @@
 #include <QGraphicsPixmapItem>
 #include <QKeyEvent>
 
-#include "globals.h"
-#include "subdlg_searchobj.h"
-#include "subdlg_spawn.h"
 #include "../spherescript/scriptobjects.h"
 #include "../spherescript/scriptutils.h"
 #include "../uoclientfiles/uoart.h"
 #include "../keystrokesender/keystrokesender.h"
+#include "../globals.h"
 #include "cpputils/maps.h"
 #include "cpputils/strings.h"
+#include "forms_common.h"
+
+#include "subdlg_searchobj.h"
+#include "subdlg_spawn.h"
+
 
 
 MainTab_Items::MainTab_Items(QWidget *parent) :
@@ -31,8 +34,8 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
     // Create the model for the organizer tree view
     m_organizer_model = new QStandardItemModel(0,0);
     ui->treeView_organizer->setModel(m_organizer_model);
-    connect(ui->treeView_organizer->selectionModel(), SIGNAL(currentChanged(const QModelIndex&,const QModelIndex&)),
-            this, SLOT(onManual_treeView_organizer_selectionChanged(const QModelIndex&,const QModelIndex&)));
+    connect(ui->treeView_organizer->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
+            this, SLOT(onManual_treeView_organizer_selectionChanged(QModelIndex,QModelIndex)));
 
     // Create the model for the charList table view
     m_objList_model = new QStandardItemModel(0,2);
@@ -43,8 +46,8 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
     m_objList_model->setHorizontalHeaderItem(1, itemList_header1);
 
     ui->treeView_objList->setModel(m_objList_model);
-    connect(ui->treeView_objList->selectionModel(), SIGNAL(currentChanged(const QModelIndex&,const QModelIndex&)),
-            this, SLOT(onManual_treeView_objList_selectionChanged(const QModelIndex&,const QModelIndex&)));
+    connect(ui->treeView_objList->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)),
+            this, SLOT(onManual_treeView_objList_selectionChanged(QModelIndex,QModelIndex)));
 
     // Center column headers text
     ui->treeView_objList->header()->setDefaultAlignment(Qt::AlignHCenter);
@@ -56,7 +59,7 @@ MainTab_Items::MainTab_Items(QWidget *parent) :
     ui->splitter_img_lists->setStretchFactor(0,3);  // column 0: lists layout
     ui->splitter_img_lists->setStretchFactor(1,1);  // column 1: QGraphicsView
 
-    m_subdlg_searchObj = std::make_unique<SubDlg_SearchObj>(window());
+    m_subdlg_searchObj = std::make_unique<SubDlg_SearchObj>(this);
 }
 
 MainTab_Items::~MainTab_Items()
@@ -268,7 +271,7 @@ void MainTab_Items::on_treeView_objList_doubleClicked(const QModelIndex &index)
 
     std::string addCmd(m_lockDown ? ".static " : ".add ");
     std::string strToSend = addCmd + IDIndex.data().toString().toStdString();
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
@@ -331,7 +334,7 @@ void MainTab_Items::on_pushButton_add_clicked()
 
     std::string addCmd(m_lockDown ? ".static " : ".add ");
     std::string strToSend = addCmd + selection->selectedRows(1)[0].data().toString().toStdString();
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
@@ -342,7 +345,7 @@ void MainTab_Items::on_pushButton_add_clicked()
 void MainTab_Items::on_pushButton_remove_clicked()
 {
     std::string strToSend = ".remove";
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);

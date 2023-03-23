@@ -7,8 +7,46 @@
 #include "scriptutils.h"
 
 
-//#define COUNTOF(array) sizeof(array)/sizeof(array[0])
 #define ARRAY_COUNT(array) (sizeof(array) / sizeof((array)[0]))
+
+
+class ScriptParserHelper;
+static thread_local ScriptParserHelper* _spHelperPrivateInstance = nullptr;
+
+class ScriptParserHelper
+{
+private:
+    ScriptParserHelper()  = default;
+
+public:
+    ~ScriptParserHelper() = default;
+
+    ScriptParserHelper(ScriptParserHelper &other) = delete;
+    void operator=(const ScriptParserHelper &) = delete;
+
+    static ScriptParserHelper *instance()
+    {
+        if (_spHelperPrivateInstance == nullptr)
+            _spHelperPrivateInstance = new ScriptParserHelper();
+        return _spHelperPrivateInstance;
+    }
+
+    static constexpr std::array<char, 2> trigCharsToRemove = {' ', '='};
+    const std::locale loc;
+
+    std::string strBlockBuf1, strBlockBuf2, strBlockBuf3;
+
+    std::string objSubsection;
+    std::string objDescription;
+    std::string objName;
+    std::string objDefname;
+    std::string objID;
+    std::string objArgument;
+
+    std::string blockLine;
+};
+
+
 
 ScriptParser::ScriptParser(int profileIndex) :
     m_profileIndex(profileIndex), m_scriptLine(0)
@@ -131,6 +169,9 @@ void ScriptParser::run()
         }
     }
 
+    std::deque<ScriptObj*>().swap(m_scriptsDupeItems);
+    std::deque<ScriptObj*>().swap(m_scriptsDupeParents);
+
 
     /*  Get the ID of the item/animation to show for the child objects (derived from another item/char) */
 
@@ -194,6 +235,9 @@ void ScriptParser::run()
         }   // end of child iterating for loop
     }       // end of the tree iterating for loop
 
+    std::deque<ScriptObj*>().swap(m_scriptsChildItems);
+    std::deque<ScriptObj*>().swap(m_scriptsChildChars);
+
 
     /*  Sort alphabetically the categories, the subsections and the objects   */
 
@@ -239,6 +283,9 @@ void ScriptParser::run()
             }
         }
     }
+
+    if (_spHelperPrivateInstance != nullptr)
+        delete _spHelperPrivateInstance;
 
     appendToLog(std::string("Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\" loaded."));
     emit finished();
@@ -765,24 +812,36 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
     return true;
 }
 
+
 void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
 {
     bool ignoreTrigger = false;
+    ScriptParserHelper* sphInstance = ScriptParserHelper::instance();
 
-    std::string objSubsection(SCRIPTSUBSECTION_NONE_NAME);   // Put it in a temporary string, since the ScriptCategory class may not be
-                                                             //  instantiated when we read the Subsection value.
-    std::string objDescription;     // If the value is '@', then the Description should have the same value than the Name.
-    std::string objName;
-    std::string objDefname;         // It can be the in the block's header or with the DEFNAME keyword, we'll sort it out later.
-    std::string objID;              // Same as for the DEFNAME.
+    std::string &objSubsection = sphInstance->objSubsection;
+    objSubsection = SCRIPTSUBSECTION_NONE_NAME; // Put it in a temporary string, since the ScriptCategory class may not be
+                                                //  instantiated when we read the Subsection value.
+    std::string &objDescription = sphInstance->objDescription;
+    sphInstance->objDescription.clear();     // If the value is '@', then the Description should have the same value than the Name.
 
-    std::string objArgument = obj->m_defname;
+    std::string &objName = sphInstance->objName;
+    objName.clear();
+
+    std::string &objDefname = sphInstance->objDefname;
+    objDefname.clear();         // It can be the in the block's header or with the DEFNAME keyword, we'll sort it out later.
+
+    std::string &objID = sphInstance->objID;
+    objID.clear();              // Same as for the DEFNAME.
+
+    std::string &objArgument = sphInstance->objArgument;
+    objArgument = obj->m_defname;
     obj->m_defname.clear();
 
 
     while ( !fileStream.eof() )
     {
-        std::string line;
+        sphInstance->blockLine.clear();
+        std::string& line(sphInstance->blockLine);
         std::streampos pos = fileStream.tellg();
         std::getline(fileStream, line);
         if ( fileStream.bad() )
@@ -801,7 +860,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
 
         // Remove leading spaces
         size_t linestart = 0;
-        while ( isspace(line[linestart]) && linestart < line.length() )
+        while ( std::isspace(line[linestart], m_kLocale) && linestart < line.length() )
             ++linestart;
 
         // Checking if the block is commented.
@@ -813,13 +872,12 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         // There can be spaces between '=' and '@', or even "ON @Create" is legit, so we have to recognize all of them.
         //  Removing whitespaces and '=' symbols, we should have only "ON@Create"
         // Also, valid assignations are both "DEFNAME= foo" and "DEFNAME  foo".
-        std::string tempLine(line);
+        std::string &tempLine(sphInstance->strBlockBuf1);
         // need to put all to uppercase since std::string::find is case-sensitive.
         strToUpper(tempLine);
         // remove whitespaces and '=' symbols
-        std::string charsToRemove(" =");
-        for (size_t i = 0; i < charsToRemove.length(); ++i)
-              tempLine.erase(std::remove(tempLine.begin(), tempLine.end(), charsToRemove[i]), tempLine.end());
+        for (size_t i = 0; i < sphInstance->trigCharsToRemove.size(); ++i)
+              tempLine.erase(std::remove(tempLine.begin(), tempLine.end(), sphInstance->trigCharsToRemove[i]), tempLine.end());
         // now look for our triggers
         size_t prefixPos = tempLine.find("ON@", linestart);
         if (prefixPos != std::string::npos)
@@ -866,7 +924,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         //  Skip eventual whitespaces before the Value
         for (valueStart = delimiterIndex + 1; valueStart < line.length(); ++valueStart)
         {   // i'm using delimiterIndex instead of keywordEnd because the first holds the rightmost delimiter position (the second holds the leftmost)
-            if (!isspace(line[valueStart]))
+            if (!std::isspace(line[valueStart], m_kLocale))
                 break;
         }
 
@@ -875,13 +933,15 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         if (valueEnd == std::string::npos)
             valueEnd = line.length();
         --valueEnd;
-        while ( (valueEnd > valueStart) && (isspace(line[valueEnd]) || line[valueEnd] == '\n') )
+        while ( (valueEnd > valueStart) && (std::isspace(line[valueEnd], m_kLocale) || line[valueEnd] == '\n') )
             --valueEnd;
         ++valueEnd;     // to have the character number (starting from 1), instead of having the position (0-based)
 
         // Finally separate the keyword from the value.
-        std::string keyword = line.substr(keywordStart, keywordEnd - keywordStart);
-        std::string value = line.substr(valueStart, valueEnd - valueStart);
+        std::string &keyword = sphInstance->strBlockBuf2;
+        std::string &value = sphInstance->strBlockBuf3;
+        keyword = line.substr(keywordStart, keywordEnd - keywordStart);
+        value = line.substr(valueStart, valueEnd - valueStart);
         //appendToLog(std::string("Keyword:*" + keyword + "* - Value:*" + value + "*"+ ". line:*" +line +"*"));
         //appendToLog(std::string("keystart:" + std::to_string(keywordStart) + "-end:" + std::to_string(keywordEnd)));
         //appendToLog(std::string("valstart:" + std::to_string(valueStart) + "-end:" + std::to_string(valueEnd)));
@@ -900,7 +960,9 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         case ScriptUtils::SCRIPTOBJ_TAG_DUPEITEM:
             // if dupeitem is not numerical, metti string normale; metti tutte le altre to lower
             if (isStringNumericHex(value))
+            {
                 obj->m_dupeItem = ScriptUtils::numericalStrFormattedAsSphereInt(value);
+            }
             else
             {
                 strToLower(value);

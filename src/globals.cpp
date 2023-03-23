@@ -19,6 +19,23 @@ int g_loadedScriptsProfile = -1;
 std::vector<ScriptsProfile> g_scriptsProfiles;
 std::vector<std::string> g_scriptFileList;
 
+ClientProfile*  getLoadedClientProfile()
+{
+    if ((g_loadedClientProfile >= 0) && (g_loadedClientProfile < g_clientProfiles.size()))
+        return &g_clientProfiles[g_loadedClientProfile];
+    return nullptr;
+}
+
+ScriptsProfile* getLoadedScriptsProfile()
+{
+    if ((g_loadedScriptsProfile >= 0) && (g_loadedClientProfile < g_scriptsProfiles.size()))
+        return &g_scriptsProfiles[g_loadedScriptsProfile];
+    return nullptr;
+}
+
+
+// --
+
 bool g_sendKeystrokeAndFocusClient = true;
 
 ScriptObjTree *g_scriptObjTree_Chars        = nullptr;

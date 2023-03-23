@@ -3,9 +3,10 @@
 
 #include <QMessageBox>
 
-#include "../globals.h"
 #include "../spherescript/scriptobjects.h"
 #include "../keystrokesender/keystrokesender.h"
+#include "../globals.h"
+#include "forms_common.h"
 
 
 SubDlg_Spawn::SubDlg_Spawn(QWidget *parent) :
@@ -28,7 +29,7 @@ void SubDlg_Spawn::on_pushButton_place_clicked()
     if (!m_selectedScriptObj)
         return;
 
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(".add 01ea7", true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(".add 01ea7", true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
@@ -62,7 +63,7 @@ void SubDlg_Spawn::on_pushButton_init_clicked()
     }
     stringsToSend.emplace_back(".act.timer 1");
 
-    auto ksResult = ks::KeystrokeSender::sendStringsFastAsync(stringsToSend, true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringsFastAsync(stringsToSend, true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
@@ -82,7 +83,7 @@ void SubDlg_Spawn::on_pushButton_customCmd_clicked()
     QString maxTime = ui->lineEdit_maxTime->text();
 
     QString command = QString::fromStdString(g_settings.m_customSpawnCmd).arg(objDefname, amount, maxDist, minTime, maxTime);
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(command.toStdString(), true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(command.toStdString(), true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);

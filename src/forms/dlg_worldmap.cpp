@@ -6,6 +6,7 @@
 
 #include "../keystrokesender/keystrokesender.h"
 #include "../globals.h"
+#include "forms_common.h"
 
 
 Dlg_WorldMap::Dlg_WorldMap(QWidget *parent) :
@@ -81,7 +82,7 @@ void Dlg_WorldMap::on_pushButton_go_clicked()
     int z = m_mapViewer.m_selectedMapZ, m = int(m_mapViewer.m_mapPlane);
     QString qstrToSend = QString(".go %1 %2 %3 %4").arg(x).arg(y).arg(z).arg(m);
 
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(qstrToSend.toStdString(), true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(qstrToSend.toStdString(), true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);

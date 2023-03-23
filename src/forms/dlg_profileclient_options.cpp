@@ -124,14 +124,16 @@ void Dlg_ProfileClient_Options::on_pushButton_profileAdd_clicked()
     std::string profileDir(ui->lineEdit_editPath->text().toStdString());
     profileDir = standardizePath(profileDir);
     ClientProfile newProfile(profileDir);
-    if (! ui->lineEdit_editName->text().isEmpty() )
-        newProfile.m_name = ui->lineEdit_editName->text().toStdString();
+
     if (ui->checkBox_setDefaultProfile->checkState() == Qt::Checked)
     {
         newProfile.m_defaultProfile = true;
         for (size_t i = 0; i < g_clientProfiles.size(); ++i)
             g_clientProfiles[i].m_defaultProfile = false;
     }
+
+    if (! ui->lineEdit_editName->text().isEmpty() )
+        newProfile.m_name = ui->lineEdit_editName->text().toStdString();
 
     g_clientProfiles.emplace_back(std::move(newProfile));
 
@@ -167,8 +169,6 @@ void Dlg_ProfileClient_Options::on_pushButton_profileSave_clicked()
     // Update profile data
     ClientProfile *cp = &g_clientProfiles[m_currentProfileIndex];
     cp->m_name = ui->lineEdit_editName->text().toStdString();
-    cp->m_clientPath = ui->lineEdit_editPath->text().toStdString();
-    cp->m_clientPath = standardizePath(cp->m_clientPath);
 
     cp->m_defaultProfile = (ui->checkBox_setDefaultProfile->checkState() == Qt::Unchecked) ? false: true;
     if (cp->m_defaultProfile)
@@ -180,6 +180,11 @@ void Dlg_ProfileClient_Options::on_pushButton_profileSave_clicked()
         }
     }
 
+    cp->m_clientPath = ui->lineEdit_editPath->text().toStdString();
+    cp->m_clientPath = standardizePath(cp->m_clientPath);
+
+    cp->m_clientWindowName = ui->lineEdit_editWindowTitle->text().toStdString();
+
     saveProfilesToJson();
 }
 
@@ -188,9 +193,10 @@ void Dlg_ProfileClient_Options::on_listView_profiles_clicked(const QModelIndex &
     m_currentProfileIndex = index.row();
     ClientProfile *cp = &g_clientProfiles[m_currentProfileIndex];
 
-    ui->lineEdit_editName->setText(QString(cp->m_name.c_str()));
+    ui->lineEdit_editName->setText(QString::fromStdString(cp->m_name));
     ui->checkBox_setDefaultProfile->setCheckState(cp->m_defaultProfile ? Qt::Checked : Qt::Unchecked);
-    ui->lineEdit_editPath->setText(QString(cp->m_clientPath.c_str()));
+    ui->lineEdit_editPath->setText(QString::fromStdString(cp->m_clientPath));
+    ui->lineEdit_editWindowTitle->setText(QString::fromStdString(cp->m_clientWindowName));
 
     ui->pushButton_profileDelete->setDisabled(false);
     ui->pushButton_profileSave->setDisabled(false);

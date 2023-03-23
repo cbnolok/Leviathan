@@ -24,7 +24,8 @@ const char * getErrorStringStatic(KSError err);
 class KeystrokeSender : public KS_BASE_CLASS
 {
 public:
-    KeystrokeSender(bool setFocusToWindow = false) : KS_BASE_CLASS(setFocusToWindow) {}
+    KeystrokeSender(std::string windowTitleFragment, bool setFocusToWindow = false) :
+        KS_BASE_CLASS(windowTitleFragment, setFocusToWindow) {}
 
     void setSetFocusToWindow(bool value);
 
@@ -33,6 +34,7 @@ public:
     UOClientType getClientType() const;
 
     // Public methods inherited from KS_BASE_CLASS:
+    // getWindowNameThirdPartyFragment();
     // sendChar();
     // sendEnter();
     // sendString();

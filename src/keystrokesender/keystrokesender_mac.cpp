@@ -1,16 +1,20 @@
 #if defined(__APPLE__)
 
-#include <Carbon/Carbon.h>
 #include "keystrokesender_mac.h"
+#include <Carbon/Carbon.h>
 #include <chrono>
 #include <thread>
 #include <sstream>
+#include <QString>
 
 namespace ks
 {
 
-CGKeyCode KeyboardCodeFromCharCode(char charCode) {
-  switch (charCode)
+// static methods
+
+CGKeyCode KeyboardCodeFromCharCode(char charCode)
+{
+    switch (charCode)
     {
         case 'a': case 'A': return kVK_ANSI_A;
         case 'b': case 'B': return kVK_ANSI_B;
@@ -100,9 +104,18 @@ void KeystrokeSender_Mac::setClipboard(std::string text)
     exec(cmd.str().c_str());
 }
 
+
+// --
+
+
 KeystrokeSender_Mac::KeystrokeSender_Mac(bool setFocusToWindow) :
-    m_setFocusToWindow(setFocusToWindow)
+    m_setFocusToWindow(setFocusToWindow), m_error(KSError::Ok), m_clientType(UOClientType::Unknown)
 {
+}
+
+std::string KeystrokeSender_Mac::getWindowNameThirdPartyFragment() const
+{
+    return m_windowNameThirdpartyFragment;
 }
 
 bool KeystrokeSender_Mac::sendChar(const char ch)

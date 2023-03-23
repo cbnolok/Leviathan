@@ -7,13 +7,14 @@
 #include <QSignalMapper>
 #include <QMessageBox>
 
-#include "../globals.h"
 #include "../uoclientfiles/uohues.h"
 #include "../uoclientfiles/uoart.h"
 #include "../uoclientfiles/uoanim.h"
 #include "../spherescript/scriptsearch.h"
 #include "../spherescript/scriptutils.h"
 #include "../keystrokesender/keystrokesender.h"
+#include "../globals.h"
+#include "forms_common.h"
 
 
 Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
@@ -75,8 +76,8 @@ Dlg_HuePicker::Dlg_HuePicker(QWidget *parent) :
         }
     }
     // connect the mapper
-    connect(m_hueTableMapClick, SIGNAL(mapped(int)), this, SLOT(onManual_hueTableClicked_mapped(int)));
-    connect(m_hueTableMapDoubleClick, SIGNAL(mapped(int)), this, SLOT(onManual_hueTableDoubleClicked_mapped(int)));
+    connect(m_hueTableMapClick, SIGNAL(mappedInt(int)), this, SLOT(onManual_hueTableClicked_mapped(int)));
+    connect(m_hueTableMapDoubleClick, SIGNAL(mappedInt(int)), this, SLOT(onManual_hueTableDoubleClicked_mapped(int)));
 
     drawHueTable();
     drawPreview();
@@ -239,7 +240,7 @@ void Dlg_HuePicker::on_horizontalSlider_shade_valueChanged(int value)
 void Dlg_HuePicker::on_pushButton_set_clicked()
 {
     std::string strToSend = ".xcolor " + std::to_string(m_selectedHueIndex + 1);
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);
@@ -250,7 +251,7 @@ void Dlg_HuePicker::on_pushButton_set_clicked()
 void Dlg_HuePicker::on_pushButton_setClose_clicked()
 {
     std::string strToSend = ".xcolor " + std::to_string(m_selectedHueIndex);
-    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, g_sendKeystrokeAndFocusClient);
+    auto ksResult = ks::KeystrokeSender::sendStringFastAsync(strToSend, true, getClientWindowNameFragment(), g_sendKeystrokeAndFocusClient);
     if (ksResult != ks::KSError::Ok)
     {
         QMessageBox errorDlg(QMessageBox::Warning, "Warning", ks::getErrorStringStatic(ksResult), QMessageBox::NoButton, this);

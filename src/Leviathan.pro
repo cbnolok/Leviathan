@@ -14,6 +14,7 @@ CONFIG += c++20
 RESOURCES = leviathan_resources.qrc
 
 SOURCES += \
+    forms/forms_common.cpp \
     globals.cpp \
     main.cpp \
     cpputils/strings.cpp \
@@ -80,6 +81,7 @@ SOURCES += \
 
 HEADERS  += \
     cpputils/collections.h \
+    forms/forms_common.h \
     globals.h \
     logging.h \
     version.h \

@@ -29,7 +29,12 @@ extern int g_loadedScriptsProfile;                      // index of the current 
 extern std::vector<ScriptsProfile> g_scriptsProfiles;   // contains all of the scripts profiles
 extern std::vector<std::string> g_scriptFileList;       // contains the absolute path of each script of the profile loaded
 
+ClientProfile*  getLoadedClientProfile();
+ScriptsProfile* getLoadedScriptsProfile();
+
+
 extern bool g_sendKeystrokeAndFocusClient;              // for KeystrokeSender
+
 
 // Containers for Sphere Objects: characters, items, maps...
 class ScriptObjTree;

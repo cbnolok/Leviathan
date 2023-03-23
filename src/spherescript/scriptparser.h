@@ -3,12 +3,14 @@
 
 #include <QObject>
 #include <fstream>  // for std::ifstream
+#include <locale>   // for std::isspace
 #include <string>
 #include <vector>
 #include <deque>
 
 
 class ScriptObj;
+
 
 class ScriptParser : public QObject
 {
@@ -31,13 +33,16 @@ public:
     bool loadFile(int fileIndex, bool loadingResources = false);
 
 private:
+    const std::locale m_kLocale;
     int m_profileIndex;
     int m_scriptLine;   // track the number of the line we are parsing in the script file
+
     std::vector<std::string> m_loadedScripts;
     std::deque<ScriptObj*> m_scriptsDupeParents;   // Used to temporarily store the parent items (which has DUPELIST property) of dupe items (having DUPEITEM prop)
     std::deque<ScriptObj*> m_scriptsDupeItems;     // Used to temporarily store the Dupe Items before organizing them into the correct Category and Subsection
     std::deque<ScriptObj*> m_scriptsChildItems;
     std::deque<ScriptObj*> m_scriptsChildChars;
+
     void parseBlock(std::ifstream &fileStream, ScriptObj *obj);   //fileStream pointing to the first line after block header
 };
 

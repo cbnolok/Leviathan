@@ -6,7 +6,7 @@
 #include "keystrokesender_common.h"
 
 
-// forward declare Xlib types: we don't want to include Xlib.h here because it would pullute every
+// forward declare Xlib types: we don't want to include Xlib.h here because it would pollute every
 //  file including this header with tons of Xlib preprocessor macros. This would cause compilation errors
 //  (conflict with Qt enum member names).
 struct _XDisplay;
@@ -19,10 +19,12 @@ namespace ks
 
 class KeystrokeSender_Linux
 {
-public:
+protected:
     KeystrokeSender_Linux(bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
     ~KeystrokeSender_Linux();
 
+public:
+    std::string getWindowNameThirdPartyFragment() const;
     bool canSend();
 
     bool sendChar(const char ch);
@@ -44,13 +46,14 @@ public:
 
 protected:
     bool m_setFocusToWindow;
-    KSError m_error = KSError::Ok;
-    UOClientType m_clientType = UOClientType::Unknown;
+    KSError m_error;
+    UOClientType m_clientType;
+    std::string m_windowNameThirdpartyFragment;
 
 private:
-    Display*   	m_display       = 0;	// NULL
-    Window      m_rootWindow    = 0;
-    Window      m_UOWindow      = 0;
+    Display*   	m_display;
+    Window      m_rootWindow;
+    Window      m_UOWindow;
 
     bool findUOWindow();
     bool attach();

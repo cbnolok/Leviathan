@@ -14,9 +14,10 @@ public:
     static std::vector<ClientProfile> createFromJson();
 
     int m_index;
-    std::string m_name;
     bool m_defaultProfile;
+    std::string m_name;
     std::string m_clientPath;
+    std::string m_clientWindowName;
 };
 
 #endif // CLIENTPROFILE_H

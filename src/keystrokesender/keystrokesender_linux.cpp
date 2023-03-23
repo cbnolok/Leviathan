@@ -25,20 +25,10 @@
 namespace ks
 {
 
-KeystrokeSender_Linux::KeystrokeSender_Linux(bool setFocusToWindow) :
-    m_setFocusToWindow(setFocusToWindow)
-{
-}
-
-KeystrokeSender_Linux::~KeystrokeSender_Linux()
-{
-    detach();
-}
-
 /*  Convenience X functions */
 
 // Function to create a keyboard event
-XKeyEvent createKeyEvent(Display *display, Window &window,
+static XKeyEvent createKeyEvent(Display *display, Window &window,
                          Window &winRoot, bool press, int keycode, int modifiers)
 {
     XKeyEvent event;
@@ -64,7 +54,7 @@ XKeyEvent createKeyEvent(Display *display, Window &window,
     return event;
 }
 
-Window *getWindowList(Display *display, Window &winRoot, unsigned long &windowListSize)
+static Window *getWindowList(Display *display, Window &winRoot, unsigned long &windowListSize)
 {
     Atom prop = XInternAtom(display,"_NET_CLIENT_LIST",False), type;
     int form;
@@ -80,7 +70,7 @@ Window *getWindowList(Display *display, Window &winRoot, unsigned long &windowLi
     return (Window*)list;
 }
 
-char *getWindowName(Display *display, Window window)
+static char *getWindowName(Display *display, Window window)
 {
     Atom prop = XInternAtom(display,"WM_NAME",False), type;
     int form;
@@ -98,7 +88,7 @@ char *getWindowName(Display *display, Window window)
 }
 
 // check if window sill exists
-bool isWindow(Window &windowToFind, Display *display, Window &winRoot)
+static bool isWindow(Window &windowToFind, Display *display, Window &winRoot)
 {
     unsigned long windowListSize;
     Window* list = getWindowList(display, winRoot, windowListSize);
@@ -112,7 +102,7 @@ bool isWindow(Window &windowToFind, Display *display, Window &winRoot)
 }
 
 // from: https://stackoverflow.com/questions/2858263/how-do-i-bring-a-processes-window-to-the-foreground-on-x-windows-c
-void setForegroundWindow(Display *display, Window window)   // set the desktop's topmost window
+static void setForegroundWindow(Display *display, Window window)   // set the desktop's topmost window
 {
     XEvent event = { 0 };
     event.xclient.type = ClientMessage;
@@ -127,7 +117,25 @@ void setForegroundWindow(Display *display, Window window)   // set the desktop's
 }
 
 
+
 /* Implementation for Leviathan */
+
+KeystrokeSender_Linux::KeystrokeSender_Linux(bool setFocusToWindow) :
+    m_setFocusToWindow(setFocusToWindow), m_error(KSError::Ok), m_clientType(UOClientType::Unknown),
+    m_display(nullptr), m_rootWindow(0), m_UOWindow(0)
+{
+}
+
+KeystrokeSender_Linux::~KeystrokeSender_Linux()
+{
+    detach();
+}
+
+std::string KeystrokeSender_Linux::getWindowNameThirdPartyFragment() const
+{
+    return m_windowNameThirdpartyFragment;
+}
+
 
 bool KeystrokeSender_Linux::findUOWindow()
 {

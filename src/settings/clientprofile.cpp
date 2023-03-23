@@ -12,7 +12,7 @@
 
 
 ClientProfile::ClientProfile(std::string clientPath) :
-        m_name("Unnamed"), m_defaultProfile(false), m_clientPath(clientPath)
+    m_defaultProfile(false), m_name("Unnamed"), m_clientPath(clientPath)
 {
     m_clientPath = standardizePath(m_clientPath);
 }
@@ -22,8 +22,9 @@ QJsonObject ClientProfile::generateJsonObject()
     // Build the json object.
     QJsonObject obj;
     obj["Name"] = m_name.c_str();
-    obj["Path"] = standardizePath(m_clientPath).c_str();
     obj["DefaultProfile"] = m_defaultProfile;
+    obj["Path"] = standardizePath(m_clientPath).c_str();
+    obj["WindowName"] = m_clientWindowName.c_str();
 
     return obj;
 }
@@ -54,36 +55,50 @@ std::vector<ClientProfile> ClientProfile::createFromJson()
     if (profilesListObj.isEmpty())
         return savedProfiles;
 
+    std::string strErr;
     for (auto it = profilesListObj.begin(), end = profilesListObj.end(); it != end; ++it) // for each profile
     {
         QJsonObject profileObj = profilesListObj[it.key()].toObject();
         QJsonValue val = QJsonValue::Undefined;
 
-        val = profileObj["Path"];
-        if ( ! QJSONVAL_ISVALID(val) )
-        {
-            appendToLog("Error loading Client Profile number " + it.key().toStdString() + ". Invalid path");
-            continue;
-        }
-
-        const std::string valStr(val.toString().toStdString());
-        ClientProfile profile(standardizePath(valStr));
-
-        val = profileObj["Name"];
-        if (QJSONVAL_ISVALID(val))
-            profile.m_name = val.toString().toStdString();
+        ClientProfile profile(val.toString().toStdString());
 
         val = profileObj["DefaultProfile"];
         if (QJSONVAL_ISVALID(val))
             profile.m_defaultProfile = val.toBool();
 
+        val = profileObj["Name"];
+        if (QJSONVAL_ISVALID(val))
+            profile.m_name = val.toString().toStdString();
+        else
+            strErr = "Name";
+
         val = profileObj["Path"];
         if (QJSONVAL_ISVALID(val))
             profile.m_clientPath = val.toString().toStdString();
+        else
+            strErr = "Path";
 
-        savedProfiles.push_back(profile);
+        val = profileObj["WindowName"];
+        if (QJSONVAL_ISVALID(val))
+        {
+            const std::string str = val.toString().toStdString();
+            if (!str.empty())
+                profile.m_clientWindowName = str;
+        }
+        else
+            strErr = "WindowName";
+
+        if (!strErr.empty())
+        {
+            appendToLog("Error loading Client Profile number " + it.key().toStdString() + ". Invalid " + strErr);
+            strErr.clear();
+            continue;
+        }
+
+        strErr.clear();
+        savedProfiles.emplace_back(std::move(profile));
     }
 
     return savedProfiles;
-
 }
