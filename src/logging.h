@@ -7,14 +7,15 @@
 #include <QObject>
 #include <string>
 
+static constexpr const char* kLogStrTabL1 = "   ";
 
 extern class LogEventEmitter : public QObject
 {
     Q_OBJECT
 signals:
-    void requestAppend(QString) const;
+    void requestAppend(QString);
 public:
-    void append(const std::string& text) const {
+    void append(const std::string& text) {
         emit requestAppend(QString::fromStdString(text));
     }
 } g_logEventEmitter;

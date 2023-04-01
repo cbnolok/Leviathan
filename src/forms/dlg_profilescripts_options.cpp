@@ -16,6 +16,8 @@
 #include "../cpputils/collections.h"
 #include "../cpputils/sysio.h"
 
+inline const QStringList kScriptFileExtensions("*.scp");
+
 
 void Dlg_ProfileScripts_Options::setEnabledScriptsGroup(bool val)
 {
@@ -66,7 +68,7 @@ void Dlg_ProfileScripts_Options::updateProfilesView()
 
     // Load all the profiles.
     //g_scriptsProfiles = ScriptsProfile::createFromJson();
-    for (auto it = g_scriptsProfiles.begin(); it != g_scriptsProfiles.end(); ++it)
+    for (auto it = g_scriptsProfiles.cbegin(); it != g_scriptsProfiles.cend(); ++it)
     {
         auto* newProfileItem = new QStandardItem(QString::fromStdString(it->m_name));
         if (it->m_defaultProfile)        // set blue text color for the default profile
@@ -95,16 +97,16 @@ void Dlg_ProfileScripts_Options::initNewScriptsModel()
     m_scripts_model_base = new QFileSystemModel(this);
     //m_scripts_model_base->setSorting(QDir::DirsFirst | QDir::Name);
     m_scripts_model_base->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
-    const QStringList extensions("*.scp");
-    m_scripts_model_base->setNameFilters(extensions);   // filter out unneeded files (grays them)
-    m_scripts_model_base->setNameFilterDisables(false); // don't show them
-    m_scripts_model_base->setReadOnly(true);            // can't do actions like rename, copy, cut, etc.
+    m_scripts_model_base->setNameFilters(kScriptFileExtensions);// filter out unneeded files (grays them)
+    m_scripts_model_base->setNameFilterDisables(false);         // don't show them
+    m_scripts_model_base->setReadOnly(true);                    // can't do actions like rename, copy, cut, etc.
 
     // Set up the CheckableProxyModel.
     m_scripts_model_proxy = new CheckableProxyModel(this, true);
     m_scripts_model_proxy->setSourceModel(m_scripts_model_base);
 
-    connect(m_scripts_model_base, SIGNAL(directoryLoaded(QString)), this, SLOT(ms_scriptTree_directoryLoaded(QString)));
+    connect(m_scripts_model_base, SIGNAL(directoryLoaded(QString)),
+            this, SLOT(ms_scriptTree_directoryLoaded(QString)));
 
     ui->treeView_scripts->setModel(m_scripts_model_proxy);
 
@@ -193,7 +195,7 @@ void Dlg_ProfileScripts_Options::ms_scriptTree_directoryLoaded(QString element)
     }
 
     // Am I done?
-if (m_scriptsViewHelper.pendingDirectories == 0)
+    if (m_scriptsViewHelper.pendingDirectories == 0)
     {
         // Done.
         // Reporting missing folders.
@@ -241,8 +243,10 @@ void Dlg_ProfileScripts_Options::checkExpandedScriptsFromProfile(const QModelInd
         bool match = false;
         std::string childFileStr (m_scripts_model_base->filePath(sourceChildIdx).toStdString());
         childFileStr = standardizePath(childFileStr);
+
         for (std::string const& strScriptFullPath : *scriptsToLoad)
         {
+
             if (childFileStr.compare(strScriptFullPath))
                 continue;
 
@@ -542,6 +546,7 @@ void Dlg_ProfileScripts_Options::on_pushButton_profileSave_clicked()
                 CheckableProxy::FileSystem::extractCheckedFilesPath(m_scripts_model_base, m_scripts_model_proxy, ui->treeView_scripts->rootIndex(), true);
         sp->m_scriptsToLoad.clear();
         for (qsizetype i = 0; i < selectedScripts.count(); ++i)
+
             sp->m_scriptsToLoad.emplace_back(selectedScripts.at(i).toStdString());
     }
 

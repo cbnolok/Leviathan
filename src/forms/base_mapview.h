@@ -33,7 +33,7 @@ private:
     QGraphicsView* m_graphicsView;
 
 protected:
-    virtual bool eventFilter(QObject *obj, QEvent *event);
+    virtual bool eventFilter(QObject *obj, QEvent *event) override;
 
 signals:
     void mouseMoved(QPoint);

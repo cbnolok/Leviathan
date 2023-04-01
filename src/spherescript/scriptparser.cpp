@@ -3,11 +3,9 @@
 #include "../globals.h"
 #include "../cpputils/strings.h"
 #include "../cpputils/sysio.h"
+#include "logging.h"
 #include "scriptobjects.h"
 #include "scriptutils.h"
-
-
-#define ARRAY_COUNT(array) (sizeof(array) / sizeof((array)[0]))
 
 
 class ScriptParserHelper;
@@ -92,6 +90,7 @@ void ScriptParser::run()
     }
     g_scriptFileList = std::move(expandedFileList);
 
+
     int progressVal = 0;
 
     /*  Store in memory scripts data    */
@@ -156,8 +155,9 @@ void ScriptParser::run()
         }
 
         if (!found)
-            appendToLog("[WARNING](Dupe) Couldn't find Parent Item (" + dupeObj->m_dupeItem + ") " +
+            appendToLog("[WARNING] (Dupe) Couldn't find Parent Item (" + dupeObj->m_dupeItem + ") " +
                         "for Dupe Item -> Defname=" + dupeObj->m_defname + ", ID=" + dupeObj->m_ID + ". " +
+                        '\n' + kLogStrTabL1 +
                         "File: " + g_scriptFileList[dupeObj->m_scriptFileIndex]);
 
         int progressValNow = (int)( (dupeObj_i*150)/dupeObjs_num );
@@ -183,7 +183,7 @@ void ScriptParser::run()
     std::deque<ScriptObj*>*     displayID_childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
     size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
     size_t childrenProcessed = 0;
-    for (uint tree_i = 0; tree_i < ARRAY_COUNT(displayID_trees); ++tree_i)
+    for (uint tree_i = 0; tree_i < STATIC_ARRAY_COUNT(displayID_trees); ++tree_i)
     {
         // Iterate one time for the items and one for the chars
 
@@ -221,6 +221,7 @@ void ScriptParser::run()
             if (!found)
                 appendToLog("[WARNING](displayID) Couldn't find Parent Object (" + childObj->m_ID + ") " +
                             "for Child Object -> Defname=" + childObj->m_defname + ", ID=" + childObj->m_ID + ". " +
+                            '\n' + kLogStrTabL1 +
                             "File: " + g_scriptFileList[childObj->m_scriptFileIndex]);
 
             ++childrenProcessed;
@@ -260,7 +261,7 @@ void ScriptParser::run()
         getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN), getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE), getScriptObjTree(SCRIPTOBJ_TYPE_SPELL), getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
     };
 
-    for (uint tree_i = 0; tree_i < ARRAY_COUNT(sorting_trees); ++tree_i)
+    for (uint tree_i = 0; tree_i < STATIC_ARRAY_COUNT(sorting_trees); ++tree_i)
     {
         auto& categories = sorting_trees[tree_i]->m_categories;
         std::sort(categories.begin(), categories.end(), _sortCategory);    // sort categories
@@ -284,7 +285,10 @@ void ScriptParser::run()
     }
 
     if (_spHelperPrivateInstance != nullptr)
+    {
         delete _spHelperPrivateInstance;
+        _spHelperPrivateInstance = nullptr;
+    }
 
     appendToLog(std::string("Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\" loaded."));
     emit finished();

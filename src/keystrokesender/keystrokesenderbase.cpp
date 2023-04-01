@@ -2,6 +2,9 @@
 #include "keystrokesender.h"
 #include <thread>
 
+
+#define STATIC_ARRAY_COUNT(array) (sizeof(array) / sizeof((array)[0]))
+
 namespace ks
 {
 
@@ -22,6 +25,9 @@ static const std::string UODefaultClientWindowTitles[]
 };
 
 char const * getErrorStringStatic(KSError err) {
+
+    if (int(err) < 0 || (int(err) >= int(STATIC_ARRAY_COUNT(KSErrorString))) )
+        return "";
     return KSErrorString[int(err)];
 }
 

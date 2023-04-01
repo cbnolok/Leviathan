@@ -8,6 +8,9 @@
 #include "settings/scriptsprofile.h"
 
 
+// Useful macros
+#define STATIC_ARRAY_COUNT(array) (sizeof(array) / sizeof((array)[0]))
+
 // Macros for platform specific functions
 #ifdef _WIN32
     #define strcmpi		    _strcmpi

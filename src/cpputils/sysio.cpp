@@ -1,6 +1,7 @@
 #include "strings.h"
 #include "sysio.h"
 #include <algorithm>    // for std::replace
+#include <filesystem>
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -9,7 +10,6 @@
     #include <dirent.h>     // To search files inside a directory
     #include <cstring>
 #endif
-#include <sys/stat.h>
 
 #ifdef QT_CORE_LIB
     #include <QString>
@@ -53,24 +53,12 @@ std::string standardizePath(std::string s)
 
 bool isValidFile(const std::string& filePath)
 {
-    struct stat info;
-
-    if (stat( filePath.c_str(), &info ) != 0)
-        return false;
-    else
-        return true;
+    return std::filesystem::is_regular_file(filePath);
 }
 
 bool isValidDirectory(const std::string& directoryPath)
 {
-    struct stat info;
-
-    if (stat( directoryPath.c_str(), &info ) != 0)
-        return false;
-    else if (info.st_mode & S_IFDIR)
-        return true;
-    else
-        return false;
+    return std::filesystem::is_directory(directoryPath);
 }
 
 
@@ -92,6 +80,7 @@ std::string getDirectoryFromString(std::string const& str)
     return ret.substr(0, ret.find_last_of(kStdDirDelim));
 }
 
+
 void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int maxFolderLevel)
 {
     // This function adds to the list, recursively, files inside folders.
@@ -102,13 +91,20 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
     HANDLE dir;
     WIN32_FIND_DATAW findData;
 
+    auto pathForFindFile = [] (std::string const& str) -> std::string {
+        // Remove trailing \, otherwise it fails to detect if it's a directory...
+        if (!str.empty() && (str.back() == '\\'))
+            return str.substr(0, str.length() - 1);
+        return str;
+    };
+
     std::replace(path.begin(), path.end(), kStdDirDelim, '\\');
     Q_ASSERT(!path.empty());
     //Q_ASSERT((path.back() == '\\') || (path.back() == '*')); // Throws if path is not a folder
     if (path.back() == '\\')
         path.pop_back();
 
-    std::wstring buf(stringToWideString("\\\\?\\" + path));
+    std::wstring buf(stringToWideString("\\\\?\\" + pathForFindFile(path)));
     if ((dir = FindFirstFileW(buf.c_str(), &findData)) == INVALID_HANDLE_VALUE)
         return;     // No files found
 
@@ -116,20 +112,21 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
     if (path.back() == '*')
         path.pop_back();    // Remove '*'
 
+    const bool first_is_directory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY;
     std::string fileName;
     std::string bufNewPath;
     bool success = true;
     while (success && (dir != INVALID_HANDLE_VALUE))
     {
         fileName = wideStringToString(findData.cFileName);
-        if (!fileName.compare("."))
-            goto loopcont;
-        if (!fileName.compare(".."))
-            goto loopcont;
+        const bool cur_is_directory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY;
 
-        {
-        const bool is_directory = (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-        if (is_directory)
+        if (!fileName.compare("."))
+            goto loop_continue;
+        if (!fileName.compare(".."))
+            goto loop_continue;
+
+        if (cur_is_directory)
         {
             // Recurse this directory
             bufNewPath = path;
@@ -144,20 +141,22 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
                 out->emplace_back(standardizePath(bufNewPath));
             }
             maxFolderLevel -= 1;
-            goto loopcont;
-        }
+            goto loop_continue;
         }
 
         if (fileName[0] == '.')
-            goto loopcont;
+            goto loop_continue;
         if (fileName.length() <= 4)
-            goto loopcont;
+            goto loop_continue;
         if (strcmp(fileName.c_str() + fileName.length() - 4, ".scp") != 0)
-            goto loopcont;   // we look only for .scp files.
+            goto loop_continue;   // we look only for .scp files.
 
-        out->emplace_back(standardizePath(path + fileName));
+        bufNewPath = path;
+        if (first_is_directory && !cur_is_directory)
+            bufNewPath += fileName;
+        out->emplace_back(standardizePath(bufNewPath));
 
-loopcont:
+loop_continue:
         if (maxFolderLevel == 0)
             success = false;
         else

@@ -7,7 +7,8 @@ MainTab_Log::MainTab_Log(QWidget *parent) :
     ui(new Ui::MainTab_Log)
 {
     ui->setupUi(this);
-    connect(&g_logEventEmitter, SIGNAL(requestAppend(QString)), this, SLOT(appendText(QString)));
+    connect(&g_logEventEmitter, SIGNAL(requestAppend(QString)),
+            this, SLOT(appendText(QString)));
 }
 
 MainTab_Log::~MainTab_Log()
