@@ -16,6 +16,12 @@ bool isStringNumericDec(const std::string &s);
 std::wstring stringToWideString(const std::string& str);
 std::string  wideStringToString(const std::wstring& wstr);
 
+inline bool isCharASCII(const char ch) {
+    return (0 == (ch & 0x1000'0000)); // if unsigned char ch > 127.
+}
+bool isStringASCII(const char* str);
+bool isStringASCII(std::string const& str);
+
 
 // Function by Marius: https://stackoverflow.com/questions/236129/split-a-string-in-c
 template < class ContainerT >
@@ -27,13 +33,13 @@ void strSplit(const std::string& str, ContainerT& tokensContainer,
     using value_type = typename ContainerT::value_type;
     using size_type  = typename ContainerT::size_type;
 
-    while(lastPos < length + 1)
+    while (lastPos < length + 1)
     {
         pos = str.find_first_of(delimiters, lastPos);
-        if(pos == std::string::npos)
+        if (pos == std::string::npos)
             pos = length;
 
-        if(pos != lastPos || !trimEmpty)
+        if (pos != lastPos || !trimEmpty)
             tokensContainer.push_back(value_type(str.data()+lastPos, (size_type)pos-lastPos));
 
         lastPos = pos + 1;

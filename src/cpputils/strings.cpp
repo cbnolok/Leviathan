@@ -1,5 +1,7 @@
 #include "strings.h"
 #include <cstring>      // for strlen
+#include <algorithm>    // std::any_of
+#include <functional>   // std::negate
 
 
 void strToUpper(std::string &string)
@@ -61,6 +63,22 @@ bool isStringNumericDec(const std::string &s)
     strtol(s.c_str(), &p, 0);
     return *p == 0;
     */
+}
+
+bool isStringASCII(const char* str)
+{
+    while (*str != '\0')
+    {
+        if (!isCharASCII(*str))
+            return false;
+        ++str;
+    }
+    return true;
+}
+
+bool isStringASCII(std::string const& str)
+{
+    return std::any_of(str.cbegin(), str.cend(), std::not_fn(isCharASCII));
 }
 
 

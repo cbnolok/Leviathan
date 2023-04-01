@@ -1,5 +1,5 @@
-#ifndef KEYSTROKESENDER_LINUX_H
-#define KEYSTROKESENDER_LINUX_H
+#ifndef KeystrokeSender_H
+#define KeystrokeSender_H
 
 #if defined(__unix__) && !defined(__APPLE__)
 
@@ -17,17 +17,17 @@ namespace ks
 {
 
 
-class KeystrokeSender_Linux
+class KeystrokeSender
 {
 protected:
-    KeystrokeSender_Linux(bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
-    ~KeystrokeSender_Linux();
+    KeystrokeSender(std::string windowTitleFragment, bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
+    ~KeystrokeSender();
 
 public:
     std::string getWindowNameThirdPartyFragment() const;
     bool canSend();
 
-    bool sendChar(const char ch);
+    bool sendChar(unsigned int ch);
     bool sendEnter();
     bool sendString(const std::string& str, bool enterTerminated = true);
     bool sendStrings(const std::vector<std::string> &strings, bool enterTerminated = true);
@@ -68,4 +68,4 @@ private:
 
 #endif // defined(__unix__) && !defined(__APPLE__)
 
-#endif // KEYSTROKESENDER_LINUX_H
+#endif // KeystrokeSender_H

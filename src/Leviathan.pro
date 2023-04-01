@@ -16,6 +16,7 @@ RESOURCES = leviathan_resources.qrc
 SOURCES += \
     forms/forms_common.cpp \
     globals.cpp \
+    keystrokesender/keystrokesenderbase.cpp \
     main.cpp \
     cpputils/strings.cpp \
     cpputils/sysio.cpp \
@@ -73,16 +74,19 @@ SOURCES += \
     uoclientfiles/uohues.cpp \
     uoclientfiles/uoidx.cpp \
     uoclientfiles/uoanimuop.cpp \
-    keystrokesender/keystrokesender_common.cpp \
     keystrokesender/keystrokesender_windows.cpp \
     keystrokesender/keystrokesender_linux.cpp \
-    keystrokesender/keystrokesender.cpp \
     keystrokesender/keystrokesender_mac.cpp
 
 HEADERS  += \
     cpputils/collections.h \
+    cpputils/utf8/checked.h \
+    cpputils/utf8/core.h \
+    cpputils/utf8/unchecked.h \
+    cpputils/utf8/utf8.h \
     forms/forms_common.h \
     globals.h \
+    keystrokesender/keystrokesenderbase.h \
     logging.h \
     version.h \
     cpputils/maps.h \
@@ -147,7 +151,6 @@ HEADERS  += \
     uoclientfiles/uoart.h \
     uoclientfiles/uohues.h \
     uoclientfiles/uoidx.h \
-    keystrokesender/keystrokesender_common.h \
     keystrokesender/keystrokesender_windows.h \
     keystrokesender/keystrokesender_linux.h \
     keystrokesender/keystrokesender.h \

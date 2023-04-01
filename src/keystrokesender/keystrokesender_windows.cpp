@@ -1,24 +1,28 @@
 #ifdef _WIN32
 
 #include "keystrokesender_windows.h"
+#include "../cpputils/utf8/unchecked.h"
 #include "../cpputils/strings.h"
 #include <thread>
 #include <chrono>
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 
-static constexpr int kDelayKeystrokes = 50; //milliseconds
-static HWND windowHandleHelper = nullptr;
+static constexpr int kDelayKeystrokes = 45; // milliseconds. Anything less will fail to send some characters of the string
+static constexpr unsigned int kMaxStringChars = 255;
+
 
 namespace ks
 {
 
+static HWND gs_windowHandleHelper = nullptr;
 static std::string getWindowStdStringTitle(HWND hWnd)
 {
     int length = GetWindowTextLengthW(hWnd);
     std::wstring windowTitle_wide(length + 1, '\0');
-    length = GetWindowTextW(hWnd, &windowTitle_wide[0], length);
+    length = GetWindowTextW(hWnd, windowTitle_wide.data(), length);
     windowTitle_wide.resize(length);
 
     return wideStringToString(windowTitle_wide);
@@ -26,123 +30,167 @@ static std::string getWindowStdStringTitle(HWND hWnd)
 
 static BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
 {
-    windowHandleHelper = nullptr;
+    gs_windowHandleHelper = nullptr;
     const std::string windowTitle(getWindowStdStringTitle(hWnd));
-    KeystrokeSender_Windows *classInstance = reinterpret_cast<KeystrokeSender_Windows*>(lParam);
+    auto *classInstance = reinterpret_cast<KeystrokeSender*>(lParam);
 
-    UOClientType clitype = detectClientType(windowTitle, classInstance->getWindowNameThirdPartyFragment());
+    const UOClientType clitype = detectClientTypeFromTitle(windowTitle, classInstance->getWindowTitleThirdpartyFragment());
     if (clitype == UOClientType::Unknown)
-        return FALSE;
+        return TRUE; // continue enumeration
 
-    windowHandleHelper = hWnd;
-    return TRUE;
+    gs_windowHandleHelper = hWnd;
+    return FALSE; // stop enumeration
 }
 
 
-KeystrokeSender_Windows::KeystrokeSender_Windows(std::string windowTitleFragment, bool setFocusToWindow) :
-    m_setFocusToWindow(setFocusToWindow), m_error(KSError::Ok), m_clientType(UOClientType::Unknown),
-    m_windowNameThirdpartyFragment(windowTitleFragment),
-    m_UOHandle(nullptr)
+//--
+
+
+KeystrokeSender::KeystrokeSender(std::string windowTitleFragment) :
+    KeystrokeSenderBase(windowTitleFragment)
 {
 }
 
 
-std::string KeystrokeSender_Windows::getWindowNameThirdPartyFragment() const
-{
-    return m_windowNameThirdpartyFragment;
-}
-
-bool KeystrokeSender_Windows::findUOWindow()
+bool KeystrokeSender::findUOWindow()
 {
     EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(this));
-    m_UOHandle = windowHandleHelper;
-    windowHandleHelper = nullptr;
+    m_UOHandle = gs_windowHandleHelper;
+    gs_windowHandleHelper = nullptr;
 
     if (m_UOHandle == nullptr)
     {
         m_error = KSError::NoWindow;
+        m_clientType = UOClientType::Unknown;
         return false;
     }
+
     m_error = KSError::Ok;
+    m_clientType = detectClientTypeFromTitle(
+                getWindowStdStringTitle(static_cast<HWND>(m_UOHandle)),
+                getWindowTitleThirdpartyFragment() );
     return true;
 }
 
-bool KeystrokeSender_Windows::canSend()
+
+// virtuals
+
+/*
+void KeystrokeSender::resetWindow()
+{
+    m_UOHandle = nullptr;
+    m_clientType = UOClientType::Unknown;
+    m_error = KSError::Ok;
+}
+*/
+
+bool KeystrokeSender::canSend()
 {
     if (m_UOHandle == nullptr)
     {
-        if (!findUOWindow())
-            return false;
+        return findUOWindow();
     }
-    if (IsWindow(static_cast<HWND>(m_UOHandle)))
+    else if (IsWindow(static_cast<HWND>(m_UOHandle)))
     {
         EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(this));
-        const std::string windowName(getWindowStdStringTitle(windowHandleHelper));
-        windowHandleHelper = nullptr;
+        const std::string strClientWindowTitle(getWindowStdStringTitle(gs_windowHandleHelper));
+        gs_windowHandleHelper = nullptr;
 
-        const UOClientType clitype = detectClientType(windowName, getWindowNameThirdPartyFragment());
+        const UOClientType clitype = detectClientTypeFromTitle(
+                    strClientWindowTitle,
+                    getWindowTitleThirdpartyFragment() );
         if (clitype == m_clientType)
             return true;
         if (findUOWindow())
             return true;
-        return false;
     }
-    return findUOWindow();
+
+    m_error = KSError::NoWindow;
+    return false;
 }
 
-bool KeystrokeSender_Windows::sendChar(const char ch)
+/*
+WM_CHAR message:
+Bits 	Meaning
+---------------
+0-15 	The repeat count for the current message. The value is the number of times the keystroke is autorepeated as a result of the user holding down the key. If the keystroke is held long enough, multiple messages are sent. However, the repeat count is not cumulative.
+16-23 	The scan code. The value depends on the OEM.
+24      Indicates whether the key is an extended key, such as the right-hand ALT and CTRL keys that appear on an enhanced 101- or 102-key keyboard. The value is 1 if it is an extended key; otherwise, it is 0.
+25-28 	Reserved; do not use.
+29      The context code. The value is 1 if the ALT key is held down while the key is pressed; otherwise, the value is 0.
+30      The previous key state. The value is 1 if the key is down before the message is sent, or it is 0 if the key is up.
+31      The transition state. The value is 1 if the key is being released, or it is 0 if the key is being pressed.
+*/
+
+/* Hook for getting received messages from a window:
+ClientWindowProc = (WNDPROC)SetWindowLongPtr((HWND)sdlWindowHwnd, GWLP_WNDPROC, (LONG_PTR)HookWindowProc);
+LRESULT CALLBACK HookWindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+    qDebug() << QString::asprintf("HookWindowProc: 0x%08X, 0x%08X)", msg, wparam, lparam);
+    return CallWindowProc(ClientWindowProc, hwnd, msg, wparam, lparam);
+}
+*/
+
+bool KeystrokeSender::sendChar(unsigned int ch, bool setFocusToWindow)
 {
     if (!canSend())
         return false;
 
-    if (m_setFocusToWindow)
+    if (setFocusToWindow)
         SetForegroundWindow(static_cast<HWND>(m_UOHandle));
 
-    PostMessage(static_cast<HWND>(m_UOHandle), WM_CHAR, ch, 0);
-    return true;
+    //qDebug() << QString::fromUtf8(reinterpret_cast<char*>(&ch), 4);
+    return PostMessageW(static_cast<HWND>(m_UOHandle), WM_CHAR, ch, 0);
 }
 
-bool KeystrokeSender_Windows::sendEnter()
+bool KeystrokeSender::sendEnter(bool setFocusToWindow)
 {
     if (!canSend())
         return false;
 
-    if (m_setFocusToWindow)
+    if (setFocusToWindow)
         SetForegroundWindow(static_cast<HWND>(m_UOHandle));
 
-    // Also the WM_CHAR works for the enter key
+    // We need to send also the key scancode, otherwise Orion client won't work. SDL/IBM PC XT Enter scancode: 1C (press), 9C (release).
+    // qDebug() << Qt::hex << Qt::showbase << ( 1u | (0x1C << 16) | (1 << 30) | (1 << 31) );
+    bool ok = false;
 
     // KeyDown
-    PostMessage(static_cast<HWND>(m_UOHandle), WM_KEYDOWN, VK_RETURN, (LPARAM)( 1 ));
+    ok = PostMessageW(static_cast<HWND>(m_UOHandle), WM_KEYDOWN, VK_RETURN, (LPARAM)( 1u | (0x1C << 16)) );
+    if (!ok)
+        return false;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(kDelayKeystrokes));
+    std::this_thread::sleep_for(std::chrono::milliseconds(kDelayKeystrokes / 2));
 
     // KeyUp
-    PostMessage(static_cast<HWND>(m_UOHandle), WM_KEYUP, VK_RETURN, (LPARAM)( 1 | (1 << 30) | (1u << 31) ));
+    ok = PostMessageW(static_cast<HWND>(m_UOHandle), WM_KEYUP, VK_RETURN, (LPARAM)( 1u | (0x1C << 16) | (1 << 30) | (1 << 31) ));
 
-    return true;
+    return ok;
 }
 
-bool KeystrokeSender_Windows::sendString(const std::string &str, bool enterTerminated)
+
+bool KeystrokeSender::sendString(const std::string &str, bool enterTerminated, bool setFocusToWindow)
 {
     if ( str.length() < 1 )
     {
         m_error = KSError::StringShort;
         return false;
     }
+    if (!canSend())
+        return false;
 
     // In the past (maybe because of how older versions of the Enhanced Client were coded), PostMessage didn't work
     //  for EC but only for the Classic Client, so we needed to use SendInput, which required the receiver window to
     //  be the foreground window.
 
-    if (m_setFocusToWindow)
+    if (setFocusToWindow)
         SetForegroundWindow(static_cast<HWND>(m_UOHandle));
 
-    unsigned len = (str.length() > 255) ? 255 : unsigned(str.length());
-
-    for (unsigned i = 0; i < len; ++i)
+    size_t iSentUTF8Chars = 0;
+    for (const char* it = str.data(); (*it != '\0') && (iSentUTF8Chars <= kMaxStringChars); ++iSentUTF8Chars)
     {
-        if (!sendChar(str[i]))
+        const unsigned int ch = utf8::unchecked::next(it);
+        if (!sendChar(ch, false))
             return false;
         std::this_thread::sleep_for(std::chrono::milliseconds(kDelayKeystrokes));
     }
@@ -154,131 +202,6 @@ bool KeystrokeSender_Windows::sendString(const std::string &str, bool enterTermi
     }
 
     return true;
-}
-
-bool KeystrokeSender_Windows::sendStrings(const std::vector<std::string>& strings, bool enterTerminated)
-{
-    for (const std::string& str : strings)
-    {
-        if (!sendString(str, enterTerminated))
-            return false;
-    }
-
-    return true;
-}
-
-
-/* static functions */
-
-KSError KeystrokeSender_Windows::sendCharFast(const char ch, std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks(windowTitleFragment, setFocusToWindow);
-    ks.sendChar(ch);
-    return ks.m_error;
-}
-
-KSError KeystrokeSender_Windows::sendEnterFast(std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks(windowTitleFragment, setFocusToWindow);
-    ks.sendEnter();
-    return ks.m_error;
-}
-
-KSError KeystrokeSender_Windows::sendStringFast(const std::string& str, bool enterTerminated, std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks(windowTitleFragment, setFocusToWindow);
-    ks.sendString(str, enterTerminated);
-    return ks.m_error;
-}
-
-KSError KeystrokeSender_Windows::sendStringsFast(const std::vector<std::string>& strings, bool enterTerminated, std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks(windowTitleFragment, setFocusToWindow);
-    for (const std::string& str : strings)
-    {
-        ks.sendString(str, enterTerminated);
-        if (ks.m_error != KSError::Ok)
-            return ks.m_error;
-    }
-    return ks.m_error;
-}
-
-
-/* Static async functions */
-
-KSError KeystrokeSender_Windows::sendCharFastAsync(const char ch, std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks_check(windowTitleFragment, setFocusToWindow);
-    if (!ks_check.canSend())
-        return ks_check.m_error;
-
-    // send the keys asynchronously, so that i don't pause the calling thread
-    std::thread sender(
-        [=] () -> void
-        {
-            KeystrokeSender_Windows ks_thread(windowTitleFragment, setFocusToWindow);
-            ks_thread.sendChar(ch);
-        });
-    sender.detach();
-
-    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
-}
-
-KSError KeystrokeSender_Windows::sendEnterFastAsync(std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks_check(windowTitleFragment, setFocusToWindow);
-    if (!ks_check.canSend())
-        return ks_check.m_error;
-
-    // send the keys asynchronously, so that i don't pause the calling thread
-    std::thread sender(
-        [=] () -> void
-        {
-            KeystrokeSender_Windows ks_thread(windowTitleFragment, setFocusToWindow);
-            ks_thread.sendEnter();
-        });
-    sender.detach();
-
-    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
-}
-
-KSError KeystrokeSender_Windows::sendStringFastAsync(const std::string& str, bool enterTerminated, std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks_check(windowTitleFragment, setFocusToWindow);
-    if (!ks_check.canSend())
-        return ks_check.m_error;
-
-    if ( str.length() < 1 )
-        return KSError::StringShort;
-
-    // send the keys asynchronously, so that i don't pause the calling thread
-    std::thread sender(
-        [=] () -> void
-        {
-            KeystrokeSender_Windows ks_thread(windowTitleFragment, setFocusToWindow);
-            ks_thread.sendString(str, enterTerminated);
-        });
-    sender.detach();
-
-    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
-}
-
-KSError KeystrokeSender_Windows::sendStringsFastAsync(const std::vector<std::string> &strings, bool enterTerminated, std::string windowTitleFragment, bool setFocusToWindow)
-{
-    KeystrokeSender_Windows ks_check(windowTitleFragment, setFocusToWindow);
-    if (!ks_check.canSend())
-        return ks_check.m_error;
-
-    // send the keys asynchronously, so that i don't pause the calling thread
-    std::thread sender(
-        [=] () -> void
-        {
-            KeystrokeSender_Windows ks_thread(windowTitleFragment, setFocusToWindow);
-            ks_thread.sendStrings(strings, enterTerminated);
-        });
-    sender.detach();
-
-    return KSError::Ok;    // assuming all went fine, since i'm not tracking what's happening in the other thread
 }
 
 

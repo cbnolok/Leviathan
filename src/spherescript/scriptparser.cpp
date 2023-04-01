@@ -17,7 +17,6 @@ class ScriptParserHelper
 {
 private:
     ScriptParserHelper()  = default;
-
 public:
     ~ScriptParserHelper() = default;
 
@@ -169,8 +168,8 @@ void ScriptParser::run()
         }
     }
 
-    std::deque<ScriptObj*>().swap(m_scriptsDupeItems);
-    std::deque<ScriptObj*>().swap(m_scriptsDupeParents);
+    //std::deque<ScriptObj*>().swap(m_scriptsDupeItems);
+    //std::deque<ScriptObj*>().swap(m_scriptsDupeParents);
 
 
     /*  Get the ID of the item/animation to show for the child objects (derived from another item/char) */
@@ -235,8 +234,8 @@ void ScriptParser::run()
         }   // end of child iterating for loop
     }       // end of the tree iterating for loop
 
-    std::deque<ScriptObj*>().swap(m_scriptsChildItems);
-    std::deque<ScriptObj*>().swap(m_scriptsChildChars);
+    //std::deque<ScriptObj*>().swap(m_scriptsChildItems);
+    //std::deque<ScriptObj*>().swap(m_scriptsChildChars);
 
 
     /*  Sort alphabetically the categories, the subsections and the objects   */
