@@ -3,7 +3,7 @@
 
 #if defined(__unix__) && !defined(__APPLE__)
 
-#include "keystrokesender_common.h"
+#include "keystrokesenderbase.h"
 
 
 // forward declare Xlib types: we don't want to include Xlib.h here because it would pollute every
@@ -17,38 +17,17 @@ namespace ks
 {
 
 
-class KeystrokeSender
+class KeystrokeSender : public KeystrokeSenderBase
 {
-protected:
-    KeystrokeSender(std::string windowTitleFragment, bool setFocusToWindow = false); // set the focus to the window to which i have sent the text
+public:
+    KeystrokeSender(std::string windowTitleFragment); // set the focus to the window to which i have sent the text
     ~KeystrokeSender();
 
-public:
-    std::string getWindowNameThirdPartyFragment() const;
-    bool canSend();
+    virtual bool canSend() override;
 
-    bool sendChar(unsigned int ch);
-    bool sendEnter();
-    bool sendString(const std::string& str, bool enterTerminated = true);
-    bool sendStrings(const std::vector<std::string> &strings, bool enterTerminated = true);
-
-    // Static methods: do the work without creating an instance of the class and setting everything manually
-    static KSError sendCharFast(const char ch, bool setFocusToWindow = false);
-    static KSError sendEnterFast(bool setFocusToWindow = false);
-    static KSError sendStringFast(const std::string& str, bool enterTerminated = true, bool setFocusToWindow = false);
-    static KSError sendStringsFast(const std::vector<std::string>& strings, bool enterTerminated = true, bool setFocusToWindow = false);
-
-    // Static async methods: spawn a thread to do this, so we don't have to pause the current thread
-    static KSError sendCharFastAsync(const char ch, bool setFocusToWindow = false);
-    static KSError sendEnterFastAsync(bool setFocusToWindow = false);
-    static KSError sendStringFastAsync(const std::string& str, bool enterTerminated = true, bool setFocusToWindow = false);
-    static KSError sendStringsFastAsync(const std::vector<std::string>& strings, bool enterTerminated = true, bool setFocusToWindow = false);
-
-protected:
-    bool m_setFocusToWindow;
-    KSError m_error;
-    UOClientType m_clientType;
-    std::string m_windowNameThirdpartyFragment;
+    virtual bool sendChar(unsigned int ch, bool setFocusToWindow = false) override;
+    virtual bool sendEnter(bool setFocusToWindow = false) override;
+    virtual bool sendString(const std::string& str, bool enterTerminated = true, bool setFocusToWindow = false) override;
 
 private:
     Display*   	m_display;
@@ -58,9 +37,10 @@ private:
     bool findUOWindow();
     bool attach();
     void detach();
-    bool _sendChar(const char ch);
+
+    bool _sendChar(unsigned int ch);
     bool _sendEnter();
-    bool _sendString(const std::string& str, bool enterTerminated = true);
+    bool _sendString(const std::string& str, bool enterTerminated);
 };
 
 

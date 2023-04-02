@@ -7,6 +7,7 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 #else
+    #include <sys/stat.h>
     #include <dirent.h>     // To search files inside a directory
     #include <cstring>
 #endif
@@ -140,7 +141,6 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
                 getFilesInDirectorySub(out, bufNewPath + "*", maxFolderLevel - 1);
                 out->emplace_back(standardizePath(bufNewPath));
             }
-            maxFolderLevel -= 1;
             goto loop_continue;
         }
 
@@ -165,11 +165,11 @@ loop_continue:
 
     FindClose(dir);
 #else
-    DIR *dir = opendir(directory.c_str());
+    DIR *dir = opendir(path.c_str());
     while (class dirent *ent = readdir(dir))
     {
         const std::string file_name = ent->d_name;
-        const std::string full_file_name = directory + kStdDirDelim + file_name;
+        const std::string full_file_name = path + kStdDirDelim + file_name;
 
         class stat st;
         if (stat(full_file_name.c_str(), &st) == -1)
@@ -177,11 +177,14 @@ loop_continue:
         const bool is_directory = (st.st_mode & S_IFDIR) != 0;
         if (is_directory)
         {
+            if (maxFolderLevel == 0)
+                continue;
+
             // Recurse this directory
             if ( (strcmp(file_name.c_str(), "..") == 0) || (strcmp(file_name.c_str(), ".") == 0) )
                 continue;   // Ignore this one
 
-            getFilesInDirectorySub(out, full_file_name);
+            getFilesInDirectorySub(out, full_file_name, maxFolderLevel - 1);
             continue;
         }
         else if (file_name[0] == '.')
