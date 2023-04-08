@@ -263,7 +263,7 @@ bool KeystrokeSender::sendEnter(bool setFocusToWindow)
 
 bool KeystrokeSender::_sendString(const std::string& str, bool enterTerminated)
 {
-    unsigned len = (str.length() > 255) ? 255 : unsigned(str.length());
+    const unsigned len = std::min(unsigned(str.length()), 255u);
 
     for (unsigned i = 0; i < len; ++i)
     {

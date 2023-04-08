@@ -491,4 +491,3 @@ void Base_MapView::redrawSelectedPointCursor()
             m_scene->addItem(m_giSelectedPointCursor);
     }
 }
-

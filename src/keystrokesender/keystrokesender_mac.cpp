@@ -82,9 +82,9 @@ static std::string pexec(const char* cmd)
         return "ERROR";
     char buffer[128];
     std::string result;
-    while(!feof(pipe))
+    while (!feof(pipe))
     {
-        if(fgets(buffer, 128, pipe) != NULL)
+        if (fgets(buffer, 128, pipe) != NULL)
         {
             result += buffer;
         }
@@ -95,11 +95,11 @@ static std::string pexec(const char* cmd)
 
 static void focusWindow(int pid)
 {
-    std::string cmd = "osascript -e 'tell application \"System Events\" to set frontmost of the first process whose unix id is "+std::to_string(pid)+" to true'";
+    std::string cmd = "osascript -e 'tell application \"System Events\" to set frontmost of the first process whose unix id is " + std::to_string(pid) + " to true'";
     pexec(cmd.c_str());
 }
 
-static void setClipboard(std::string text)
+static void setClipboard(std::string const& text)
 {
     std::stringstream cmd;
     cmd << "printf \"" << text << "\" | pbcopy";
@@ -111,22 +111,12 @@ static void setClipboard(std::string text)
 // --
 
 
-KeystrokeSender::KeystrokeSender(bool setFocusToWindow) :
-    m_setFocusToWindow(setFocusToWindow), m_error(KSError::Ok), m_clientType(UOClientType::Unknown),
-    m_windowNameThirdpartyFragment(windowTitleFragment), m_UOPid(0)
+KeystrokeSender::KeystrokeSender(std::string windowTitleFragment) :
+    KeystrokeSenderBase(windowTitleFragment),
+    m_UOPid(0)
 {
 }
 
-std::string KeystrokeSender::getWindowNameThirdPartyFragment() const
-{
-    return m_windowNameThirdpartyFragment;
-}
-
-void KeystrokeSender::resetWindow()
-{
-    m_clientType = UOClientType::Unknown;
-    m_UOPid = 0;
-}
 
 bool KeystrokeSender::findUOWindow()
 {
@@ -137,14 +127,14 @@ bool KeystrokeSender::findUOWindow()
     int Pid = 0;
 
     CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListExcludeDesktopElements, kCGNullWindowID);
-    CFIndex numWindows = CFArrayGetCount(windowList);
+    const CFIndex numWindows = CFArrayGetCount(windowList);
 
-    for(CFIndex i = 0; i < numWindows; ++i)
+    for (CFIndex i = 0; i < numWindows; ++i)
     {
         CFDictionaryRef info = (CFDictionaryRef)CFArrayGetValueAtIndex(windowList, i);
         CFStringRef thisWindowName = (CFStringRef)CFDictionaryGetValue(info, kCGWindowName);
         std::unique_ptr<char[]> thisWindowNameCStr = cUTF8StringFromCFString(thisWindowName);
-        UOClientType clitype = detectClientType(thisWindowNameCStr.get(), m_windowNameThirdpartyFragment);
+        UOClientType clitype = detectClientTypeFromTitle(thisWindowNameCStr.get(), getWindowTitleThirdpartyFragment());
 
         //if(thisWindowName && CFStringFind(thisWindowName, nameRef, 0).location != kCFNotFound)
         if (clitype != UOClientType::Unknown)
@@ -158,7 +148,7 @@ bool KeystrokeSender::findUOWindow()
         }
     }
 
-    CFRelease(windowNameRef);
+    //CFRelease(windowNameRef);
     CFRelease(windowList);
 
     return (0 != Pid);
@@ -173,77 +163,88 @@ bool KeystrokeSender::canSend()
     return true;
 }
 
-
-bool KeystrokeSender::sendChar(const char ch)
+void KeystrokeSender::_sendChar(unsigned int ch)
 {
-    if (!canSend())
-        return false;
-
     CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateCombinedSessionState);
-    CGKeyCode key = keyboardCodeFromCharCode(ch);
 
-    CGEventRef keyDown = CGEventCreateKeyboardEvent(source, key, TRUE);
-    CGEventRef keyUp = CGEventCreateKeyboardEvent(source, key, FALSE);
+    const UniChar uch = std::max((unsigned int)UINT16_MAX, ch);
+    CGEventRef keyDown = CGEventCreateKeyboardEvent(source, 0, TRUE);
+    CGEventRef keyUp = CGEventCreateKeyboardEvent(source, 0, FALSE);
+    CGEventKeyboardSetUnicodeString(keyDown, 1, &uch);
+    CGEventKeyboardSetUnicodeString(keyUp, 1, &uch);
 
-    CGEventPostToPid(pid, keyDown);
-    CGEventPostToPid(pid, keyUp);
+    CGEventPostToPid(m_UOPid, keyDown);
+    CGEventPostToPid(m_UOPid, keyUp);
 
     CFRelease(keyUp);
     CFRelease(keyDown);
     CFRelease(source);
-
-    return true;
 }
 
-bool KeystrokeSender::sendEnter()
+bool KeystrokeSender::sendChar(unsigned int ch, bool setFocusToWindow)
 {
     if (!canSend())
         return false;
 
+    if (setFocusToWindow)
+        focusWindow(m_UOPid);
+
+    _sendChar(ch);
+
+    return true;
+}
+
+void KeystrokeSender::_sendEnter()
+{
+    const CGEventFlags flags_shift = kCGEventFlagMaskControl;
     CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateCombinedSessionState);
-    CGEventFlags flags_shift = kCGEventFlagMaskControl;
     CGEventRef ev;
+
+    //CGEventSetType(keyEvent, kCGEventKeyUp);
+    //CGEventSetType(keyEvent, kCGEventKeyDown);
 
     // press down
     ev = CGEventCreateKeyboardEvent (source, kVK_Return, true);
     CGEventSetFlags(ev, flags_shift | CGEventGetFlags(ev)); //combine flags
-    CGEventPostToPid(pid, ev);
+    CGEventPostToPid(m_UOPid, ev);
     CFRelease(ev);
 
     // press up
     ev = CGEventCreateKeyboardEvent (source, kVK_Return, false);
     CGEventSetFlags(ev, flags_shift | CGEventGetFlags(ev)); //combine flags
-    CGEventPostToPid(pid, ev);
+    CGEventPostToPid(m_UOPid, ev);
     CFRelease(ev);
 
-    return true;
-
+    CFRelease(source);
 }
 
-bool KeystrokeSender::sendString(const std::string& str, bool enterTerminated)
+bool KeystrokeSender::sendEnter(bool setFocusToWindow)
 {
-    int pid = findUOWindow();
+    if (!canSend())
+        return false;
 
-    if (pid == 0)
-        return KSError::NoWindow;
-
-    //bring to front
     if (setFocusToWindow)
-        focusWindow(pid);
+        focusWindow(m_UOPid);
 
+    _sendEnter();
+
+    return true;
+}
+
+void KeystrokeSender::_pasteString(const std::string& str)
+{
     //add cmd to clipboard
     setClipboard(str);
 
-
-    CGEventFlags flags_cmd = kCGEventFlagMaskCommand;
+    const CGEventFlags flags_cmd = kCGEventFlagMaskCommand;
+    CGEventSourceRef source = CGEventSourceCreate (kCGEventSourceStateCombinedSessionState);
     CGEventRef ev;
     CGEventRef evc;
-    CGEventSourceRef source = CGEventSourceCreate (kCGEventSourceStateCombinedSessionState);
 
     //press down ctrl
     evc = CGEventCreateKeyboardEvent (source, kVK_Command, true);
     CGEventSetFlags(evc,flags_cmd | CGEventGetFlags(evc)); //combine flags
-    CGEventPostToPid(pid,evc);
+    CGEventPostToPid(m_UOPid,evc);
     CFRelease(evc);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
@@ -251,95 +252,43 @@ bool KeystrokeSender::sendString(const std::string& str, bool enterTerminated)
     //press down
     ev = CGEventCreateKeyboardEvent (source, kVK_ANSI_V, true);
     CGEventSetFlags(ev,flags_cmd | CGEventGetFlags(ev)); //combine flags
-    CGEventPostToPid(pid,ev);
+    CGEventPostToPid(m_UOPid,ev);
     CFRelease(ev);
 
     //press up
     ev = CGEventCreateKeyboardEvent (source, kVK_ANSI_V, false);
     CGEventSetFlags(ev,flags_cmd | CGEventGetFlags(ev)); //combine flags
-    CGEventPostToPid(pid,ev);
+    CGEventPostToPid(m_UOPid,ev);
     CFRelease(ev);
 
     //press up ctrl
     evc = CGEventCreateKeyboardEvent (source, kVK_Command, false);
     CGEventSetFlags(evc,CGEventGetFlags(evc)); //combine flags
-    CGEventPostToPid(pid,evc);
+    CGEventPostToPid(m_UOPid,evc);
     CFRelease(evc);
 
-    if(enterTerminated)
-    {
-        sendEnterFast(setFocusToWindow);
-    }
-
     CFRelease(source);
-    return KSError::Ok;
 }
 
-bool KeystrokeSender::sendStrings(const std::vector<std::string>& strings, bool enterTerminated)
+bool KeystrokeSender::sendString(const std::string& str, bool enterTerminated, bool setFocusToWindow)
 {
-    sendStringsFast(strings,enterTerminated,false);
+    if (!canSend())
+        return false;
+
+    //bring to front
+    if (setFocusToWindow)
+        focusWindow(m_UOPid);
+
+    _pasteString(str);
+
+    if (enterTerminated)
+    {
+        _sendEnter();
+    }
+
     return true;
 }
 
-
-/* static methods */
-
-KSError KeystrokeSender::sendCharFast(unsigned int ch, bool setFocusToWindow)
-{
-
-}
-
-KSError KeystrokeSender::sendEnterFast(bool setFocusToWindow)
-{
-
-}
-
-KSError KeystrokeSender::sendStringFast(const std::string& str, bool enterTerminated, bool setFocusToWindow)
-{
-
-}
-
-KSError KeystrokeSender::sendStringsFast(const std::vector<std::string>& strings, bool enterTerminated, bool setFocusToWindow)
-{
-    int pid = findUOWindow();
-
-    if (pid == 0)
-        return KSError::NoWindow;
-
-    //bring to front
-    if (m_setFocusToWindow)
-    {
-        focusWindow(pid);
-    }
-
-    for(auto const& s : strings)
-    {
-        sendStringFast(s,enterTerminated,false);
-    }
-    return KSError::Ok;
-}
-
-/* Static async functions */
-
-KSError KeystrokeSender::sendCharFastAsync(unsigned int ch, bool setFocusToWindow)
-{
-    return sendCharFast(ch,setFocusToWindow);
-}
-
-KSError KeystrokeSender::sendEnterFastAsync(bool setFocusToWindow)
-{
-    return sendEnterFast(setFocusToWindow);
-}
-
-KSError KeystrokeSender::sendStringFastAsync(const std::string& str, bool enterTerminated, bool setFocusToWindow)
-{
-    return sendStringFast(str,enterTerminated,setFocusToWindow);
-}
-
-KSError KeystrokeSender::sendStringsFastAsync(const std::vector<std::string> &strings, bool enterTerminated, bool setFocusToWindow)
-{
-    return sendStringsFast(strings,enterTerminated,setFocusToWindow);
-}
 
 }
 

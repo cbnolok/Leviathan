@@ -85,8 +85,6 @@ bool isStringASCII(std::string const& str)
 
 // Converting WStrings to Strings, and vice-versa.
 // https://stackoverflow.com/questions/4804298/how-to-convert-wstring-into-string
-#include <locale>
-
 // WINDOWS
 #if (_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -104,8 +102,6 @@ bool isStringASCII(std::string const& str)
 #elif (__LINUX__ || __gnu_linux__ || __linux__ || __linux || linux)
 #define LINUX_PLATFORM 1
 #include <unistd.h>
-#define CoTaskMemAlloc(p) malloc(p)
-#define CoTaskMemFree(p) free(p)
 
 //ANDROID
 #elif (__ANDROID__ || ANDROID)
@@ -114,7 +110,7 @@ bool isStringASCII(std::string const& str)
 //MACOS
 #elif defined(__APPLE__)
 #include <unistd.h>
-#include "TargetConditionals.h"
+#include <TargetConditionals.h>
 #if TARGET_OS_IPHONE && TARGET_IPHONE_SIMULATOR
 #define IOS_SIMULATOR_PLATFORM 1
 #elif TARGET_OS_IPHONE
@@ -125,21 +121,21 @@ bool isStringASCII(std::string const& str)
 
 #endif
 
-using namespace std::literals::string_literals;
+
 std::string wideStringToString(const std::wstring& wstr)
 {
-    if (wstr.empty())
-    {
-        return {};
-    }
-    size_t pos;
-    size_t begin = 0;
+    using namespace std::literals::string_literals;
     std::string ret;
+    if (wstr.empty())
+        return ret;
+
+    const size_t wstr_length = wstr.length();
+    size_t begin = 0;
+    size_t pos = wstr.find(static_cast<wchar_t>(0), begin);
 
 #if WINDOWS_PLATFORM
     int size;
-    pos = wstr.find(static_cast<wchar_t>(0), begin);
-    while (pos != std::wstring::npos && begin < wstr.length())
+    while ((pos != std::wstring::npos) && (begin < wstr_length))
     {
         std::wstring segment(&wstr[begin], pos - begin);
         size = static_cast<int>(WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &segment[0], static_cast<int>(segment.size()),
@@ -152,7 +148,7 @@ std::string wideStringToString(const std::wstring& wstr)
         begin = pos + 1;
         pos = wstr.find(static_cast<wchar_t>(0), begin);
     }
-    if (begin <= wstr.length())
+    if (begin <= wstr_length)
     {
         std::wstring segment(&wstr[begin], wstr.length() - begin);
         size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &segment[0], static_cast<int>(segment.size()),
@@ -165,23 +161,22 @@ std::string wideStringToString(const std::wstring& wstr)
 #elif LINUX_PLATFORM || MACOS_PLATFORM || EMSCRIPTEN_PLATFORM
     size_t size;
 
-    while (pos != std::wstring::npos && begin < wstr.length())
+    while ((pos != std::wstring::npos) && (begin < wstr_length))
     {
-        std::wstring segment = std::wstring(&wstr[begin], pos - begin);
-        pos = wstr.find(static_cast<wchar_t>(0), begin);
+        std::wstring segment(&wstr[begin], pos - begin);
         size = wcstombs(nullptr, segment.c_str(), 0);
-        std::string converted = std::string(size, 0);
+        std::string converted(size, 0);
         wcstombs(&converted[0], segment.c_str(), converted.size());
         ret.append(converted);
         ret.append({ 0 });
         begin = pos + 1;
         pos = wstr.find(static_cast<wchar_t>(0), begin);
     }
-    if (begin <= wstr.length())
+    if (begin <= wstr_length)
     {
-        std::wstring segment = std::wstring(&wstr[begin], wstr.length() - begin);
+        std::wstring segment(&wstr[begin], wstr.length() - begin);
         size = wcstombs(nullptr, segment.c_str(), 0);
-        std::string converted = std::string(size, 0);
+        std::string converted(size, 0);
         wcstombs(&converted[0], segment.c_str(), converted.size());
         ret.append(converted);
     }
@@ -193,17 +188,15 @@ std::string wideStringToString(const std::wstring& wstr)
 
 std::wstring stringToWideString(const std::string& str)
 {
-    if (str.empty())
-    {
-        return {};
-    }
-
-    size_t pos;
-    size_t begin = 0;
     std::wstring ret;
+    if (str.empty())
+        return ret;
+
+    size_t begin = 0;
+    size_t pos = str.find(static_cast<char>(0), begin);
+
 #ifdef WINDOWS_PLATFORM
     int size = 0;
-    pos = str.find(static_cast<char>(0), begin);
     while (pos != std::string::npos)
     {
         std::string segment(&str[begin], pos - begin);
@@ -228,11 +221,10 @@ std::wstring stringToWideString(const std::string& str)
 
 #elif LINUX_PLATFORM || MACOS_PLATFORM || EMSCRIPTEN_PLATFORM
     size_t size;
-    pos = str.find(static_cast<char>(0), begin);
     while (pos != std::string::npos)
     {
-        std::string segment = std::string(&str[begin], pos - begin);
-        std::wstring converted = std::wstring(segment.size(), 0);
+        std::string segment(&str[begin], pos - begin);
+        std::wstring converted(segment.size(), 0);
         size = mbstowcs(&converted[0], &segment[0], converted.size());
         converted.resize(size);
         ret.append(converted);
@@ -242,8 +234,8 @@ std::wstring stringToWideString(const std::string& str)
     }
     if (begin < str.length())
     {
-        std::string segment = std::string(&str[begin], str.length() - begin);
-        std::wstring converted = std::wstring(segment.size(), 0);
+        std::string segment(&str[begin], str.length() - begin);
+        std::wstring converted(segment.size(), 0);
         size = mbstowcs(&converted[0], &segment[0], converted.size());
         converted.resize(size);
         ret.append(converted);

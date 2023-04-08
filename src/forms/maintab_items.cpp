@@ -467,3 +467,4 @@ void MainTab_Items::on_checkBox_lockDown_stateChanged(int arg1)
 {
     m_lockDown = (arg1 != Qt::Unchecked);
 }
+

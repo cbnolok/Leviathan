@@ -733,3 +733,4 @@ CheckableProxyModelState& CheckableProxyModelState::uncheckedLeafIndexes(QModelI
 
   @see checkedBranchSourceModelIndexes checkedLeafIndexes
   */
+

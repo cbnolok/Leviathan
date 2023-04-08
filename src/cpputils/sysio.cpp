@@ -157,10 +157,7 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
         out->emplace_back(standardizePath(bufNewPath));
 
 loop_continue:
-        if (maxFolderLevel == 0)
-            success = false;
-        else
-            success = FindNextFileW(dir, &findData);
+        success = FindNextFileW(dir, &findData);
     }
 
     FindClose(dir);
