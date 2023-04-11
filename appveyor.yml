@@ -7,7 +7,7 @@ branches:
 
 image:
   - Visual Studio 2019
-  - Ubuntu
+  - Ubuntu2004 # 20.04 LTS (Focal Fossa)
   - macos-bigsur
 
 install:
@@ -22,10 +22,14 @@ for:
 
     environment:
       # Set Qt toolkit path
-      - set QTOOLS=C:\Qt\Tools\mingw900_64\bin
-      - set QTDIR=C:\Qt\6.4.2\mingw_64 # required as is
+      QTOOLS: C:\Qt\Tools\mingw1120_64\bin
+      QTDIR: C:\Qt\6.4.2\mingw_64 # required as is
 
     before_build:
+      - set PATH=%QTOOLS%;%QTDIR%\bin;%PATH%
+
+      - dir C:\mingw-w64
+
       - cmd /c ver
       - gcc --version
       - qmake --version
@@ -36,10 +40,9 @@ for:
       - cd src
       - mkdir deploy64
 
-      - set PATH=%QTOOLS%;%QTDIR%\bin;%PATH%
-      - mingw32-make clean
-      - del Makefile*
-      - del .qmake.stash
+      #- mingw32-make clean
+      #- del Makefile*
+      #- del .qmake.stash
 
       - qmake Leviathan.pro CONFIG+=release
       - mingw32-make -j%NUMBER_OF_PROCESSORS%
@@ -82,14 +85,13 @@ for:
   - # Linux build
     matrix:
       only:
-      - image: Ubuntu
-
-    environment:
-      # Set Qt toolkit path
-      - export QTDIR=${HOME}/Qt/6.2/gcc_64
-      - export PATH="${QTDIR}/bin:$PATH"
+      - image: Ubuntu2004
 
     before_build:
+      # Set Qt toolkit path
+      - export QTDIR=${HOME}/Qt/6.2/gcc_64
+      - export PATH=${QTDIR}/bin:$PATH
+
       - lsb_release -d
       - gcc --version
       - qmake --version
@@ -128,12 +130,11 @@ for:
       only:
       - image: macos-bigsur
 
-    environment:
+    before_build:
       # Set Qt toolkit path
       - export QTDIR=${HOME}/Qt/6.2/macos
-      - export PATH="${QTDIR}/bin:$PATH"
+      - export PATH=${QTDIR}/bin:$PATH
 
-    before_build:
       - sw_vers
       - gcc --version
       - qmake --version

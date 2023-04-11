@@ -1,13 +1,12 @@
 #include "strings.h"
 #include "sysio.h"
+#include <sys/stat.h>
 #include <algorithm>    // for std::replace
-#include <filesystem>
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 #else
-    #include <sys/stat.h>
     #include <dirent.h>     // To search files inside a directory
     #include <cstring>
 #endif
@@ -54,12 +53,16 @@ std::string standardizePath(std::string s)
 
 bool isValidFile(const std::string& filePath)
 {
-    return std::filesystem::is_regular_file(filePath);
+    //return std::filesystem::is_regular_file(filePath);  // Can't use this, since it was added to MacOS only since version 10.15...
+    struct stat sb;
+    return (stat(filePath.c_str(), &sb) == 0);
 }
 
 bool isValidDirectory(const std::string& directoryPath)
 {
-    return std::filesystem::is_directory(directoryPath);
+    //return std::filesystem::is_directory(directoryPath); // Can't use this, since it was added to MacOS only since version 10.15...
+    struct stat sb;
+    return (stat(directoryPath.c_str(), &sb) == 0) && ((sb.st_mode & S_IFDIR) == S_IFDIR);
 }
 
 
