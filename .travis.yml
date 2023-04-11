@@ -3,7 +3,7 @@ notifications:
 
 language: cpp
 compiler: gcc
-dist: trusty
+dist: jammy
 sudo: required
 
 #https://github.com/travis-ci/travis-ci/issues/6730
@@ -15,27 +15,13 @@ sudo: required
 git:
   depth: 1
 
-# preinstalled g++ and Qt versions are SO OLD, we need to update them manually...
-
 before_install:
-  # For g++
-  - sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 1397BC53640DB551
-  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
-
-  # For Qt
-  - sudo add-apt-repository --yes ppa:beineri/opt-qt562-trusty
-
   # Update informations about new available packages 
   - sudo apt-get update -qq
 
 install:
-  # For g++
-  - sudo apt-get remove g++
-  - sudo apt-get install -qq g++-7
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
-
   # For Qt
-  - sudo apt-get install -qq qt56base qt56imageformats qt56svg
+  - sudo apt-get install -qq qt6-base qt6-image-formats-plugins qt6-svg
 
 before_script:
   # Set up the new Qt environment
