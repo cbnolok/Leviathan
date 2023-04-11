@@ -18,6 +18,10 @@
 // And on:
 // https://stackoverflow.com/questions/30156202/xlib-c-get-window-handle-sendevent
 
+// TODO: it might not work with an official client running on WINE.
+// WINE seems to handle X11 events via those functions: X11DRV_ClientMessage (dlls/winex11.drv/event.c), X11DRV_KeyEvent (dlls/winex11.drv/keyboard.c),
+// X11DRV_send_keyboard_input (dlls/winex11.drv/keyboard.c) -> __wine_send_input
+
 
 // !!! To compile this file, the following linker instructions are needed: -L/usr/X11R6/lib -lX11 !!!
 
