@@ -28,8 +28,6 @@ for:
     before_build:
       - set PATH=%QTOOLS%;%QTDIR%\bin;%PATH%
 
-      - dir C:\mingw-w64
-
       - cmd /c ver
       - gcc --version
       - qmake --version
@@ -62,10 +60,10 @@ for:
       - copy /Y ..\winlibs\64\zlib.dll deploy64
 
       # Pack everything in a zip
-      - 7z a LeviathanWin64-automated-%APPVEYOR_REPO_TAG_NAME%.zip .\deploy64\*
+      - 7z a ..\LeviathanWin64-automated-%APPVEYOR_REPO_TAG_NAME%.zip .\deploy64\*
 
     artifacts:
-      - path: src/LeviathanWin64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+      - path: LeviathanWin64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
         name: binpkg-x86_64
 
     deploy:
@@ -105,10 +103,12 @@ for:
 
     after_build:
       # Pack everything in a zip
-      - tar -czf LeviathanLinux64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
+      - pwd
+      - ls
+      - tar -czf ../LeviathanLinux64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
     
     artifacts:
-      - path: src/LeviathanLinux64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+      - path: LeviathanLinux64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
         name: binpkg-x86_64
 
     deploy:
@@ -148,10 +148,12 @@ for:
 
     after_build:
       # Pack everything in a zip
-      - zip -r LeviathanMacOSx86_64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
+      - pwd
+      - ls
+      - zip -r ../LeviathanMacOSx86_64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
     
     artifacts:
-      - path: src/LeviathanMacOSx86_64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+      - path: LeviathanMacOSx86_64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
         name: binpkg-x86_64
 
     deploy:

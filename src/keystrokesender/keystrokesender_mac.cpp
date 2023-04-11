@@ -1,13 +1,13 @@
 #if defined(__APPLE__)
 
-#include "KeystrokeSender.h"
+#include "keystrokesender.h"
 #include <Carbon/Carbon.h>
 #include <chrono>
 #include <thread>
 #include <sstream>
 #include <memory>
 
-
+/*
 static CFStringRef cStringToCFString(const char* inStr)
 {
     return CFStringCreateWithCString(NULL, inStr, kCFStringEncodingUTF8);
@@ -17,6 +17,7 @@ static CFStringRef stdStringToCFString(std::string const& inStr)
 {
     return CFStringCreateWithCString(NULL, inStr.c_str(), kCFStringEncodingUTF8);
 }
+*/
 
 static std::unique_ptr<char[]> cUTF8StringFromCFString(CFStringRef aString)
 {
@@ -37,43 +38,6 @@ static std::unique_ptr<char[]> cUTF8StringFromCFString(CFStringRef aString)
 namespace ks
 {
 
-
-static CGKeyCode keyboardCodeFromCharCode(char charCode)
-{
-    switch (charCode)
-    {
-        case 'a': case 'A': return kVK_ANSI_A;
-        case 'b': case 'B': return kVK_ANSI_B;
-        case 'c': case 'C': return kVK_ANSI_C;
-        case 'd': case 'D': return kVK_ANSI_D;
-        case 'e': case 'E': return kVK_ANSI_E;
-        case 'f': case 'F': return kVK_ANSI_F;
-        case 'g': case 'G': return kVK_ANSI_G;
-        case 'h': case 'H': return kVK_ANSI_H;
-        case 'i': case 'I': return kVK_ANSI_I;
-        case 'j': case 'J': return kVK_ANSI_J;
-        case 'k': case 'K': return kVK_ANSI_K;
-        case 'l': case 'L': return kVK_ANSI_L;
-        case 'm': case 'M': return kVK_ANSI_M;
-        case 'n': case 'N': return kVK_ANSI_N;
-        case 'o': case 'O': return kVK_ANSI_O;
-        case 'p': case 'P': return kVK_ANSI_P;
-        case 'q': case 'Q': return kVK_ANSI_Q;
-        case 'r': case 'R': return kVK_ANSI_R;
-        case 's': case 'S': return kVK_ANSI_S;
-        case 't': case 'T': return kVK_ANSI_T;
-        case 'u': case 'U': return kVK_ANSI_U;
-        case 'v': case 'V': return kVK_ANSI_V;
-        case 'w': case 'W': return kVK_ANSI_W;
-        case 'x': case 'X': return kVK_ANSI_X;
-        case 'y': case 'Y': return kVK_ANSI_Y;
-        case 'z': case 'Z': return kVK_ANSI_Z;
-        case '-': case '_': return kVK_ANSI_Minus;
-        case '.': case '>': return kVK_ANSI_Period;
-        case ' ': return kVK_Space;
-  }
-  return 0;
-}
 
 static std::string pexec(const char* cmd)
 {
