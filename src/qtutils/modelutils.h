@@ -11,35 +11,24 @@ class CheckableProxyModel;
 class QFileSystemModel;
 class QTreeView;
 
-class ModelUtils
+namespace ModelUtils
 {
-public:
-    class Abstract
+    namespace Abstract
     {
-        static QStringList extractStrings(QAbstractItemModel *model, const QModelIndex &parent, bool appendParent = true);
+        QStringList extractStrings(QAbstractItemModel *model, const QModelIndex &parent, bool appendParent = true);
     };
 
-    class CheckableProxy
+    namespace CheckableProxy
     {
-    public:
-        static QStringList extractStrings(CheckableProxyModel *model, const QModelIndex &proxyParent, bool appendParent = true, bool extractCheckedOnly = true);
-        static void resetCheckedState(CheckableProxyModel *model, bool value, QModelIndex proxyParent = QModelIndex());
+        QStringList extractStrings(CheckableProxyModel *model, const QModelIndex &proxyParent, bool appendParent = true, bool extractCheckedOnly = true);
+        void resetCheckedState(CheckableProxyModel *model, bool value, QModelIndex proxyParent = QModelIndex());
 
-        class FileSystem
+        namespace FileSystem
         {
-        public:
-            static QStringList extractCheckedFilesPath(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, const QModelIndex &proxyParent, bool extractCheckedOnly = true);
-            static void checkChildren(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, QTreeView *view, QString const& folder);
+            QStringList extractCheckedFilesPath(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, const QModelIndex &proxyParent, bool extractCheckedOnly = true);
+            void checkChildren(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, QTreeView *view, QString const& folder);
         };
     };
-
-    /*
-    class FileSystem
-    {
-    public:
-
-    };
-    */
 };
 
 

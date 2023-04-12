@@ -4,8 +4,6 @@
 #include <QTreeView>
 #include "checkableproxymodel.h"
 
-#include <QDebug>
-
 
 // To use with a tree-style model.
 auto ModelUtils::Abstract::
@@ -122,7 +120,6 @@ auto ModelUtils::CheckableProxy::FileSystem::
 checkChildren(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, QTreeView *view, QString const& folder)
 -> void
 {
-    qDebug() << "entro";
     if (!model_base || !model_proxy || !view)
         return;
     if (folder.isEmpty())
@@ -138,26 +135,20 @@ checkChildren(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, QT
     if (!folderIdxProxy.isValid())
         return;
 
-    qDebug() << "inizio";
     for (int baseRow = 0; baseRow < model_proxy->rowCount(folderIdxProxy); ++baseRow)
     {
-        qDebug() << 1;
         const QModelIndex elemIdxProxy = model_proxy->index(baseRow, 0, folderIdxProxy);
         //const QModelIndex elemIdxProxy = folderIdxProxy.siblingAtRow(baseRow);
         if (!elemIdxProxy.isValid())
             continue;
 
-        qDebug() << 2;
         const int state = model_proxy->data(elemIdxProxy, Qt::CheckStateRole).toInt();
         const QModelIndex elemIdxSource = model_proxy->mapToSource(elemIdxProxy);
         if (!model_base->isDir(elemIdxSource))
         {
-            qDebug() << 3;
             // I'm a child file
             if (folderIdxProxy == viewRootIdx)
                 continue; //check only files in subfolders
-
-            qDebug() << elemIdxSource.data() << " " << elemIdxProxy.data(Qt::CheckStateRole);
 
             if (state != Qt::Checked)
                 model_proxy->setData(elemIdxProxy, Qt::Checked, Qt::CheckStateRole);
@@ -165,7 +156,6 @@ checkChildren(QFileSystemModel *model_base, CheckableProxyModel *model_proxy, QT
             continue;
         }
 
-        qDebug() << 4;
         // I'm a child folder.
         if (state != Qt::Checked)
             continue;

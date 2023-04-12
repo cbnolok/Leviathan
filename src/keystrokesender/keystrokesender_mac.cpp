@@ -1,6 +1,6 @@
 #if defined(__APPLE__)
 
-#include "keystrokesender.h"
+#include "keystrokesender_mac.h"
 #include <Carbon/Carbon.h>
 #include <chrono>
 #include <thread>

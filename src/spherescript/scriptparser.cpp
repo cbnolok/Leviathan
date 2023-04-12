@@ -8,24 +8,24 @@
 #include "scriptutils.h"
 
 
-class ScriptParserHelper;
-static thread_local ScriptParserHelper* _spHelperPrivateInstance = nullptr;
+class ParserBuffersHolder;
+static thread_local ParserBuffersHolder* _buffersPrivateInstance = nullptr;
 
-class ScriptParserHelper
+class ParserBuffersHolder
 {
 private:
-    ScriptParserHelper()  = default;
+    ParserBuffersHolder()  = default;
 public:
-    ~ScriptParserHelper() = default;
+    ~ParserBuffersHolder() = default;
 
-    ScriptParserHelper(ScriptParserHelper &other) = delete;
-    void operator=(const ScriptParserHelper &) = delete;
+    ParserBuffersHolder(ParserBuffersHolder &other) = delete;
+    void operator=(const ParserBuffersHolder &) = delete;
 
-    static ScriptParserHelper *instance()
+    static ParserBuffersHolder *instance()
     {
-        if (_spHelperPrivateInstance == nullptr)
-            _spHelperPrivateInstance = new ScriptParserHelper();
-        return _spHelperPrivateInstance;
+        if (_buffersPrivateInstance == nullptr)
+            _buffersPrivateInstance = new ParserBuffersHolder();
+        return _buffersPrivateInstance;
     }
 
     static constexpr std::array<char, 2> trigCharsToRemove = {' ', '='};
@@ -119,7 +119,7 @@ void ScriptParser::run()
     emit notifyTPMessage("Organizing dupe items...");
     emit notifyTPProgressMax(150);
 
-    size_t dupeObjs_num = m_scriptsDupeItems.size();
+    const size_t dupeObjs_num = m_scriptsDupeItems.size();
     for (size_t dupeObj_i = 0; dupeObj_i < dupeObjs_num; ++dupeObj_i)
     {
         bool found = false;
@@ -160,7 +160,7 @@ void ScriptParser::run()
                         '\n' + kLogStrTabL1 +
                         "File: " + g_scriptFileList[dupeObj->m_scriptFileIndex]);
 
-        int progressValNow = (int)( (dupeObj_i*150)/dupeObjs_num );
+        const int progressValNow = (int)( (dupeObj_i*150)/dupeObjs_num );
         if (progressValNow > progressVal)
         {
             progressVal = progressValNow;
@@ -179,16 +179,16 @@ void ScriptParser::run()
     emit notifyTPProgressMax(150);
     progressVal = 0;
 
-    ScriptObjTree*              displayID_trees[]         = { g_scriptObjTree_Items,  g_scriptObjTree_Chars   };
-    std::deque<ScriptObj*>*     displayID_childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
-    size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
+    ScriptObjTree *const              displayID_trees[]         = { g_scriptObjTree_Items,  g_scriptObjTree_Chars   };
+    std::deque<ScriptObj*> *const     displayID_childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
+    const size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
     size_t childrenProcessed = 0;
     for (uint tree_i = 0; tree_i < STATIC_ARRAY_COUNT(displayID_trees); ++tree_i)
     {
         // Iterate one time for the items and one for the chars
 
         auto* curChildObjects = displayID_childObjects[tree_i];
-        size_t child_s = curChildObjects->size();
+        const size_t child_s = curChildObjects->size();
         //#pragma omp parallel for schedule(static) private(curChildObjects, child_s)
         for (size_t child_i = 0; child_i < child_s; ++child_i)
         {
@@ -197,7 +197,7 @@ void ScriptParser::run()
 
             bool found = false;
             ScriptObj* childObj = (*curChildObjects)[child_i];
-            bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
+            const bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
 
             for (const ScriptObj* parentObj : *displayID_trees[tree_i])
             {
@@ -225,7 +225,7 @@ void ScriptParser::run()
                             "File: " + g_scriptFileList[childObj->m_scriptFileIndex]);
 
             ++childrenProcessed;
-            int progressValNow = (int)( (childrenProcessed*150)/childItemsNum );
+            const int progressValNow = (int)( (childrenProcessed*150)/childItemsNum );
             if (progressValNow > progressVal)
             {
                 progressVal = progressValNow;
@@ -256,7 +256,7 @@ void ScriptParser::run()
     auto _sortSubsection    = [](const ScriptSubsection* a, const ScriptSubsection* b)  -> bool {return a->m_subsectionName < b->m_subsectionName;};
     auto _sortDescription   = [](const ScriptObj* a, const ScriptObj* b)                -> bool {return a->m_description    < b->m_description;};
 
-    ScriptObjTree* sorting_trees[] =
+    ScriptObjTree *const sorting_trees[] =
     {   getScriptObjTree(SCRIPTOBJ_TYPE_ITEM),  getScriptObjTree(SCRIPTOBJ_TYPE_CHAR), getScriptObjTree(SCRIPTOBJ_TYPE_DEF), getScriptObjTree(SCRIPTOBJ_TYPE_AREA),
         getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN), getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE), getScriptObjTree(SCRIPTOBJ_TYPE_SPELL), getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
     };
@@ -274,7 +274,7 @@ void ScriptParser::run()
                 auto& objects = subsections[subsection_i]->m_objects;
                 std::sort(objects.begin(), objects.end(), _sortDescription);   // sort objects
 
-                int progressValNow = (int)( (subsection_i*150)/subsections.size() );
+                const int progressValNow = (int)( (subsection_i*150)/subsections.size() );
                 if (progressValNow > progressVal)
                 {
                     progressVal = progressValNow;
@@ -284,10 +284,10 @@ void ScriptParser::run()
         }
     }
 
-    if (_spHelperPrivateInstance != nullptr)
+    if (_buffersPrivateInstance != nullptr)
     {
-        delete _spHelperPrivateInstance;
-        _spHelperPrivateInstance = nullptr;
+        delete _buffersPrivateInstance;
+        _buffersPrivateInstance = nullptr;
     }
 
     appendToLog(std::string("Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\" loaded."));
@@ -819,33 +819,33 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
 void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
 {
     bool ignoreTrigger = false;
-    ScriptParserHelper* sphInstance = ScriptParserHelper::instance();
+    ParserBuffersHolder* buffersInstance = ParserBuffersHolder::instance();
 
-    std::string &objSubsection = sphInstance->objSubsection;
+    std::string &objSubsection = buffersInstance->objSubsection;
     objSubsection = SCRIPTSUBSECTION_NONE_NAME; // Put it in a temporary string, since the ScriptCategory class may not be
                                                 //  instantiated when we read the Subsection value.
-    std::string &objDescription = sphInstance->objDescription;
-    sphInstance->objDescription.clear();     // If the value is '@', then the Description should have the same value than the Name.
+    std::string &objDescription = buffersInstance->objDescription;
+    buffersInstance->objDescription.clear();     // If the value is '@', then the Description should have the same value than the Name.
 
-    std::string &objName = sphInstance->objName;
+    std::string &objName = buffersInstance->objName;
     objName.clear();
 
-    std::string &objDefname = sphInstance->objDefname;
+    std::string &objDefname = buffersInstance->objDefname;
     objDefname.clear();         // It can be the in the block's header or with the DEFNAME keyword, we'll sort it out later.
 
-    std::string &objID = sphInstance->objID;
+    std::string &objID = buffersInstance->objID;
     objID.clear();              // Same as for the DEFNAME.
 
-    std::string &objArgument = sphInstance->objArgument;
+    std::string &objArgument = buffersInstance->objArgument;
     objArgument = obj->m_defname;
     obj->m_defname.clear();
 
 
     while ( !fileStream.eof() )
     {
-        sphInstance->blockLine.clear();
-        std::string& line(sphInstance->blockLine);
-        std::streampos pos = fileStream.tellg();
+        const std::streampos pos = fileStream.tellg();
+        buffersInstance->blockLine.clear();
+        std::string& line(buffersInstance->blockLine);
         std::getline(fileStream, line);
         if ( fileStream.bad() )
             break;
@@ -867,7 +867,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
             ++linestart;
 
         // Checking if the block is commented.
-        size_t index_comment = line.rfind("//", linestart + 1);     // reverse find, starting from the second character (position 1)
+        const size_t index_comment = line.rfind("//", linestart + 1);     // reverse find, starting from the second character (position 1)
         if (index_comment != std::string::npos)
                 continue;
 
@@ -875,12 +875,12 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         // There can be spaces between '=' and '@', or even "ON @Create" is legit, so we have to recognize all of them.
         //  Removing whitespaces and '=' symbols, we should have only "ON@Create"
         // Also, valid assignations are both "DEFNAME= foo" and "DEFNAME  foo".
-        std::string &tempLine(sphInstance->strBlockBuf1);
+        std::string &tempLine(buffersInstance->strBlockBuf1);
         // need to put all to uppercase since std::string::find is case-sensitive.
         strToUpper(tempLine);
         // remove whitespaces and '=' symbols
-        for (size_t i = 0; i < sphInstance->trigCharsToRemove.size(); ++i)
-              tempLine.erase(std::remove(tempLine.begin(), tempLine.end(), sphInstance->trigCharsToRemove[i]), tempLine.end());
+        for (size_t i = 0; i < buffersInstance->trigCharsToRemove.size(); ++i)
+              tempLine.erase(std::remove(tempLine.begin(), tempLine.end(), buffersInstance->trigCharsToRemove[i]), tempLine.end());
         // now look for our triggers
         size_t prefixPos = tempLine.find("ON@", linestart);
         if (prefixPos != std::string::npos)
@@ -941,8 +941,8 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         ++valueEnd;     // to have the character number (starting from 1), instead of having the position (0-based)
 
         // Finally separate the keyword from the value.
-        std::string &keyword = sphInstance->strBlockBuf2;
-        std::string &value = sphInstance->strBlockBuf3;
+        std::string &keyword = buffersInstance->strBlockBuf2;
+        std::string &value = buffersInstance->strBlockBuf3;
         keyword = line.substr(keywordStart, keywordEnd - keywordStart);
         value = line.substr(valueStart, valueEnd - valueStart);
         //appendToLog(std::string("Keyword:*" + keyword + "* - Value:*" + value + "*"+ ". line:*" +line +"*"));
@@ -1099,7 +1099,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         else
         {
             //if ( (objDescription.length() == 1) && (objDescription[0] == '@') )
-            size_t atPos = objDescription.find_first_of('@');
+            const size_t atPos = objDescription.find_first_of('@');
             if ( atPos != std::string::npos)    // substitute the @ character
             {
                 obj->m_description = "";
@@ -1124,7 +1124,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
     }
 
     // Detect if the block header argument is the DEFNAME or the ID.
-    int objIDHeader =  ScriptUtils::strToSphereInt(objArgument);
+    const int objIDHeader =  ScriptUtils::strToSphereInt(objArgument);
     if (objIDHeader == -1)  // It's a DEFNAME.
     {
         if (!objArgument.empty())

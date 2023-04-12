@@ -148,13 +148,15 @@ for:
 
     after_build:
       # Pack everything in a zip
-      - pwd
-      - ls
-      - zip -r ../LeviathanMacOSx86_64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
+      #- zip -r ../LeviathanMacOSx86_64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan.app
+      - macdeployqt Leviathan.app -dmg
+      - mv Leviathan.dmg ../LeviathanMacOSx86_64-automated-${APPVEYOR_REPO_TAG_NAME}.dmg
     
     artifacts:
-      - path: LeviathanMacOSx86_64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+      - path: LeviathanMacOSx86_64-automated-$(APPVEYOR_REPO_TAG_NAME).dmg
         name: binpkg-x86_64
+      #- path: LeviathanMacOSx86_64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+      #  name: binpkg-x86_64
 
     deploy:
       release: $(APPVEYOR_REPO_TAG_NAME)
