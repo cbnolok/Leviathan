@@ -4,7 +4,7 @@
 #include <sstream>
 #include <QImage>
 
-#include "../cpputils/strings.h"
+#include "../cpputils/string.h"
 #include "uoidx.h"
 #include "uohues.h"
 

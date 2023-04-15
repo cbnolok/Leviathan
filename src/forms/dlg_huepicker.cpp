@@ -286,7 +286,7 @@ void Dlg_HuePicker::on_lineEdit_preview_returnPressed()
     else
         sd.searchBy = ScriptSearch::SearchBy::ID;
 
-    std::vector<ScriptObjTree*> treesToSearchInto;
+    std::vector<std::unique_ptr<ScriptObjTree>*> treesToSearchInto;
     treesToSearchInto.push_back( m_previewIsItem ? getScriptObjTree(SCRIPTOBJ_TYPE_ITEM) : getScriptObjTree(SCRIPTOBJ_TYPE_CHAR) );
     ScriptSearch searchInstance(treesToSearchInto, sd);
     ScriptObj* previewObj = searchInstance.next();

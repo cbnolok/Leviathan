@@ -2,8 +2,7 @@
 #define SCRIPTSEARCH_H
 
 #include "scriptobjects.h"
-#include <string>
-#include <vector>
+#include <memory>
 
 
 struct ScriptSearch
@@ -31,12 +30,12 @@ struct ScriptSearch
 
 
 public:
-    ScriptSearch(const std::vector<ScriptObjTree *> &trees, SearchData data = {});
+    ScriptSearch(const std::vector<std::unique_ptr<ScriptObjTree> *> trees, SearchData data = {});
     ScriptObj* next();
     ScriptObj* previous();
 
 private:
-    std::vector<ScriptObjTree *> m_trees;
+    std::vector<std::unique_ptr<ScriptObjTree> *> m_trees;
     SearchBy m_searchBy;
     bool m_caseSensitive;
     std::string m_key;

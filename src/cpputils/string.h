@@ -1,5 +1,5 @@
-#ifndef STRINGS_H
-#define STRINGS_H
+#ifndef STRING_H
+#define STRING_H
 
 #include <string>
 
@@ -22,6 +22,7 @@ inline bool isCharASCII(const char ch) {
 bool isStringASCII(const char* str);
 bool isStringASCII(std::string const& str);
 
+// --
 
 // Function by Marius: https://stackoverflow.com/questions/236129/split-a-string-in-c
 template < class ContainerT >
@@ -47,5 +48,4 @@ void strSplit(const std::string& str, ContainerT& tokensContainer,
 }
 
 
-
-#endif // STRINGS_H
+#endif // STRING_H

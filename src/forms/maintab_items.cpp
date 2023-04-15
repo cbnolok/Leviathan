@@ -12,7 +12,7 @@
 #include "../keystrokesender/keystrokesender.h"
 #include "../globals.h"
 #include "cpputils/maps.h"
-#include "cpputils/strings.h"
+#include "cpputils/string.h"
 #include "forms_common.h"
 
 #include "subdlg_searchobj.h"
@@ -114,7 +114,12 @@ void MainTab_Items::updateViews()
 
     QStandardItem *root = m_organizer_model->invisibleRootItem();
 
-    ScriptObjTree *trees[3] = { g_scriptObjTree_Items, g_scriptObjTree_Templates, g_scriptObjTree_Multis };
+    ScriptObjTree *trees[3]
+    {
+        g_scriptObjTree_Items.get(),
+        g_scriptObjTree_Templates.get(),
+        g_scriptObjTree_Multis.get()
+    };
     for (int tree_i = 0; tree_i < 3; ++tree_i)
     {
         if (!trees[tree_i])
@@ -417,7 +422,7 @@ void MainTab_Items::on_pushButton_search_clicked()
     if (!m_subdlg_searchObj->exec())
         return;
 
-    const std::vector<ScriptObjTree*> trees =
+    const std::vector<std::unique_ptr<ScriptObjTree> *> trees
     {
         getScriptObjTree(SCRIPTOBJ_TYPE_ITEM),
         getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE),

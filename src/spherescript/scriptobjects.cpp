@@ -2,11 +2,11 @@
 #include "../globals.h"
 
 /*--        Helper functions    --*/
-static bool strEqual_DefaultCase( std::string const& str1, std::string const& str2 )
+static bool strEqual_DefaultCase( std::string const& str1, std::string_view  str2 )
 {
     if (g_settings.m_caseSensitiveScriptParsing)
         return (str1 == str2);
-    return (0 == strcmpi(str1.c_str(), str2.c_str()));
+    return (0 == strcmpi(str1.c_str(), str2.data()));
 }
 
 
@@ -25,8 +25,8 @@ ScriptObj::ScriptObj() :
 
 /*--        ScriptSubsection        --*/
 
-ScriptSubsection::ScriptSubsection(std::string subsectionName) :
-    m_subsectionName(std::move(subsectionName))
+ScriptSubsection::ScriptSubsection(std::string_view subsectionName) :
+    m_subsectionName(subsectionName)
 {
 }
 
@@ -42,8 +42,8 @@ ScriptSubsection::~ScriptSubsection()
 
 /*--        ScriptCategory          --*/
 
-ScriptCategory::ScriptCategory(std::string categoryName) :
-    m_categoryName(std::move(categoryName))
+ScriptCategory::ScriptCategory(std::string_view categoryName) :
+    m_categoryName(categoryName)
 {
 }
 
@@ -55,7 +55,7 @@ ScriptCategory::~ScriptCategory()
         delete m_subsections[i];
 }
 
-ScriptSubsection * ScriptCategory::findSubsection(const std::string &subsectionName, bool createNew)
+ScriptSubsection * ScriptCategory::findSubsection(std::string_view subsectionName, bool createNew)
 {
     ScriptSubsection * subsection = nullptr;
     if ( ! m_subsections.empty() )
@@ -91,7 +91,7 @@ ScriptObjTree::~ScriptObjTree()
         delete m_categories[i];
 }
 
-ScriptCategory * ScriptObjTree::findCategory(const std::string& categoryName, bool createNew)
+ScriptCategory * ScriptObjTree::findCategory(std::string_view categoryName, bool createNew)
 {
     ScriptCategory * category = nullptr;
     if ( ! m_categories.empty() )

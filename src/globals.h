@@ -41,16 +41,16 @@ extern bool g_sendKeystrokeAndFocusClient;              // for KeystrokeSender
 
 // Containers for Sphere Objects: characters, items, maps...
 class ScriptObjTree;
-extern ScriptObjTree *g_scriptObjTree_Chars;
-extern ScriptObjTree *g_scriptObjTree_Spawns;
-extern ScriptObjTree *g_scriptObjTree_Items;
-extern ScriptObjTree *g_scriptObjTree_Templates;
-extern ScriptObjTree *g_scriptObjTree_Defs;
-extern ScriptObjTree *g_scriptObjTree_Areas;
-extern ScriptObjTree *g_scriptObjTree_Spells;
-extern ScriptObjTree *g_scriptObjTree_Multis;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Chars;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Spawns;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Items;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Templates;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Defs;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Areas;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Spells;
+extern std::unique_ptr<ScriptObjTree> g_scriptObjTree_Multis;
 
-ScriptObjTree * getScriptObjTree(int objType);           // returns the right global object tree for the given script item type
+std::unique_ptr<ScriptObjTree> *getScriptObjTree(int objType);           // returns the right global object tree for the given script item type
 
 
 // Log stuff

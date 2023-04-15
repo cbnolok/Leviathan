@@ -3,12 +3,12 @@
 
 #include <QObject>
 #include <fstream>  // for std::ifstream
-#include <locale>   // for std::isspace
 #include <string>
 #include <vector>
 #include <deque>
 
 
+class next_line_view_cursor;
 class ScriptObj;
 
 
@@ -33,7 +33,6 @@ public:
     bool loadFile(int fileIndex, bool loadingResources = false);
 
 private:
-    const std::locale m_kLocale;
     int m_profileIndex;
     int m_scriptLine;   // track the number of the line we are parsing in the script file
 
@@ -43,7 +42,7 @@ private:
     std::deque<ScriptObj*> m_scriptsChildItems;
     std::deque<ScriptObj*> m_scriptsChildChars;
 
-    void parseBlock(std::ifstream &fileStream, ScriptObj *obj);   //fileStream pointing to the first line after block header
+    void parseBlock(next_line_view_cursor *cursor, ScriptObj *obj);   //fileStream pointing to the first line after block header
 };
 
 #endif // SCRIPTPARSER_H

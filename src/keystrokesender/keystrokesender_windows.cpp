@@ -2,7 +2,7 @@
 
 #include "keystrokesender_windows.h"
 #include "../cpputils/utf8/unchecked.h"
-#include "../cpputils/strings.h"
+#include "../cpputils/string.h"
 #include <thread>
 #include <chrono>
 

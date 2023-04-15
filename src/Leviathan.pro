@@ -14,11 +14,12 @@ CONFIG += c++20
 RESOURCES = leviathan_resources.qrc
 
 SOURCES += \
+    cpputils/string.cpp \
+    cpputils/stringview.cpp \
     forms/forms_common.cpp \
     globals.cpp \
     keystrokesender/keystrokesenderbase.cpp \
     main.cpp \
-    cpputils/strings.cpp \
     cpputils/sysio.cpp \
     qtutils/checkableproxymodel.cpp \
     qtutils/delayedexecutiontimer.cpp \
@@ -80,6 +81,8 @@ SOURCES += \
 
 HEADERS  += \
     cpputils/collections.h \
+    cpputils/string.h \
+    cpputils/stringview.h \
     cpputils/utf8/checked.h \
     cpputils/utf8/core.h \
     cpputils/utf8/unchecked.h \
@@ -90,7 +93,6 @@ HEADERS  += \
     logging.h \
     version.h \
     cpputils/maps.h \
-    cpputils/strings.h \
     cpputils/sysio.h \
     qtutils/checkableproxymodel.h \
     qtutils/delayedexecutiontimer.h \

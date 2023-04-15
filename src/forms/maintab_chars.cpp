@@ -115,11 +115,16 @@ void MainTab_Chars::updateViews()
 
     QStandardItem *root = m_organizer_model->invisibleRootItem();
 
-    const ScriptObjTree *trees[2] = { g_scriptObjTree_Chars, g_scriptObjTree_Spawns };
+    const ScriptObjTree *trees[2]
+    {
+        g_scriptObjTree_Chars.get(),
+        g_scriptObjTree_Spawns.get()
+    };
     for (int tree_i = 0; tree_i < 2; ++tree_i)
     {
         if (!trees[tree_i])
             continue;
+
         for (ScriptCategory* categoryInst : trees[tree_i]->m_categories)
         {
             QStandardItem *categoryItem = new QStandardItem(categoryInst->m_categoryName.c_str());
@@ -368,7 +373,7 @@ void MainTab_Chars::on_pushButton_search_clicked()
     if (!m_subdlg_searchObj->exec())
         return;
 
-    const std::vector<ScriptObjTree*> trees =
+    const std::vector<std::unique_ptr<ScriptObjTree> *> trees
     {
         getScriptObjTree(SCRIPTOBJ_TYPE_CHAR),
         getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN)

@@ -1,4 +1,4 @@
-#include "strings.h"
+#include "string.h"
 #include "sysio.h"
 #include <sys/stat.h>
 #include <algorithm>    // for std::replace

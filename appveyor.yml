@@ -103,8 +103,6 @@ for:
 
     after_build:
       # Pack everything in a zip
-      - pwd
-      - ls
       - tar -czf ../LeviathanLinux64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
     
     artifacts:

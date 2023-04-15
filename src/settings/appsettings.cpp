@@ -5,7 +5,7 @@
 #include <QFile>
 
 #include "globals.h"
-#include "cpputils/strings.h"
+#include "cpputils/string.h"
 
 // workaround for a bug in Qt: if a key is not existant, sometimes the returned value is null, instead of undefined
 #define QJSONVAL_ISVALID(qjsonvalue) (!qjsonvalue.isUndefined() && !qjsonvalue.isNull())

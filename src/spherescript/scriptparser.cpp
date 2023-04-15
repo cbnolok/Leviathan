@@ -1,11 +1,14 @@
 #include "scriptparser.h"
 
 #include "../globals.h"
-#include "../cpputils/strings.h"
+#include "../cpputils/string.h"
+#include "../cpputils/stringview.h"
 #include "../cpputils/sysio.h"
 #include "logging.h"
 #include "scriptobjects.h"
 #include "scriptutils.h"
+#include <locale>   // for std::isspace, std::locale
+#include <sstream>
 
 
 class ParserBuffersHolder;
@@ -29,7 +32,7 @@ public:
     }
 
     static constexpr std::array<char, 2> trigCharsToRemove = {' ', '='};
-    const std::locale loc;
+    const std::locale kLocale;
 
     std::string strBlockBuf1, strBlockBuf2, strBlockBuf3;
 
@@ -39,8 +42,6 @@ public:
     std::string objDefname;
     std::string objID;
     std::string objArgument;
-
-    std::string blockLine;
 };
 
 
@@ -52,22 +53,14 @@ ScriptParser::ScriptParser(int profileIndex) :
 
     g_scriptFileList.clear();
 
-    delete g_scriptObjTree_Chars;
-    delete g_scriptObjTree_Spawns;
-    delete g_scriptObjTree_Items;
-    delete g_scriptObjTree_Templates;
-    delete g_scriptObjTree_Defs;
-    delete g_scriptObjTree_Areas;
-    delete g_scriptObjTree_Spells;
-    delete g_scriptObjTree_Multis;
-    g_scriptObjTree_Chars = new ScriptObjTree();
-    g_scriptObjTree_Spawns = new ScriptObjTree();
-    g_scriptObjTree_Items = new ScriptObjTree();
-    g_scriptObjTree_Templates = new ScriptObjTree();
-    g_scriptObjTree_Defs = new ScriptObjTree();
-    g_scriptObjTree_Areas = new ScriptObjTree();
-    g_scriptObjTree_Spells = new ScriptObjTree();
-    g_scriptObjTree_Multis = new ScriptObjTree();
+    g_scriptObjTree_Chars       = std::make_unique<ScriptObjTree>();
+    g_scriptObjTree_Spawns      = std::make_unique<ScriptObjTree>();
+    g_scriptObjTree_Items       = std::make_unique<ScriptObjTree>();
+    g_scriptObjTree_Templates   = std::make_unique<ScriptObjTree>();
+    g_scriptObjTree_Defs        = std::make_unique<ScriptObjTree>();
+    g_scriptObjTree_Areas       = std::make_unique<ScriptObjTree>();
+    g_scriptObjTree_Spells      = std::make_unique<ScriptObjTree>();
+    g_scriptObjTree_Multis      = std::make_unique<ScriptObjTree>();
 }
 
 /*
@@ -179,10 +172,20 @@ void ScriptParser::run()
     emit notifyTPProgressMax(150);
     progressVal = 0;
 
-    ScriptObjTree *const              displayID_trees[]         = { g_scriptObjTree_Items,  g_scriptObjTree_Chars   };
-    std::deque<ScriptObj*> *const     displayID_childObjects[]  = { &m_scriptsChildItems,   &m_scriptsChildChars    };
+    const std::unique_ptr<ScriptObjTree> *const displayID_trees[]
+    {
+        &g_scriptObjTree_Items,
+        &g_scriptObjTree_Chars
+    };
+    std::deque<ScriptObj*> *const displayID_childObjects[]
+    {
+        &m_scriptsChildItems,
+        &m_scriptsChildChars
+    };
+
     const size_t childItemsNum = m_scriptsChildItems.size() + m_scriptsChildChars.size();
     size_t childrenProcessed = 0;
+
     for (uint tree_i = 0; tree_i < STATIC_ARRAY_COUNT(displayID_trees); ++tree_i)
     {
         // Iterate one time for the items and one for the chars
@@ -199,7 +202,7 @@ void ScriptParser::run()
             ScriptObj* childObj = (*curChildObjects)[child_i];
             const bool isChildIDNumeric = isStringNumericHex(childObj->m_ID);
 
-            for (const ScriptObj* parentObj : *displayID_trees[tree_i])
+            for (const ScriptObj* parentObj : *displayID_trees[tree_i]->get())
             {
                 if (!parentObj->m_baseDef)    // it may be a child object which has ben set ID = base object
                     continue;
@@ -252,18 +255,24 @@ void ScriptParser::run()
     progressVal = 0;
 
     // lambda functions for sorting with std::sort
-    auto _sortCategory      = [](const ScriptCategory* a, const ScriptCategory* b)      -> bool {return a->m_categoryName   < b->m_categoryName;};
-    auto _sortSubsection    = [](const ScriptSubsection* a, const ScriptSubsection* b)  -> bool {return a->m_subsectionName < b->m_subsectionName;};
-    auto _sortDescription   = [](const ScriptObj* a, const ScriptObj* b)                -> bool {return a->m_description    < b->m_description;};
+    auto _sortCategory      = [](const ScriptCategory* a, const ScriptCategory* b) noexcept      -> bool {return a->m_categoryName   < b->m_categoryName;};
+    auto _sortSubsection    = [](const ScriptSubsection* a, const ScriptSubsection* b) noexcept  -> bool {return a->m_subsectionName < b->m_subsectionName;};
+    auto _sortDescription   = [](const ScriptObj* a, const ScriptObj* b) noexcept                -> bool {return a->m_description    < b->m_description;};
 
-    ScriptObjTree *const sorting_trees[] =
-    {   getScriptObjTree(SCRIPTOBJ_TYPE_ITEM),  getScriptObjTree(SCRIPTOBJ_TYPE_CHAR), getScriptObjTree(SCRIPTOBJ_TYPE_DEF), getScriptObjTree(SCRIPTOBJ_TYPE_AREA),
-        getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN), getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE), getScriptObjTree(SCRIPTOBJ_TYPE_SPELL), getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
+    const std::unique_ptr<ScriptObjTree> *const sorting_trees[]
+    {   getScriptObjTree(SCRIPTOBJ_TYPE_ITEM),
+        getScriptObjTree(SCRIPTOBJ_TYPE_CHAR),
+        getScriptObjTree(SCRIPTOBJ_TYPE_DEF),
+        getScriptObjTree(SCRIPTOBJ_TYPE_AREA),
+        getScriptObjTree(SCRIPTOBJ_TYPE_SPAWN),
+        getScriptObjTree(SCRIPTOBJ_TYPE_TEMPLATE),
+        getScriptObjTree(SCRIPTOBJ_TYPE_SPELL),
+        getScriptObjTree(SCRIPTOBJ_TYPE_MULTI)
     };
 
     for (uint tree_i = 0; tree_i < STATIC_ARRAY_COUNT(sorting_trees); ++tree_i)
     {
-        auto& categories = sorting_trees[tree_i]->m_categories;
+        auto& categories = (*sorting_trees[tree_i])->m_categories;
         std::sort(categories.begin(), categories.end(), _sortCategory);    // sort categories
         for (size_t category_i = 0; category_i < categories.size(); ++category_i)
         {
@@ -309,140 +318,142 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             return false;   // this file was already loaded.
     }
 
-    std::ifstream fileStream;
-    // it's fundamental to open the file in binary mode, otherwise tellg and seekg won't work properly...
-    fileStream.open(filePath, std::ifstream::in | std::ifstream::binary);
-    if (!fileStream.is_open())
+    const std::stringstream file_buffer_stream;
     {
-        appendToLog(std::string("Error opening file " + filePath));
-        return false;
-    }
-    m_loadedScripts.push_back(filePath);
+        std::ifstream fileStream;
+        // it's fundamental to open the file in binary mode, otherwise tellg and seekg won't work properly...
+        fileStream.open(filePath, std::ifstream::in | std::ifstream::binary);
+        if (!fileStream.is_open())
+        {
+            appendToLog(std::string("Error opening file " + filePath));
+            return false;
+        }
 
+        // Workaround to have a const stringstream and to ensure nothing modifies it.
+        *const_cast<std::stringstream*>(&file_buffer_stream) << fileStream.rdbuf();
+    }
+
+    m_loadedScripts.push_back(filePath);
     appendToLog(std::string("Loading file " + filePath));
     m_scriptLine = 0;
 
     // Pre-allocate strings.
-    std::string line;
-    std::string blockStr;
-    std::string keywordStr;
     std::string argumentStr;
+    std::string keywordStr;
 
-//    try
-//    {
-        while ( !fileStream.eof() )
-        {         
-            std::getline(fileStream, line);
-            if ( fileStream.bad() )
-                break;
-            ++m_scriptLine;
+    const std::string_view file_buffer_view = file_buffer_stream.view();
+    next_line_view_cursor cursor(file_buffer_view.data(), file_buffer_view.size());
+    while ( cursor.canReadMore() )
+    {
+        const std::string_view line = next_line_view(&cursor);
+        ++m_scriptLine;
 
-            if ( line.find('[') == std::string::npos )
+        if ( line.find('[') == std::string::npos )
+            continue;
+
+        //-- Get the pure block string (removing also leading/trailing spaces, trailing \n, \t, \r, \v, \f...)
+        const size_t index_startBlock = line.find_first_of('[');
+        const size_t index_endBlock = line.find_first_of(']');
+        if (index_endBlock == std::string::npos)
+            continue;
+        const size_t index_comment = line.find("//");     // Checking if the block is commented.
+        if (index_comment != std::string::npos)
+        {
+            if (index_comment < index_startBlock)
                 continue;
+        }
+        std::string_view blockStr = line.substr(index_startBlock, index_endBlock-index_startBlock+1);
 
-            //-- Get the pure block string (removing also leading/trailing spaces, trailing \n, \t, \r, \v, \f...)
-            const size_t index_startBlock = line.find_first_of('[');
-            const size_t index_endBlock = line.find_first_of(']');
-            if (index_endBlock == std::string::npos)
+        //-- Get the keyword
+        // Skip eventual spaces and the '[' character before the keyword
+        const size_t index_keywordLeft = blockStr.find_first_not_of(" \r", 1); // starting from 1 skips the '['
+        if (index_keywordLeft == std::string::npos)
+            continue;
+
+        // Skip eventual spaces and the ']' character after the keyword
+        const size_t index_keywordRight = blockStr.find_first_of("] \r", index_keywordLeft);
+        if (index_keywordRight == std::string::npos)
+            continue;
+
+        // Get the pure keyword (it can also be COMMENT, which isn't in the table, so we won't do anything if we encounter it).
+        keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight-index_keywordLeft);
+
+        //-- Get the eventual keyword argument (e.g.: [DEFNAME *c_foo*]). We can also have no argument.
+        argumentStr = "<No Argument>";
+        size_t index_argumentLeft = index_keywordRight + 1;
+        while ( (blockStr[index_argumentLeft]==' ') || (blockStr[index_argumentLeft]=='\r') )
+        {
+            ++index_argumentLeft;
+        }
+        if (blockStr[index_argumentLeft]!=']')  // encountered the end of the block: argument not found
+        {
+            const size_t index_argumentRight = blockStr.find_first_of("] \r", index_argumentLeft);
+            if (index_argumentRight == std::string::npos)
                 continue;
-            const size_t index_comment = line.find("//");     // Checking if the block is commented.
-            if (index_comment != std::string::npos)
-            {
-                if (index_comment < index_startBlock)
-                    continue;
-            }
-            blockStr = line.substr(index_startBlock, index_endBlock-index_startBlock+1);
+            argumentStr = blockStr.substr(index_argumentLeft, index_argumentRight-index_argumentLeft);
+        }
 
-            //-- Get the keyword
-            // Skip eventual spaces and the '[' character before the keyword
-            const size_t index_keywordLeft = blockStr.find_first_not_of(" \r", 1); // starting from 1 skips the '['
-            if (index_keywordLeft == std::string::npos)
-                continue;
-
-            // Skip eventual spaces and the ']' character after the keyword
-            const size_t index_keywordRight = blockStr.find_first_of("] \r", index_keywordLeft);
-            if (index_keywordRight == std::string::npos)
-                continue;
-
-            // Get the pure keyword (it can also be COMMENT, which isn't in the table, so we won't do anything if we encounter it).
-            keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight-index_keywordLeft);
-
-            //-- Get the eventual keyword argument (e.g.: [DEFNAME *c_foo*]). We can also have no argument.
-            argumentStr = "<No Argument>";
-            size_t index_argumentLeft = index_keywordRight + 1;
-            while ( (blockStr[index_argumentLeft]==' ') || (blockStr[index_argumentLeft]=='\r') )
-            {
-                ++index_argumentLeft;
-            }
-            if (blockStr[index_argumentLeft]!=']')  // encountered the end of the block: argument not found
-            {
-                const size_t index_argumentRight = blockStr.find_first_of("] \r", index_argumentLeft);
-                if (index_argumentRight == std::string::npos)
-                    continue;
-                argumentStr = blockStr.substr(index_argumentLeft, index_argumentRight-index_argumentLeft);
-            }
-
-            // Look up in the table the ID (enum) of the keyword (resource)
-            switch (ScriptUtils::findTableSorted(keywordStr, ScriptUtils::resourceBlocks, ScriptUtils::SCRIPTOBJ_RES_QTY - 1))
-            {
-            case -1:
-                // keyword not found
-                break;
-            case ScriptUtils::SCRIPTOBJ_RES_ITEMDEF:
-            {
-                ScriptObj *objItem = new ScriptObj();
-                objItem->m_type = SCRIPTOBJ_TYPE_ITEM;
-                objItem->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                objItem->m_scriptFileIndex = fileIndex;
-                objItem->m_scriptLine = m_scriptLine;
-                parseBlock(fileStream, objItem);
-            }
-                break;
-            case ScriptUtils::SCRIPTOBJ_RES_MULTIDEF:
-            {
-                ScriptObj *objMulti = new ScriptObj();
-                objMulti->m_type = SCRIPTOBJ_TYPE_MULTI;
-                objMulti->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                objMulti->m_scriptFileIndex = fileIndex;
-                objMulti->m_scriptLine = m_scriptLine;
-                objMulti->m_display = 0x22c4;     // mini house
-                parseBlock(fileStream, objMulti);
-            }
-                break;
-            case ScriptUtils::SCRIPTOBJ_RES_TEMPLATE:
-            {
-                ScriptObj *objTemplate = new ScriptObj();
-                objTemplate->m_type = SCRIPTOBJ_TYPE_TEMPLATE;
-                objTemplate->m_defname = argumentStr;   // using this only as a temporary storage for the argument
-                objTemplate->m_ID = "01";               // overwrites further IDs findings
-                objTemplate->m_scriptFileIndex = fileIndex;
-                objTemplate->m_scriptLine = m_scriptLine;
-                objTemplate->m_display = 0xe76;     // bag
-                parseBlock(fileStream, objTemplate);
-            }
-                break;
-            case ScriptUtils::SCRIPTOBJ_RES_CHARDEF:
-            {
-                ScriptObj *objNPC = new ScriptObj();
-                objNPC->m_type = SCRIPTOBJ_TYPE_CHAR;
-                objNPC->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                objNPC->m_scriptFileIndex = fileIndex;
-                objNPC->m_scriptLine = m_scriptLine;
-                parseBlock(fileStream, objNPC);
-            }
-                break;
-            case ScriptUtils::SCRIPTOBJ_RES_SPAWN:
-            {
-                ScriptObj *objSpawn = new ScriptObj();
-                objSpawn->m_type = SCRIPTOBJ_TYPE_SPAWN;
-                objSpawn->m_defname = argumentStr;        // using this only as a temporary storage for the argument
-                objSpawn->m_scriptFileIndex = fileIndex;
-                objSpawn->m_scriptLine = m_scriptLine;
-                objSpawn->m_display = 0x3a;     // wisp
-                parseBlock(fileStream, objSpawn);
-            }
-                break;
-                /*
+        // Look up in the table the ID (enum) of the keyword (resource)
+        switch (ScriptUtils::findTableSorted(keywordStr, ScriptUtils::resourceBlocks, ScriptUtils::SCRIPTOBJ_RES_QTY - 1))
+        {
+        case -1:
+            // keyword not found
+            break;
+        case ScriptUtils::SCRIPTOBJ_RES_ITEMDEF:
+        {
+            ScriptObj *objItem = new ScriptObj();
+            objItem->m_type = SCRIPTOBJ_TYPE_ITEM;
+            objItem->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+            objItem->m_scriptFileIndex = fileIndex;
+            objItem->m_scriptLine = m_scriptLine;
+            parseBlock(&cursor, objItem);
+        }
+            break;
+        case ScriptUtils::SCRIPTOBJ_RES_MULTIDEF:
+        {
+            ScriptObj *objMulti = new ScriptObj();
+            objMulti->m_type = SCRIPTOBJ_TYPE_MULTI;
+            objMulti->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+            objMulti->m_scriptFileIndex = fileIndex;
+            objMulti->m_scriptLine = m_scriptLine;
+            objMulti->m_display = 0x22c4;     // mini house
+            parseBlock(&cursor, objMulti);
+        }
+            break;
+        case ScriptUtils::SCRIPTOBJ_RES_TEMPLATE:
+        {
+            ScriptObj *objTemplate = new ScriptObj();
+            objTemplate->m_type = SCRIPTOBJ_TYPE_TEMPLATE;
+            objTemplate->m_defname = argumentStr;   // using this only as a temporary storage for the argument
+            objTemplate->m_ID = "01";               // overwrites further IDs findings
+            objTemplate->m_scriptFileIndex = fileIndex;
+            objTemplate->m_scriptLine = m_scriptLine;
+            objTemplate->m_display = 0xe76;     // bag
+            parseBlock(&cursor, objTemplate);
+        }
+            break;
+        case ScriptUtils::SCRIPTOBJ_RES_CHARDEF:
+        {
+            ScriptObj *objNPC = new ScriptObj();
+            objNPC->m_type = SCRIPTOBJ_TYPE_CHAR;
+            objNPC->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+            objNPC->m_scriptFileIndex = fileIndex;
+            objNPC->m_scriptLine = m_scriptLine;
+            parseBlock(&cursor, objNPC);
+        }
+            break;
+        case ScriptUtils::SCRIPTOBJ_RES_SPAWN:
+        {
+            ScriptObj *objSpawn = new ScriptObj();
+            objSpawn->m_type = SCRIPTOBJ_TYPE_SPAWN;
+            objSpawn->m_defname = argumentStr;        // using this only as a temporary storage for the argument
+            objSpawn->m_scriptFileIndex = fileIndex;
+            objSpawn->m_scriptLine = m_scriptLine;
+            objSpawn->m_display = 0x3a;     // wisp
+            parseBlock(&cursor, objSpawn);
+        }
+            break;
+            /*
                 case ScriptUtils::SCRIPTOBJ_RES_AREA:
                 case ScriptUtils::SCRIPTOBJ_RES_AREADEF:
                 case ScriptUtils::SCRIPTOBJ_RES_ROOM:
@@ -767,56 +778,51 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
                 }
                     break;
                 */
-                //Ignore these blocks
-            case ScriptUtils::SCRIPTOBJ_RES_COMMENT:
-            case ScriptUtils::SCRIPTOBJ_RES_UNKNOWN:
-            case ScriptUtils::SCRIPTOBJ_RES_ADVANCE:
-            case ScriptUtils::SCRIPTOBJ_RES_BLOCKIP:
-            case ScriptUtils::SCRIPTOBJ_RES_BOOK:
-            case ScriptUtils::SCRIPTOBJ_RES_DIALOG:
-            case ScriptUtils::SCRIPTOBJ_RES_FAME:
-            case ScriptUtils::SCRIPTOBJ_RES_GLOBALS:
-            case ScriptUtils::SCRIPTOBJ_RES_GMPAGE:
-            case ScriptUtils::SCRIPTOBJ_RES_KARMA:
-            case ScriptUtils::SCRIPTOBJ_RES_MENU:
-            case ScriptUtils::SCRIPTOBJ_RES_MOONGATES:
-            case ScriptUtils::SCRIPTOBJ_RES_NAMES:
-            case ScriptUtils::SCRIPTOBJ_RES_NEWBIE:
-            case ScriptUtils::SCRIPTOBJ_RES_NOTOTITLES:
-            case ScriptUtils::SCRIPTOBJ_RES_OBSCENE:
-            case ScriptUtils::SCRIPTOBJ_RES_PLEVEL:
-            case ScriptUtils::SCRIPTOBJ_RES_REGIONRESOURCE:
-            case ScriptUtils::SCRIPTOBJ_RES_REGIONTYPE:
-            case ScriptUtils::SCRIPTOBJ_RES_RUNES:
-            case ScriptUtils::SCRIPTOBJ_RES_SECTOR:
-            case ScriptUtils::SCRIPTOBJ_RES_SERVERS:
-            case ScriptUtils::SCRIPTOBJ_RES_SKILLCLASS:
-            case ScriptUtils::SCRIPTOBJ_RES_SKILLMENU:
-            case ScriptUtils::SCRIPTOBJ_RES_SPEECH:
-            case ScriptUtils::SCRIPTOBJ_RES_STARTS:
-            case ScriptUtils::SCRIPTOBJ_RES_TELEPORTERS:
-            case ScriptUtils::SCRIPTOBJ_RES_TIMERF:
-            case ScriptUtils::SCRIPTOBJ_RES_WEBPAGE:
-            case ScriptUtils::SCRIPTOBJ_RES_WORLDCHAR:
-            case ScriptUtils::SCRIPTOBJ_RES_WC:
-            case ScriptUtils::SCRIPTOBJ_RES_WS:
-            case ScriptUtils::SCRIPTOBJ_RES_QTY:
-                break;
-            default:
-                //appendToLog("Unknown keyword \"" + keywordStr + "\" in file " + filePath + ".");
-                break;
-            }
+            //Ignore these blocks
+        case ScriptUtils::SCRIPTOBJ_RES_COMMENT:
+        case ScriptUtils::SCRIPTOBJ_RES_UNKNOWN:
+        case ScriptUtils::SCRIPTOBJ_RES_ADVANCE:
+        case ScriptUtils::SCRIPTOBJ_RES_BLOCKIP:
+        case ScriptUtils::SCRIPTOBJ_RES_BOOK:
+        case ScriptUtils::SCRIPTOBJ_RES_DIALOG:
+        case ScriptUtils::SCRIPTOBJ_RES_FAME:
+        case ScriptUtils::SCRIPTOBJ_RES_GLOBALS:
+        case ScriptUtils::SCRIPTOBJ_RES_GMPAGE:
+        case ScriptUtils::SCRIPTOBJ_RES_KARMA:
+        case ScriptUtils::SCRIPTOBJ_RES_MENU:
+        case ScriptUtils::SCRIPTOBJ_RES_MOONGATES:
+        case ScriptUtils::SCRIPTOBJ_RES_NAMES:
+        case ScriptUtils::SCRIPTOBJ_RES_NEWBIE:
+        case ScriptUtils::SCRIPTOBJ_RES_NOTOTITLES:
+        case ScriptUtils::SCRIPTOBJ_RES_OBSCENE:
+        case ScriptUtils::SCRIPTOBJ_RES_PLEVEL:
+        case ScriptUtils::SCRIPTOBJ_RES_REGIONRESOURCE:
+        case ScriptUtils::SCRIPTOBJ_RES_REGIONTYPE:
+        case ScriptUtils::SCRIPTOBJ_RES_RUNES:
+        case ScriptUtils::SCRIPTOBJ_RES_SECTOR:
+        case ScriptUtils::SCRIPTOBJ_RES_SERVERS:
+        case ScriptUtils::SCRIPTOBJ_RES_SKILLCLASS:
+        case ScriptUtils::SCRIPTOBJ_RES_SKILLMENU:
+        case ScriptUtils::SCRIPTOBJ_RES_SPEECH:
+        case ScriptUtils::SCRIPTOBJ_RES_STARTS:
+        case ScriptUtils::SCRIPTOBJ_RES_TELEPORTERS:
+        case ScriptUtils::SCRIPTOBJ_RES_TIMERF:
+        case ScriptUtils::SCRIPTOBJ_RES_WEBPAGE:
+        case ScriptUtils::SCRIPTOBJ_RES_WORLDCHAR:
+        case ScriptUtils::SCRIPTOBJ_RES_WC:
+        case ScriptUtils::SCRIPTOBJ_RES_WS:
+        case ScriptUtils::SCRIPTOBJ_RES_QTY:
+            break;
+        default:
+            //appendToLog("Unknown keyword \"" + keywordStr + "\" in file " + filePath + ".");
+            break;
         }
-//    }
-//    catch (std::ios_base::failure& e)
-//    {
-//        appendToLog("ERROR: Caught an exception while reading the file " + filePath + ". Error code: " + std::to_string(e.code().value()) + ". Message: " + e.what() + ".");
-//    }
+    }
     return true;
 }
 
 
-void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
+void ScriptParser::parseBlock(next_line_view_cursor *cursor, ScriptObj *obj)
 {
     bool ignoreTrigger = false;
     ParserBuffersHolder* buffersInstance = ParserBuffersHolder::instance();
@@ -841,21 +847,15 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
     obj->m_defname.clear();
 
 
-    while ( !fileStream.eof() )
+    while (cursor->canReadMore())
     {
-        const std::streampos pos = fileStream.tellg();
-        buffersInstance->blockLine.clear();
-        std::string& line(buffersInstance->blockLine);
-        std::getline(fileStream, line);
-        if ( fileStream.bad() )
-            break;
-
-        //appendToLog(std::string("Reading line " + line));
+        const auto pos = *cursor;
+        const std::string_view line = next_line_view(cursor);
 
         // Check if we are in a new block, in this case we have to stop.
         if ( line.find('[') != std::string::npos )
         {
-            fileStream.seekg(pos);
+            *cursor = pos;
             break;
         }
 
@@ -863,7 +863,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
 
         // Remove leading spaces
         size_t linestart = 0;
-        while ( std::isspace(line[linestart], m_kLocale) && linestart < line.length() )
+        while ( std::isspace(line[linestart], buffersInstance->kLocale) && linestart < line.length() )
             ++linestart;
 
         // Checking if the block is commented.
@@ -927,7 +927,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         //  Skip eventual whitespaces before the Value
         for (valueStart = delimiterIndex + 1; valueStart < line.length(); ++valueStart)
         {   // i'm using delimiterIndex instead of keywordEnd because the first holds the rightmost delimiter position (the second holds the leftmost)
-            if (!std::isspace(line[valueStart], m_kLocale))
+            if (!std::isspace(line[valueStart], buffersInstance->kLocale))
                 break;
         }
 
@@ -936,7 +936,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         if (valueEnd == std::string::npos)
             valueEnd = line.length();
         --valueEnd;
-        while ( (valueEnd > valueStart) && (std::isspace(line[valueEnd], m_kLocale) || line[valueEnd] == '\n') )
+        while ( (valueEnd > valueStart) && (std::isspace(line[valueEnd], buffersInstance->kLocale) || line[valueEnd] == '\n') )
             --valueEnd;
         ++valueEnd;     // to have the character number (starting from 1), instead of having the position (0-based)
 
@@ -952,7 +952,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         switch (ScriptUtils::findTableSorted(keyword, ScriptUtils::objectTags, ScriptUtils::SCRIPTOBJ_TAG_QTY - 1))
         {
         case ScriptUtils::SCRIPTOBJ_TAG_CATEGORY:
-            obj->m_category = getScriptObjTree(obj->m_type)->findCategory(value);
+            obj->m_category = getScriptObjTree(obj->m_type)->get()->findCategory(value);
             break;
         case ScriptUtils::SCRIPTOBJ_TAG_SUBSECTION:
             objSubsection = value;
@@ -1081,7 +1081,7 @@ void ScriptParser::parseBlock(std::ifstream &fileStream, ScriptObj *obj)
         }
         else
         {
-            obj->m_category = getScriptObjTree(obj->m_type)->findCategory(SCRIPTCATEGORY_NONE_NAME);
+            obj->m_category = getScriptObjTree(obj->m_type)->get()->findCategory(SCRIPTCATEGORY_NONE_NAME);
             obj->m_subsection = obj->m_category->findSubsection(objSubsection);
             obj->m_subsection->m_objects.push_back(obj);
         }

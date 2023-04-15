@@ -8,6 +8,7 @@
 #include "uoclientfiles/uomap.h"
 #include "uoclientfiles/uostatics.h"
 #include "uoclientfiles/uoradarcol.h"
+#include <memory>
 
 
 AppSettings g_settings;
@@ -38,28 +39,32 @@ ScriptsProfile* getLoadedScriptsProfile()
 
 bool g_sendKeystrokeAndFocusClient = true;
 
-ScriptObjTree *g_scriptObjTree_Chars        = nullptr;
-ScriptObjTree *g_scriptObjTree_Spawns       = nullptr;
-ScriptObjTree *g_scriptObjTree_Items        = nullptr;
-ScriptObjTree *g_scriptObjTree_Templates    = nullptr;
-ScriptObjTree *g_scriptObjTree_Defs         = nullptr;
-ScriptObjTree *g_scriptObjTree_Areas        = nullptr;
-ScriptObjTree *g_scriptObjTree_Spells       = nullptr;
-ScriptObjTree *g_scriptObjTree_Multis       = nullptr;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Chars;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Spawns;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Items;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Templates;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Defs;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Areas;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Spells;
+std::unique_ptr<ScriptObjTree> g_scriptObjTree_Multis;
 
-ScriptObjTree * getScriptObjTree(int objType)
+// --
+
+
+std::unique_ptr<ScriptObjTree>* getScriptObjTree(int objType)
 {
     switch (objType)
     {
-    case SCRIPTOBJ_TYPE_ITEM:       return g_scriptObjTree_Items;
-    case SCRIPTOBJ_TYPE_CHAR:       return g_scriptObjTree_Chars;
-    case SCRIPTOBJ_TYPE_DEF:        return g_scriptObjTree_Defs;
-    case SCRIPTOBJ_TYPE_AREA:       return g_scriptObjTree_Areas;
-    case SCRIPTOBJ_TYPE_SPAWN:      return g_scriptObjTree_Spawns;
-    case SCRIPTOBJ_TYPE_TEMPLATE:   return g_scriptObjTree_Templates;
-    case SCRIPTOBJ_TYPE_SPELL:      return g_scriptObjTree_Spells;
-    case SCRIPTOBJ_TYPE_MULTI:      return g_scriptObjTree_Multis;
-    default:    return nullptr;
+    case SCRIPTOBJ_TYPE_ITEM:       return &g_scriptObjTree_Items;
+    case SCRIPTOBJ_TYPE_CHAR:       return &g_scriptObjTree_Chars;
+    case SCRIPTOBJ_TYPE_DEF:        return &g_scriptObjTree_Defs;
+    case SCRIPTOBJ_TYPE_AREA:       return &g_scriptObjTree_Areas;
+    case SCRIPTOBJ_TYPE_SPAWN:      return &g_scriptObjTree_Spawns;
+    case SCRIPTOBJ_TYPE_TEMPLATE:   return &g_scriptObjTree_Templates;
+    case SCRIPTOBJ_TYPE_SPELL:      return &g_scriptObjTree_Spells;
+    case SCRIPTOBJ_TYPE_MULTI:      return &g_scriptObjTree_Multis;
+    default:
+        std::abort();
     }
 }
 

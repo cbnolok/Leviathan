@@ -1,6 +1,6 @@
-#include "strings.h"
+#include "string.h"
 #include <cstring>      // for strlen
-#include <algorithm>    // std::any_of
+#include <algorithm>    // std::any_of, std::find
 #include <functional>   // std::negate
 
 
@@ -12,7 +12,8 @@ void strToUpper(std::string &string)
 
 void strToUpper(char *string)
 {
-    for (size_t i = 0; i < strlen(string); ++i)
+    const size_t string_length = strlen(string);
+    for (size_t i = 0; i < string_length; ++i)
         string[i] = toupper(string[i]);
 }
 
@@ -25,13 +26,14 @@ void strToLower(std::string &string)
 
 void strToLower(char *string)
 {
-    for (size_t i = 0; i < strlen(string); ++i)
+    const size_t string_length = strlen(string);
+    for (size_t i = 0; i < string_length; ++i)
         string[i] = tolower(string[i]);
 }
 
 void strTrim(std::string &string)
 {
-    static const char delims[] = " \t\n";
+    static constexpr char delims[] = " \t\n";
 
     size_t start = string.find_first_not_of(delims);        // Finds the first character equal to none of characters in delims
     if (start == std::string::npos)
@@ -43,7 +45,6 @@ void strTrim(std::string &string)
 
     string = string.substr(start, nchars);
 }
-
 
 bool isStringNumericHex(const std::string &s)
 {
