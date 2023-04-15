@@ -71,6 +71,7 @@ ScriptParser::~ScriptParser()
 
 void ScriptParser::run()
 {
+    constexpr int kProgressGaugeSteps = 150;
     g_loadedScriptsProfile = m_profileIndex;
 
     // TODO: enable reading scripts file from spheretables
@@ -90,14 +91,14 @@ void ScriptParser::run()
 
     appendToLog(std::string("Loading Scripts Profile \"" + g_scriptsProfiles[m_profileIndex].m_name + "\"..."));
     int filesNumber = (int)g_scriptFileList.size();
-    emit notifyTPProgressMax(150);
+    emit notifyTPProgressMax(kProgressGaugeSteps);
     //QString msg("Parsing ");
     emit notifyTPMessage("Parsing scripts");
     for (int i = 0; i < filesNumber; ++i)
     {
         //emit notifyTPMessage(msg + g_scriptFileList[i].c_str());
         loadFile(i, false);
-        int progressValNow = (int)( (i*150)/filesNumber );
+        int progressValNow = (int)( (i*kProgressGaugeSteps)/filesNumber );
         if (progressValNow > progressVal)
         {
             progressVal = progressValNow;
@@ -110,7 +111,7 @@ void ScriptParser::run()
 
     appendToLog("Organizing dupe items...");
     emit notifyTPMessage("Organizing dupe items...");
-    emit notifyTPProgressMax(150);
+    emit notifyTPProgressMax(kProgressGaugeSteps);
 
     const size_t dupeObjs_num = m_scriptsDupeItems.size();
     for (size_t dupeObj_i = 0; dupeObj_i < dupeObjs_num; ++dupeObj_i)
@@ -153,7 +154,7 @@ void ScriptParser::run()
                         '\n' + kLogStrTabL1 +
                         "File: " + g_scriptFileList[dupeObj->m_scriptFileIndex]);
 
-        const int progressValNow = (int)( (dupeObj_i*150)/dupeObjs_num );
+        const int progressValNow = (int)( (dupeObj_i*kProgressGaugeSteps)/dupeObjs_num );
         if (progressValNow > progressVal)
         {
             progressVal = progressValNow;
@@ -169,7 +170,7 @@ void ScriptParser::run()
 
     appendToLog("Assigning the displayID to child objects...");
     emit notifyTPMessage("Assigning the displayID to child objects...");
-    emit notifyTPProgressMax(150);
+    emit notifyTPProgressMax(kProgressGaugeSteps);
     progressVal = 0;
 
     const std::unique_ptr<ScriptObjTree> *const displayID_trees[]
@@ -228,7 +229,7 @@ void ScriptParser::run()
                             "File: " + g_scriptFileList[childObj->m_scriptFileIndex]);
 
             ++childrenProcessed;
-            const int progressValNow = (int)( (childrenProcessed*150)/childItemsNum );
+            const int progressValNow = (int)( (childrenProcessed * kProgressGaugeSteps)/childItemsNum );
             if (progressValNow > progressVal)
             {
                 progressVal = progressValNow;
@@ -318,7 +319,7 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             return false;   // this file was already loaded.
     }
 
-    const std::stringstream file_buffer_stream;
+    std::stringstream file_buffer_stream;
     {
         std::ifstream fileStream;
         // it's fundamental to open the file in binary mode, otherwise tellg and seekg won't work properly...
@@ -329,8 +330,7 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             return false;
         }
 
-        // Workaround to have a const stringstream and to ensure nothing modifies it.
-        *const_cast<std::stringstream*>(&file_buffer_stream) << fileStream.rdbuf();
+        file_buffer_stream << fileStream.rdbuf();
     }
 
     m_loadedScripts.push_back(filePath);
@@ -341,7 +341,14 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
     std::string argumentStr;
     std::string keywordStr;
 
-    const std::string_view file_buffer_view = file_buffer_stream.view();
+// Apple Clang doesn't support (at time of writing) this c++20 feature.
+#ifndef __APPLE__
+    const std::string_view file_buffer_view(file_buffer_stream.view());
+#else
+    const std::string file_buffer_string(file_buffer_stream.str());
+    const std::string_view file_buffer_view(file_buffer_string);
+    file_buffer_stream.str({});
+#endif
     next_line_view_cursor cursor(file_buffer_view.data(), file_buffer_view.size());
     while ( cursor.canReadMore() )
     {

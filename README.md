@@ -1,5 +1,6 @@
 # Leviathan
 Cross-platform GM Tool for SphereServer.<br>
+[![Build status](https://ci.appveyor.com/api/projects/status/8fbrvl82b5wdujgc?svg=true)](https://ci.appveyor.com/project/cbnolok/leviathan)
 <br>
 Known issues:
 * The "send text to client" feature needs to be tested further on Linux.

@@ -10,10 +10,6 @@ image:
   - Ubuntu2004 # 20.04 LTS (Focal Fossa)
   - macos-bigsur
 
-install:
-  # Build Leviathan version file
-  - python appveyor_generateversion.py
-
 for:
   - # Windows
     matrix:
@@ -23,7 +19,7 @@ for:
     environment:
       # Set Qt toolkit path
       QTOOLS: C:\Qt\Tools\mingw1120_64\bin
-      QTDIR: C:\Qt\6.4.2\mingw_64 # required as is
+      QTDIR: C:\Qt\6.4\mingw_64 # required as is
 
     before_build:
       - set PATH=%QTOOLS%;%QTDIR%\bin;%PATH%
@@ -35,6 +31,9 @@ for:
       - python --version
 
     build_script:
+      # Build Leviathan version file
+      - python appveyor_generateversion.py
+
       - cd src
       - mkdir deploy64
 
@@ -85,6 +84,12 @@ for:
       only:
       - image: Ubuntu2004
 
+    install:
+      - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+      - sudo apt-get -y update
+      - sudo apt-get -y install gcc-11 g++-11
+      - sudo update-alternatives --set gcc /usr/bin/gcc-11
+
     before_build:
       # Set Qt toolkit path
       - export QTDIR=${HOME}/Qt/6.2/gcc_64
@@ -97,6 +102,9 @@ for:
       - python --version
 
     build_script:
+      # Build Leviathan version file
+      - python appveyor_generateversion.py
+
       - cd src
       - qmake Leviathan.pro CONFIG+=release
       - make -j"$(nproc)"
@@ -140,6 +148,9 @@ for:
       - python --version
 
     build_script:
+      # Build Leviathan version file
+      - python appveyor_generateversion.py
+
       - cd src
       - qmake Leviathan.pro CONFIG+=release
       - make -j"$(nproc)"
