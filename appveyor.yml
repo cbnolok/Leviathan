@@ -66,19 +66,19 @@ for:
         name: binpkg-x86_64
 
     deploy:
-        tag: $(APPVEYOR_REPO_TAG_NAME)
-        release: $(APPVEYOR_REPO_TAG_NAME)
-        description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
-        provider: GitHub
-        auth_token:
-          secure: J8jjMGdO2zbAS725FDct4WZwi9jxYf2J1lCZC6zFStF4afJhL0QiQh08eGV3KT00
-        artifact: binpkg-x86_64
-        force_update: true
-        draft: false
-        prerelease: false
-        on:
-          #branch: master                 # release from master branch only. appveyor_repo_tag doesn't work with on: branch
-          appveyor_repo_tag: true        # deploy on tag push only
+      tag: $(APPVEYOR_REPO_TAG_NAME)
+      release: $(APPVEYOR_REPO_TAG_NAME)
+      description: 'Release for version $(APPVEYOR_REPO_TAG_NAME)'
+      provider: GitHub
+      auth_token:
+        secure: J8jjMGdO2zbAS725FDct4WZwi9jxYf2J1lCZC6zFStF4afJhL0QiQh08eGV3KT00
+      artifact: binpkg-x86_64
+      force_update: true
+      draft: false
+      prerelease: false
+      on:
+        branch: master            # release from master branch only.
+        APPVEYOR_REPO_TAG: true   # deploy on tag push only
 
 
   - # Linux build
@@ -91,7 +91,7 @@ for:
       - sudo apt-get -y update
       - sudo apt-get -y install gcc-11 g++-11
       - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11
-      - sudo update-alternatives --set gcc /usr/bin/gcc-11 #--slave g++ /usr/bin/g++-11
+      - sudo update-alternatives --set gcc /usr/bin/gcc-11
 
     before_build:
       # Set Qt toolkit path
@@ -123,7 +123,7 @@ for:
     deploy:
       tag: $(APPVEYOR_REPO_TAG_NAME)
       release: $(APPVEYOR_REPO_TAG_NAME)
-      description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
+      description: 'Release for version $(APPVEYOR_REPO_TAG_NAME)'
       provider: GitHub
       auth_token:
         secure: J8jjMGdO2zbAS725FDct4WZwi9jxYf2J1lCZC6zFStF4afJhL0QiQh08eGV3KT00
@@ -132,8 +132,8 @@ for:
       draft: false
       prerelease: false
       on:
-        #branch: master                # release from master branch only. appveyor_repo_tag doesn't work with on: branch
-        appveyor_repo_tag: true        # deploy on tag push only
+        branch: master            # release from master branch only.
+        APPVEYOR_REPO_TAG: true   # deploy on tag push only
 
 
   - # MacOS
@@ -175,7 +175,7 @@ for:
     deploy:
       tag: $(APPVEYOR_REPO_TAG_NAME)
       release: $(APPVEYOR_REPO_TAG_NAME)
-      description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
+      description: 'Release for version $(APPVEYOR_REPO_TAG_NAME)'
       provider: GitHub
       auth_token:
         secure: J8jjMGdO2zbAS725FDct4WZwi9jxYf2J1lCZC6zFStF4afJhL0QiQh08eGV3KT00
@@ -184,5 +184,5 @@ for:
       draft: false
       prerelease: false
       on:
-        #branch: master                # release from master branch only. appveyor_repo_tag doesn't work with on: branch
-        APPVEYOR_REPO_TAG: true        # deploy on tag push only
+        branch: master            # release from master branch only.
+        APPVEYOR_REPO_TAG: true   # deploy on tag push only
