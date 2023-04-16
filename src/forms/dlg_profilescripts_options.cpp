@@ -214,7 +214,7 @@ void Dlg_ProfileScripts_Options::ms_scriptTree_directoryLoaded(QString element)
         std::vector<std::string> scriptsToLoad;
         for (std::string const& str : m_scriptsProfileLoaded->m_scriptsToLoad)
         {
-            getFilesInDirectorySub(&scriptsToLoad, str, 1);
+            getFilesRecurseDirectories(&scriptsToLoad, str, 1);
         }
         checkExpandedScriptsFromProfile(ui->treeView_scripts->rootIndex(), &scriptsToLoad);
 

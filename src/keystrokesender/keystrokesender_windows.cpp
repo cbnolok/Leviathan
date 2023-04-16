@@ -54,6 +54,7 @@ KeystrokeSender::KeystrokeSender(std::string windowTitleFragment) :
 
 bool KeystrokeSender::findUOWindow()
 {
+    gs_windowHandleHelper = nullptr;
     EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(this));
     m_UOHandle = gs_windowHandleHelper;
     gs_windowHandleHelper = nullptr;
@@ -86,25 +87,22 @@ void KeystrokeSender::resetWindow()
 
 bool KeystrokeSender::canSend()
 {
-    if (m_UOHandle == nullptr)
+    if ((m_UOHandle == nullptr) || !IsWindow(static_cast<HWND>(m_UOHandle)))
     {
+        m_UOHandle = nullptr;
         return findUOWindow();
     }
-    else if (IsWindow(static_cast<HWND>(m_UOHandle)))
-    {
-        EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(this));
-        const std::string strClientWindowTitle(getWindowStdStringTitle(gs_windowHandleHelper));
-        gs_windowHandleHelper = nullptr;
 
-        const UOClientType clitype = detectClientTypeFromTitle(
-                    strClientWindowTitle,
-                    getWindowTitleThirdpartyFragment() );
-        if (clitype == m_clientType)
-            return true;
-        if (findUOWindow())
-            return true;
-    }
-
+    EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(this));
+    const std::string strClientWindowTitle(getWindowStdStringTitle(gs_windowHandleHelper));
+    gs_windowHandleHelper = nullptr;
+    
+    const UOClientType clitype = detectClientTypeFromTitle(
+                strClientWindowTitle,
+                getWindowTitleThirdpartyFragment() );
+    if (clitype == m_clientType)
+        return true;
+    
     m_error = KSError::NoWindow;
     return false;
 }

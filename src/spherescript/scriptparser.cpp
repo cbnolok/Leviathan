@@ -80,7 +80,7 @@ void ScriptParser::run()
     expandedFileList.reserve(tempFileList.size());
     for (std::string const& str : tempFileList)
     {
-        getFilesInDirectorySub(&expandedFileList, str, -1);
+        getFilesRecurseDirectories(&expandedFileList, str, -1);
     }
     g_scriptFileList = std::move(expandedFileList);
 
@@ -369,7 +369,7 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             if (index_comment < index_startBlock)
                 continue;
         }
-        std::string_view blockStr = line.substr(index_startBlock, index_endBlock-index_startBlock+1);
+        std::string_view blockStr = line.substr(index_startBlock, index_endBlock - index_startBlock + 1);
 
         //-- Get the keyword
         // Skip eventual spaces and the '[' character before the keyword
@@ -383,7 +383,7 @@ bool ScriptParser::loadFile(int fileIndex, bool loadingResources)
             continue;
 
         // Get the pure keyword (it can also be COMMENT, which isn't in the table, so we won't do anything if we encounter it).
-        keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight-index_keywordLeft);
+        keywordStr = blockStr.substr(index_keywordLeft, index_keywordRight - index_keywordLeft);
 
         //-- Get the eventual keyword argument (e.g.: [DEFNAME *c_foo*]). We can also have no argument.
         argumentStr = "<No Argument>";

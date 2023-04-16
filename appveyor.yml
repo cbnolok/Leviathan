@@ -66,15 +66,16 @@ for:
         name: binpkg-x86_64
 
     deploy:
+        tag: $(APPVEYOR_REPO_TAG_NAME)
         release: $(APPVEYOR_REPO_TAG_NAME)
-        description: 'Windows build (x86_64 arch)'
+        description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
         provider: GitHub
         auth_token:
           secure: J8jjMGdO2zbAS725FDct4WZwi9jxYf2J1lCZC6zFStF4afJhL0QiQh08eGV3KT00
         artifact: binpkg-x86_64
+        force_update: true
         draft: false
         prerelease: false
-        tag: $(APPVEYOR_REPO_TAG_NAME)
         on:
           #branch: master                 # release from master branch only. appveyor_repo_tag doesn't work with on: branch
           appveyor_repo_tag: true        # deploy on tag push only
@@ -89,9 +90,8 @@ for:
       - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
       - sudo apt-get -y update
       - sudo apt-get -y install gcc-11 g++-11
-      - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 30 # gcc master, g++ slave: this updates also g++
-      - sudo update-alternatives --set gcc /usr/bin/gcc-11
-      #- sudo update-alternatives --set g++ /usr/bin/g++-11
+      - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 --slave /usr/bin/g++ g++ /usr/bin/g++-11
+      - sudo update-alternatives --set gcc /usr/bin/gcc-11 #--slave g++ /usr/bin/g++-11
 
     before_build:
       # Set Qt toolkit path
@@ -121,15 +121,16 @@ for:
         name: binpkg-x86_64
 
     deploy:
+      tag: $(APPVEYOR_REPO_TAG_NAME)
       release: $(APPVEYOR_REPO_TAG_NAME)
-      description: 'Linux build (x86_64 arch)'
+      description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
       provider: GitHub
       auth_token:
         secure: J8jjMGdO2zbAS725FDct4WZwi9jxYf2J1lCZC6zFStF4afJhL0QiQh08eGV3KT00
       artifact: binpkg-x86_64
+      force_update: true
       draft: false
       prerelease: false
-      tag: $(APPVEYOR_REPO_TAG_NAME)
       on:
         #branch: master                # release from master branch only. appveyor_repo_tag doesn't work with on: branch
         appveyor_repo_tag: true        # deploy on tag push only
@@ -172,15 +173,16 @@ for:
       #  name: binpkg-x86_64
 
     deploy:
+      tag: $(APPVEYOR_REPO_TAG_NAME)
       release: $(APPVEYOR_REPO_TAG_NAME)
-      description: 'MacOS build (x86_64 arch)'
+      description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
       provider: GitHub
       auth_token:
         secure: J8jjMGdO2zbAS725FDct4WZwi9jxYf2J1lCZC6zFStF4afJhL0QiQh08eGV3KT00
       artifact: binpkg-x86_64
+      force_update: true
       draft: false
       prerelease: false
-      tag: $(APPVEYOR_REPO_TAG_NAME)
       on:
         #branch: master                # release from master branch only. appveyor_repo_tag doesn't work with on: branch
-        appveyor_repo_tag: true        # deploy on tag push only
+        APPVEYOR_REPO_TAG: true        # deploy on tag push only

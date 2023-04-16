@@ -86,7 +86,7 @@ std::string getDirectoryFromString(std::string_view path)
 }
 
 
-void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int maxFolderLevel)
+void getFilesRecurseDirectories(std::vector<std::string> *out, std::string path, int maxFolderLevel)
 {
     // This function adds to the list, recursively, files inside folders.
     // TODO: right now doesn't get saves and .ini.
@@ -97,7 +97,10 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
     namespace fs = std::filesystem;
 
     if (!fs::is_directory(path))
+    {
+        out->emplace_back(path);
         return;
+    }
 
     std::string entry_name;
     std::string entry_path;
@@ -109,7 +112,7 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
             // Recurse this directory
             if (maxFolderLevel != 0)
             {
-                getFilesInDirectorySub(out, entry_path, maxFolderLevel - 1);
+                getFilesRecurseDirectories(out, entry_path, maxFolderLevel - 1);
                 out->emplace_back(entry_path);
             }
             continue;
@@ -148,7 +151,7 @@ void getFilesInDirectorySub(std::vector<std::string> *out, std::string path, int
             if ( (strcmp(file_name.c_str(), "..") == 0) || (strcmp(file_name.c_str(), ".") == 0) )
                 continue;   // Ignore this one
 
-            getFilesInDirectorySub(out, full_file_name, maxFolderLevel - 1);
+            getFilesRecurseDirectories(out, full_file_name, maxFolderLevel - 1);
             continue;
         }
         else if (file_name[0] == '.')
