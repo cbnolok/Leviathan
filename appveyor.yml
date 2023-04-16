@@ -88,7 +88,10 @@ for:
       - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
       - sudo apt-get -y update
       - sudo apt-get -y install gcc-11 g++-11
+      - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 30
+      - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 30
       - sudo update-alternatives --set gcc /usr/bin/gcc-11
+      - sudo update-alternatives --set g++ /usr/bin/g++-11
 
     before_build:
       # Set Qt toolkit path
