@@ -17,8 +17,6 @@ public:
     ~Dlg_Settings();
 
 private slots:
-    void on_checkBox_loadDefaultProfilesAtStartup_stateChanged(int /* arg1 UNUSED */);
-    void on_checkBox_caseSensitiveScriptParsing_stateChanged(int /* arg1 UNUSED */);
     void on_buttonBox_accepted();
     void on_buttonBox_rejected();    
 

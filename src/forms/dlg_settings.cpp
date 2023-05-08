@@ -27,20 +27,11 @@ Dlg_Settings::~Dlg_Settings()
     delete ui;
 }
 
-void Dlg_Settings::on_checkBox_loadDefaultProfilesAtStartup_stateChanged(int /* arg1 UNUSED */)
-{
-    m_loadDefaultProfilesAtStartup = ui->checkBox_loadDefaultProfilesAtStartup->isChecked();
-}
-
-void Dlg_Settings::on_checkBox_caseSensitiveScriptParsing_stateChanged(int /* arg1 UNUSED */)
-{
-    m_caseSensitiveScriptParsing = ui->checkBox_caseSensitiveScriptParsing->isChecked();
-}
-
 void Dlg_Settings::on_buttonBox_accepted()
 {
-    g_settings.m_loadDefaultProfilesAtStartup = m_loadDefaultProfilesAtStartup;
-    g_settings.m_caseSensitiveScriptParsing = m_caseSensitiveScriptParsing;
+    g_settings.m_loadDefaultProfilesAtStartup = ui->checkBox_loadDefaultProfilesAtStartup->isChecked();;
+    g_settings.m_caseSensitiveScriptParsing = ui->checkBox_caseSensitiveScriptParsing->isChecked();;
+    g_settings.m_customSpawnCmd = ui->lineEdit_spawn->text().toStdString();
 
     // Open the file in which we store the Settings.
     QFile jsonFile;

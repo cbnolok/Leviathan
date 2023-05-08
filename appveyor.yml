@@ -49,7 +49,7 @@ for:
 
       # Prepare the libraries and the other files to deploy  
       - call %QTDIR%\bin\windeployqt.exe --force --compiler-runtime --no-translations --no-opengl-sw --no-system-d3d-compiler --no-quick-import --no-virtualkeyboard deploy64
-      # windeployqt only copies the required Qt dlls, not the c++ ones, even if i added --compiler-runtime
+      # windeployqt only copies the required Qt dlls, not the c++ ones, even adding --compiler-runtime
       - copy /Y "%QTOOLS%\libstdc++-6.dll" deploy64
       - copy /Y "%QTOOLS%\libgcc_s_seh-1.dll" deploy64
       - copy /Y "%QTOOLS%\libwinpthread-1.dll" deploy64
@@ -59,10 +59,10 @@ for:
       - copy /Y ..\winlibs\64\zlib.dll deploy64
 
       # Pack everything in a zip
-      - 7z a ..\LeviathanWin64-automated-%APPVEYOR_REPO_TAG_NAME%.zip .\deploy64\*
+      - 7z a ..\Leviathan-Windows-x86_64-automated-%APPVEYOR_REPO_TAG_NAME%.zip .\deploy64\*
 
     artifacts:
-      - path: LeviathanWin64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+      - path: Leviathan-Windows-x86_64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
         name: binpkg-x86_64
 
     deploy:
@@ -114,10 +114,10 @@ for:
 
     after_build:
       # Pack everything in a zip
-      - tar -czf ../LeviathanLinux64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
+      - tar -czf ../Leviathan-Linux-x86_64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan
     
     artifacts:
-      - path: LeviathanLinux64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
+      - path: Leviathan-Linux-x86_64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
         name: binpkg-x86_64
 
     deploy:
@@ -164,13 +164,11 @@ for:
       # Pack everything in a zip
       #- zip -r ../LeviathanMacOSx86_64-automated-${APPVEYOR_REPO_TAG_NAME}.zip Leviathan.app
       - macdeployqt Leviathan.app -dmg
-      - mv Leviathan.dmg ../LeviathanMacOSx86_64-automated-${APPVEYOR_REPO_TAG_NAME}.dmg
+      - mv Leviathan.dmg ../Leviathan-MacOS-x86_64-automated-${APPVEYOR_REPO_TAG_NAME}.dmg
     
     artifacts:
-      - path: LeviathanMacOSx86_64-automated-$(APPVEYOR_REPO_TAG_NAME).dmg
+      - path: Leviathan-MacOS-x86_64-automated-$(APPVEYOR_REPO_TAG_NAME).dmg
         name: binpkg-x86_64
-      #- path: LeviathanMacOSx86_64-automated-$(APPVEYOR_REPO_TAG_NAME).zip
-      #  name: binpkg-x86_64
 
     deploy:
       tag: $(APPVEYOR_REPO_TAG_NAME)
